@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kreditjáték</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.wrap{width:min(720px,calc(100% - 24px));margin:0 auto;padding:28px 0 56px}.hero{margin:0 0 18px}.hero h1{font-size:clamp(38px,10vw,68px);line-height:.95;letter-spacing:-.04em;margin:0 0 10px}.hero p{margin:0;color:#64748b;font-size:17px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:22px;margin:14px 0;box-shadow:0 10px 34px rgba(15,23,42,.06)}.choices{display:grid;gap:12px}.btn{width:100%;min-height:58px;border:0;border-radius:16px;padding:15px 18px;font:inherit;font-weight:850;font-size:17px;cursor:pointer;background:#0f172a;color:#fff}.btn.alt{background:#e2e8f0;color:#0f172a}.btn:disabled{opacity:.45;cursor:not-allowed}.field{display:grid;gap:7px;margin:12px 0}.field label{font-weight:800}.field input{width:100%;min-height:50px;border:1px solid #cbd5e1;border-radius:14px;padding:12px 14px;font:inherit;font-size:16px}.code{font-size:clamp(42px,13vw,76px);font-weight:950;letter-spacing:.08em;margin:4px 0 10px}.muted{color:#64748b}.list{display:grid;gap:8px;margin-top:14px}.person{padding:13px 14px;border-radius:14px;background:#f8fafc;font-weight:800}.ok,.error{padding:14px;border-radius:14px;margin-top:12px}.ok{background:#ecfdf5;color:#065f46}.error{background:#fef2f2;color:#991b1b}.row{display:flex;gap:10px;flex-wrap:wrap}.row .btn{flex:1 1 220px}.hidden{display:none!important}.small{font-size:14px;line-height:1.45}.connection{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:800;margin-top:10px}.dot{width:9px;height:9px;border-radius:999px;background:#94a3b8}.dot.on{background:#16a34a}.dot.off{background:#dc2626}@media(max-width:430px){.wrap{width:min(100% - 18px,720px);padding-top:18px}.card{padding:18px;border-radius:20px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero"><h1>Kreditjáték</h1><p>Online tréninggyakorlat</p><div class="connection"><span id="connDot" class="dot"></span><span id="connText">Kapcsolódás…</span></div></section>
+<section id="home" class="card choices hidden"><button id="trainerStart" class="btn">TRÉNERKÉNT INDÍTOM</button><button id="participantStart" class="btn alt">RÉSZTVEVŐKÉNT CSATLAKOZOM</button></section>
+<section id="trainer" class="card hidden"><p class="muted">Játékkód</p><div id="gameCode" class="code">------</div><p class="muted">Ezt a kódot vagy a csatlakozási linket add meg a résztvevőknek.</p><div class="row"><button id="copyLink" class="btn alt">Csatlakozási link másolása</button><button id="newGame" class="btn">Új játék</button></div><h2>Belépett résztvevők <span id="count">0</span></h2><div id="participants" class="list"><p class="muted">Még senki nem lépett be.</p></div><div id="trainerError"></div></section>
+<section id="join" class="card hidden"><h2>Csatlakozás</h2><form id="joinForm"><div class="field"><label for="codeInput">Játékkód</label><input id="codeInput" maxlength="6" autocomplete="off" autocapitalize="characters" required></div><div class="field"><label for="nameInput">Neved</label><input id="nameInput" maxlength="60" autocomplete="name" required></div><button id="joinButton" class="btn" type="submit">BELÉPEK</button></form><div id="joinError"></div></section>
+<section id="waiting" class="card hidden"><div class="ok"><strong>Beléptél.</strong><br>Várakozás a trénerre.</div><p>Játék: <strong id="waitingCode"></strong></p><p>Név: <strong id="waitingName"></strong></p></section>
+<section id="fatal" class="card hidden"><div class="error"><strong>Az online kapcsolat nem indult el.</strong><div id="fatalText" class="small"></div></div></section>
+</main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyBUifQpABjjbrIdI5pZaY3gys5N5W5wopw",authDomain:"fishpond-238c3.firebaseapp.com",projectId:"fishpond-238c3",storageBucket:"fishpond-238c3.firebasestorage.app",messagingSenderId:"334427651378",appId:"1:334427651378:web:5bf16ef09f54fe4cb1ab2b"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id),qs=new URLSearchParams(location.search),ALPHABET="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let uid=null,unsubscribePlayers=null;
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const show=id=>["home","trainer","join","waiting","fatal"].forEach(x=>$(x).classList.toggle("hidden",x!==id));
+const msg=(id,text)=>{$(id).innerHTML=text?'<div class="error">'+esc(text)+'</div>':""};
+const setConnection=(ok,text)=>{$("connDot").className="dot "+(ok?"on":"off");$("connText").textContent=text};
+const sessionRef=code=>doc(db,"kredit_sessions",code);
+const playersRef=code=>collection(db,"kredit_sessions",code,"players");
+const playerRef=(code,id)=>doc(db,"kredit_sessions",code,"players",id);
+function makeCode(){let code="";for(let i=0;i<6;i++)code+=ALPHABET[Math.floor(Math.random()*ALPHABET.length)];return code}
+async function createUniqueSession(){for(let i=0;i<20;i++){const code=makeCode(),ref=sessionRef(code),s=await getDoc(ref);if(s.exists())continue;await setDoc(ref,{code,status:"lobby",hostUid:uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});return code}throw new Error("Nem sikerült új játékkódot létrehozni.")}
+async function createGame(){msg("trainerError","");const code=await createUniqueSession();localStorage.setItem("kredit_role","trainer");localStorage.setItem("kredit_code",code);history.replaceState(null,"","?role=trainer&room="+encodeURIComponent(code));await openTrainer(code)}
+async function openTrainer(code){if(unsubscribePlayers)unsubscribePlayers();show("trainer");$("gameCode").textContent=code;localStorage.setItem("kredit_role","trainer");localStorage.setItem("kredit_code",code);const s=await getDoc(sessionRef(code));if(!s.exists()){msg("trainerError","Ez a játék már nem található.");return}unsubscribePlayers=onSnapshot(playersRef(code),snap=>{const people=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.joinedAt?.seconds||0)-(b.joinedAt?.seconds||0));$("count").textContent=String(people.length);$("participants").innerHTML=people.length?people.map(p=>'<div class="person">'+esc(p.name||"Játékos")+'</div>').join(""):'<p class="muted">Még senki nem lépett be.</p>'},err=>msg("trainerError","Nem sikerül frissíteni a résztvevőket: "+err.message))}
+async function joinGame(code,name){const s=await getDoc(sessionRef(code));if(!s.exists())throw new Error("Nincs ilyen játék.");const q=query(playersRef(code),where("uid","==",uid)),existing=await getDocs(q);let pid;if(existing.empty){pid=uid;await setDoc(playerRef(code,pid),{uid,name,joinedAt:serverTimestamp(),lastSeenAt:serverTimestamp(),active:true})}else{pid=existing.docs[0].id;await setDoc(playerRef(code,pid),{uid,name,lastSeenAt:serverTimestamp(),active:true},{merge:true})}localStorage.setItem("kredit_role","participant");localStorage.setItem("kredit_code",code);localStorage.setItem("kredit_name",name);history.replaceState(null,"","?role=player&room="+encodeURIComponent(code));$("waitingCode").textContent=code;$("waitingName").textContent=name;show("waiting")}
+$("trainerStart").onclick=()=>createGame().catch(e=>{show("trainer");msg("trainerError",e.message)});
+$("newGame").onclick=()=>createGame().catch(e=>msg("trainerError",e.message));
+$("participantStart").onclick=()=>{show("join");$("codeInput").value=(qs.get("room")||"").toUpperCase()};
+$("copyLink").onclick=async()=>{const code=localStorage.getItem("kredit_code")||$("gameCode").textContent,url=location.origin+location.pathname+"?role=player&room="+encodeURIComponent(code);try{await navigator.clipboard.writeText(url);const old=$("copyLink").textContent;$("copyLink").textContent="Link másolva";setTimeout(()=>$("copyLink").textContent=old,1200)}catch{prompt("Másold ezt a linket:",url)}};
+$("joinForm").onsubmit=async e=>{e.preventDefault();msg("joinError","");const b=$("joinButton");b.disabled=true;const code=$("codeInput").value.trim().toUpperCase(),name=$("nameInput").value.trim();try{if(code.length!==6)throw new Error("A játékkód 6 karakteres.");if(!name)throw new Error("Írd be a neved.");await joinGame(code,name)}catch(err){msg("joinError",err.message)}finally{b.disabled=false}};
+async function boot(){setConnection(false,"Kapcsolódás…");try{await signInAnonymously(auth);onAuthStateChanged(auth,async user=>{if(!user)return;uid=user.uid;setConnection(true,"Online");const role=qs.get("role"),room=(qs.get("room")||"").toUpperCase();if(role==="trainer"&&room)return openTrainer(room);if(role==="player"&&room){show("join");$("codeInput").value=room;return}const savedRole=localStorage.getItem("kredit_role"),savedCode=localStorage.getItem("kredit_code");if(savedRole==="trainer"&&savedCode)return openTrainer(savedCode);if(savedRole==="participant"&&savedCode){$("waitingCode").textContent=savedCode;$("waitingName").textContent=localStorage.getItem("kredit_name")||"";return show("waiting")}show("home")})}catch(err){setConnection(false,"Nincs online kapcsolat");$("fatalText").textContent=err.message;show("fatal")}}
+boot();
+</script>
+</body>
+</html>
