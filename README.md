@@ -1,27 +1,26 @@
 # Kreditjáték
 
-Online tréninggyakorlat.
+Online, több résztvevős tréninggyakorlat.
 
-## Aktuális irány
+## Jelenlegi tiszta állapot
 
-A projektet visszaállítottuk a Halastónál bevált egyszerű GitHub Pages-alapra.
+A GitHub repository a projekt egyetlen fejlesztési forrása.
 
-- GitHub: forrás és verziókövetés
-- GitHub Pages: webes felület
-- Firebase Authentication + Cloud Firestore: több telefon közös, valós idejű állapota
+Megmaradt:
+- a részletes játékspecifikáció a `docs/` könyvtárban;
+- a már elkészült számolási/játékmotor-alap a `src/` könyvtárban;
+- a jelenlegi statikus prototípus, amíg az új belépési folyamatot nem igazoltuk.
 
-A Replit- és Railway-próbálkozások nem részei a további fejlesztésnek.
+A korábbi félkész hosting- és szerverpróbák nincsenek bekötve a projektbe.
 
-## Sandbox
+A `kreditjatek-live` ág tiszta fejlesztési ág, a `main` állapotából indul.
 
-Az új, tiszta többfelhasználós belépő/lobby először külön `sandbox.html` oldalon fut, hogy a korábbi indexet csak igazolt működés után váltsa le.
+## Következő működési kapu
 
-A fejlesztési ág: `kreditjatek-live`.
+1. tréner játékot indít;
+2. kap egy játékkódot;
+3. résztvevő névvel és játékkóddal belép;
+4. a tréner valós időben látja a belépőket;
+5. frissítés után a játékállapot megmarad.
 
-## Következő kapu
-
-Tréner játékot indít → kódot kap → résztvevő belép → a tréner valós időben látja → frissítés után megmarad az állapot.
-
-Az 1a Ultimátum csak ezután kerül rá.
-
-A részletes játékszabályok a `docs/` könyvtárban vannak.
+Csak ennek működése után kerül rá az 1a Ultimátum, majd a teljes 1a–3b folyamat és a Közös kassza.
