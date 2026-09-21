@@ -77,5 +77,6 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
         ? {}
         : { [playerId]: session.firstStageFinalBalance[playerId] },
     publicGoodsRounds,
+    pinnedDebriefEventIds: [],
   };
 };
