@@ -20,6 +20,7 @@ import {
   MAX_PLAYERS,
   MinimumMode,
   Pairing,
+  ParticipantSelfReportItem,
   ROUND_LABELS,
   StrategicRound,
   STRATEGIC_DECISION_SECONDS,
@@ -2320,6 +2321,25 @@ function DebriefEventSummary({
       </header>
       <h3>{event.title}</h3>
       <div className="debrief-note-facts">{detail}</div>
+      {(() => {
+        const linked = (session.reflections ?? []).filter((reflection) =>
+          event.selfDecisionIds.includes(reflection.decisionId),
+        );
+        if (linked.length === 0) return null;
+        return (
+          <div className="debrief-event-reflections">
+            {linked.map((reflection) => {
+              const author = session.players.find((player) => player.id === reflection.playerId)?.name ?? 'Résztvevő';
+              return (
+                <div key={reflection.playerId + ':' + reflection.decisionId}>
+                  <strong>{author} is kiemelte</strong>
+                  <span>„{reflection.comment}”</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </article>
   );
 }
@@ -2616,22 +2636,43 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
       player,
       events: events.filter((item) => item.playerIds.includes(player.id)),
       report: buildSelfReport(session, player.id),
+      reflections: (session.reflections ?? []).filter((item) => item.playerId === player.id),
     }))
-    .sort((a, b) => b.events.length - a.events.length || a.player.name.localeCompare(b.player.name, 'hu')),
+    .sort((a, b) =>
+      b.reflections.length - a.reflections.length ||
+      b.events.length - a.events.length ||
+      a.player.name.localeCompare(b.player.name, 'hu')
+    ),
   [session, events]);
 
   return (
     <div className="debrief-workspace-body participant-debrief-list">
-      {participantRows.map(({ player, events: playerEvents, report }) => (
+      {participantRows.map(({ player, events: playerEvents, report, reflections }) => (
         <details className="participant-debrief-item" key={player.id}>
           <summary>
             <strong>{player.name}</strong>
-            <span>{playerEvents.length} érdekes esemény · {report.length} saját döntés</span>
+            <span>
+              {playerEvents.length} érdekes esemény
+              {reflections.length > 0 ? ' · ' + reflections.length + ' saját kiemelés' : ' · reflexióra vár'}
+            </span>
           </summary>
           <div className="participant-debrief-content">
             {playerEvents.length > 0 && (
               <div className="participant-event-tags">
                 {playerEvents.map((item) => <span key={item.id}>{item.title}</span>)}
+              </div>
+            )}
+            {reflections.length > 0 && (
+              <div className="participant-reflection-list">
+                {reflections.map((reflection) => {
+                  const item = report.find((reportItem) => reportItem.id === reflection.decisionId);
+                  return (
+                    <div key={reflection.decisionId}>
+                      <strong>{item?.roundLabel ?? 'Saját döntés'}</strong>
+                      <span>„{reflection.comment}”</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
             <div className="self-report-mini-grid">
@@ -2646,6 +2687,8 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
 
 function DebriefWorkspace({ session }: { session: GameSession }) {
   const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
+  const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
+  const humanPlayers = session.players.filter((player) => !player.isBot).length;
   const [open, setOpen] = useState(session.roundKey === 'report');
   const hasData =
     session.closedRounds.length > 0 ||
@@ -2670,7 +2713,10 @@ function DebriefWorkspace({ session }: { session: GameSession }) {
           <h2>Kivezetés</h2>
           <p className="debrief-workspace-intro">Csoportkép, érdekes események és egyéni történetek.</p>
         </div>
-        <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
+        <div className="debrief-workspace-status">
+          {session.roundKey === 'report' && <b>Reflexió {reflectedPlayers}/{humanPlayers}</b>}
+          <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
+        </div>
       </button>
 
       {open && (
@@ -3457,7 +3503,10 @@ function ParticipantStageRail({ session }: { session: GameSession }) {
 
 function participantRole(session: GameSession, playerId: string) {
   if (session.roundKey === 'lobby') return 'Várakozás a kezdésre';
-  if (session.roundKey === 'report') return 'Játék lezárva';
+  if (session.roundKey === 'report') {
+    const done = (session.reflections ?? []).some((item) => item.playerId === playerId);
+    return done ? 'Saját riport' : 'Saját reflexió';
+  }
   if (session.roundKey === '4') {
     const group = session.groups.find((item) => item.memberIds.includes(playerId));
     return group ? `Közös kassza · ${group.name}` : 'Közös kassza';
@@ -3469,6 +3518,143 @@ function participantRole(session: GameSession, playerId: string) {
   if (pairing.gameId === 'ultimatum') return isA ? 'Szereped: felajánló' : 'Szereped: fogadó';
   if (pairing.gameId === 'dictator') return isA ? 'Szereped: te döntesz' : 'Szereped: fogadó';
   return isA ? 'Szereped: küldő' : 'Szereped: visszaadó';
+}
+
+
+function ParticipantReflectionCard({
+  item,
+  selected,
+  comment,
+  disabled,
+  onToggle,
+  onComment,
+}: {
+  item: ParticipantSelfReportItem;
+  selected: boolean;
+  comment: string;
+  disabled: boolean;
+  onToggle: () => void;
+  onComment: (value: string) => void;
+}) {
+  return (
+    <article className={'participant-reflection-card ' + (selected ? 'selected' : '') + (disabled ? ' disabled' : '')}>
+      <button type="button" className="participant-reflection-select" onClick={onToggle} disabled={disabled && !selected}>
+        <span className="reflection-check">{selected ? '✓' : ''}</span>
+        <SelfReportMiniCard item={item} />
+      </button>
+      {selected && (
+        <label className="participant-reflection-comment">
+          <span>Mi célból döntöttél így?</span>
+          <textarea
+            maxLength={300}
+            rows={3}
+            value={comment}
+            onChange={(event) => onComment(event.target.value)}
+            placeholder="Röviden írd le, mi volt a célod ezzel a döntéssel."
+          />
+          <small>{comment.length}/300</small>
+        </label>
+      )}
+    </article>
+  );
+}
+
+function ParticipantReflectionPanel({
+  session,
+  playerId,
+}: {
+  session: GameSession;
+  playerId: string;
+}) {
+  const ownReflections = (session.reflections ?? []).filter((item) => item.playerId === playerId);
+  const report = session.selfReport?.length ? session.selfReport : buildSelfReport(session, playerId);
+  const [selected, setSelected] = useState<string[]>(() => ownReflections.map((item) => item.decisionId));
+  const [comments, setComments] = useState<Record<string, string>>(() =>
+    Object.fromEntries(ownReflections.map((item) => [item.decisionId, item.comment])),
+  );
+  const [submitError, setSubmitError] = useState('');
+  const submitted = ownReflections.length > 0;
+
+  if (submitted) {
+    return (
+      <div className="participant-own-report">
+        <p className="eyebrow">Saját riportom</p>
+        <h1>A reflexiód elkészült.</h1>
+        <p>A saját döntéseidet és a kiemelt gondolataidat később is visszanézheted ezen a képernyőn.</p>
+        <div className="participant-own-report-grid">
+          {report.map((item) => {
+            const reflection = ownReflections.find((entry) => entry.decisionId === item.id);
+            return (
+              <div className={'participant-own-report-item ' + (reflection ? 'highlighted' : '')} key={item.id}>
+                <SelfReportMiniCard item={item} />
+                {reflection && (
+                  <div className="own-reflection-text">
+                    <strong>Mi célból döntöttél így?</strong>
+                    <span>„{reflection.comment}”</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const toggle = (id: string) => {
+    setSubmitError('');
+    setSelected((current) => {
+      if (current.includes(id)) return current.filter((item) => item !== id);
+      if (current.length >= 3) return current;
+      return [...current, id];
+    });
+  };
+
+  const submit = () => {
+    setSubmitError('');
+    if (selected.length < 1 || selected.length > 3) {
+      setSubmitError('Válassz legalább 1, legfeljebb 3 döntést.');
+      return;
+    }
+    const items = selected.map((decisionId) => ({
+      decisionId,
+      comment: (comments[decisionId] ?? '').trim(),
+    }));
+    if (items.some((item) => !item.comment)) {
+      setSubmitError('Minden kiválasztott döntéshez válaszolj arra, hogy mi célból döntöttél így.');
+      return;
+    }
+    gameStore.submitReflection(session.code, playerId, items);
+  };
+
+  return (
+    <div className="participant-reflection">
+      <p className="eyebrow">Játék vége · saját reflexió</p>
+      <h1>Melyik döntésed volt számodra a legérdekesebb?</h1>
+      <p>Válassz legalább 1, legfeljebb 3 döntést. A kiválasztott döntéseknél írd le röviden, mi célból döntöttél így.</p>
+      <div className="reflection-selection-status">
+        <strong>{selected.length}/3 kiválasztva</strong>
+        <span>{selected.length === 3 ? 'Elérted a maximumot.' : 'Még választhatsz.'}</span>
+      </div>
+      <div className="participant-reflection-grid">
+        {report.map((item) => (
+          <ParticipantReflectionCard
+            key={item.id}
+            item={item}
+            selected={selected.includes(item.id)}
+            comment={comments[item.id] ?? ''}
+            disabled={selected.length >= 3}
+            onToggle={() => toggle(item.id)}
+            onComment={(value) => setComments((current) => ({ ...current, [item.id]: value }))}
+          />
+        ))}
+      </div>
+      {submitError && <div className="error">{submitError}</div>}
+      <button className="primary big participant-reflection-submit" type="button" onClick={submit}>
+        Reflexió elküldése
+      </button>
+    </div>
+  );
 }
 
 function ParticipantClient({ code: initial }: { code?: string }) {
@@ -3659,13 +3845,12 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           const poolResult = currentPlayer.currentBalance - firstStage;
           return (
             <div className="game-finish">
-              <p className="eyebrow">Játék vége</p>
-              <h1>A Kreditjáték véget ért.</h1>
-              <div className="final-summary">
+              <div className="final-summary reflection-final-summary">
                 <div><span>Az első három játék után</span><strong>{formatCredits(firstStage)}</strong></div>
                 <div><span>Közös kassza eredménye</span><strong className={poolResult >= 0 ? 'good' : 'bad'}>{poolResult >= 0 ? '+' : ''}{formatCredits(poolResult)}</strong></div>
                 <div className="final-total"><span>Végső vagyon</span><strong>{formatCredits(currentPlayer.currentBalance)}</strong></div>
               </div>
+              <ParticipantReflectionPanel session={session} playerId={playerId} />
             </div>
           );
         })()}
