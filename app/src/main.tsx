@@ -28,7 +28,7 @@ import {
 } from './gameTypes';
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
-import { canFinishPublicGoodsGame } from './sessionStore';
+import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
 
 const formatCredits = (value: number) =>
@@ -909,12 +909,12 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
               <span>Kód</span>
               <strong>{session.code}</strong>
             </div>
-            {canFinishPublicGoodsGame(session) && (
+            {canFinishGame(session) && (
               <button
                 className="toolbar-button danger-action"
                 onClick={() => {
                   const confirmed = window.confirm(
-                    'Biztosan lezárod a teljes Kreditjátékot? Ezt nem lehet visszavonni. Ha most fut egy még el nem számolt kasszakör, annak tétei nem kerülnek bele a végső eredménybe.',
+                    'Biztosan lezárod a teljes Kreditjátékot? Ezt nem lehet visszavonni. Ha most fut egy még le nem zárt kör, annak félkész döntései nem kerülnek bele a végső eredménybe.',
                   );
                   if (confirmed) gameStore.finish(session.code);
                 }}
