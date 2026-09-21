@@ -2386,9 +2386,9 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <TrainerCockpit session={session} joinUrl={joinUrl} />
       {testMode && <TestHarness session={session} />}
 
-      <LiveDebriefNotes session={session} />
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
+      <LiveDebriefNotes session={session} />
 
       <ReportPanel session={session} />
       <PlayerTable session={session} />
