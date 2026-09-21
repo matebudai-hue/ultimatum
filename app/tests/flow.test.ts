@@ -819,6 +819,11 @@ for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
   const code = runStrategicStage(count);
   testPublicGoodsControl(code, count);
 }
+
+// A JSDOM localStorage kvótája 5 MB. A nagy, egymástól független stressz-szcenáriók
+// után ürítünk, hogy a tesztkörnyezet kvótája ne legyen a production-logika része.
+localStorage.clear();
+
 testTenPlayerManualPoolSetup();
 testDebriefPinPersistence();
 testParticipantReflections();
