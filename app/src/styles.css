@@ -1326,3 +1326,36 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .debrief-empty-state{margin-top:12px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;padding:18px;display:flex;flex-direction:column;gap:5px}
 .debrief-empty-state strong{font-size:12px;color:#0f172a}
 .debrief-empty-state span{font-size:10px;line-height:1.45;color:#64748b}
+
+
+/* Focus-preserving live Kivezetes */
+.debrief-toolbar-trigger{opacity:.72;background:#f8fafc!important;color:#64748b!important}
+.debrief-toolbar-trigger:hover,.debrief-toolbar-trigger:focus-visible{opacity:1;color:var(--navy)!important;background:#eef2f7!important}
+
+.debrief-drawer-backdrop{position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,.16);display:flex;justify-content:flex-end;align-items:stretch}
+.debrief-drawer{width:min(620px,52vw);height:100vh;background:#f8fafc;border-left:1px solid #dbe3ec;box-shadow:-20px 0 50px rgba(15,23,42,.16);display:flex;flex-direction:column;animation:debriefDrawerIn .18s ease-out}
+.debrief-drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:18px 20px 14px;background:#fff;border-bottom:1px solid #e2e8f0}
+.debrief-drawer-head h2{margin:2px 0 4px;font-size:22px;color:#0f172a}
+.debrief-drawer-head>div>span{font-size:10px;color:#64748b;line-height:1.4}
+.debrief-drawer-close{width:34px;height:34px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#475569;font-size:22px;line-height:1;display:grid;place-items:center;flex:0 0 auto}
+.debrief-drawer-close:hover{background:#eef2f7;color:#0f172a}
+.debrief-drawer-content{padding:14px 16px 28px;overflow-y:auto;overscroll-behavior:contain}
+.debrief-drawer .debrief-tabs{position:sticky;top:-14px;z-index:2;background:#f8fafc;padding:14px 0 8px;margin-bottom:4px}
+.debrief-drawer .debrief-note-grid{grid-template-columns:1fr}
+.debrief-drawer .self-report-mini-grid{grid-template-columns:1fr}
+.debrief-workspace-final{scroll-margin-top:16px}
+
+@keyframes debriefDrawerIn{
+  from{transform:translateX(20px);opacity:.7}
+  to{transform:translateX(0);opacity:1}
+}
+
+@media(max-width:1000px){
+  .debrief-drawer{width:min(680px,72vw)}
+}
+@media(max-width:700px){
+  .debrief-drawer-backdrop{background:rgba(15,23,42,.24)}
+  .debrief-drawer{width:100vw}
+  .debrief-drawer-head{padding:15px 16px 12px}
+  .debrief-drawer-content{padding:12px 12px 24px}
+}
