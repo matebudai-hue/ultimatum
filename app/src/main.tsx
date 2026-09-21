@@ -1066,6 +1066,7 @@ function MinimumSelector({
 function PoolPlanning({ session }: { session: GameSession }) {
   const [groupCount, setGroupCount] = useState(Math.max(1, session.groups.length || 1));
   const editableGroups = session.publicGoodsRoundNumber === 0 && session.publicGoodsPhase === 'setup';
+  const editableMinimum = session.publicGoodsPhase === 'setup';
   const groupsValid = session.groups.length > 0 && session.groups.every((group) => group.memberIds.length > 0);
   const activePlayers = session.players.filter((player) => !player.isBot && player.active);
 
