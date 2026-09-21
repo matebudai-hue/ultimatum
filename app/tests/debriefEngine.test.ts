@@ -307,10 +307,44 @@ function testHighlightsCap() {
   console.log('DEBRIEF HIGHLIGHT CAP OK');
 }
 
+
+function testBotPairStaysInPersonalHistory() {
+  const session = makeSession(100_000);
+  session.pairings.push({
+    id: 'd-bot',
+    gameId: 'dictator',
+    roundKey: '2a',
+    playerA: 'p4',
+    playerB: 'BOT',
+    roleA: 'dictator',
+    roleB: 'receiver',
+    playerAIsBot: false,
+    playerBIsBot: true,
+  });
+  session.decisions.push({
+    id: 'd-bot-give',
+    pairingId: 'd-bot',
+    playerId: 'p4',
+    roundKey: '2a',
+    type: 'dictator_give',
+    amount: 20_000,
+    submittedAt: now,
+  });
+
+  const report = buildSelfReport(session, 'p4');
+  assert.ok(
+    report.some((item) => item.game === 'dictator' && item.pairingId === 'd-bot' && item.amount === 20_000),
+    'BOT-tal játszott saját döntés nem tűnhet el a személyes riportból.',
+  );
+
+  console.log('DEBRIEF BOT PERSONAL HISTORY OK');
+}
+
 testPercentageBasedDetection();
 testTrustSymmetryAndReciprocity();
 testPublicGoodsNarratives();
 testSelfReportAndAnonymousGroupPicture();
 testHighlightsCap();
+testBotPairStaysInPersonalHistory();
 
 console.log('DEBRIEF ENGINE TESTS OK');
