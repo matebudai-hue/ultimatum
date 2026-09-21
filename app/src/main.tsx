@@ -30,7 +30,7 @@ import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
-import { buildHighlightedEvents, buildInterestingEvents, InterestingEvent } from './debriefEngine';
+import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -2421,6 +2421,259 @@ function LiveDebriefNotes({ session }: { session: GameSession }) {
   );
 }
 
+
+function SelfReportMiniCard({
+  item,
+}: {
+  item: ReturnType<typeof buildSelfReport>[number];
+}) {
+  let main = '';
+  let secondary = '';
+
+  if (item.game === 'ultimatum') {
+    main = item.role === 'proposer'
+      ? `${formatCredits(item.amount ?? 0)} kreditet ajánlottál`
+      : `${formatCredits(item.amount ?? 0)} kreditet ajánlottak neked`;
+    secondary = item.accepted
+      ? (item.role === 'proposer' ? 'Elfogadták' : 'Elfogadtad')
+      : (item.role === 'proposer' ? 'Elutasították' : 'Elutasítottad');
+  } else if (item.game === 'dictator') {
+    main = `${formatCredits(item.amount ?? 0)} kreditet adtál`;
+    secondary = `${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+  } else if (item.game === 'trust') {
+    if (item.role === 'sender') {
+      main = `${formatCredits(item.sentAmount ?? 0)}-et küldtél → ${formatCredits(item.multipliedAmount ?? 0)} lett belőle`;
+      secondary = `${formatCredits(item.returnedAmount ?? 0)}-et kaptál vissza`;
+    } else {
+      main = `${formatCredits(item.multipliedAmount ?? 0)} került hozzád`;
+      secondary = `${formatCredits(item.returnedAmount ?? 0)}-et adtál vissza · ${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+    }
+  } else {
+    main = `${formatCredits(item.contributionAmount ?? 0)} befizetés`;
+    secondary = `saját vagyon ${item.ownWealthPercent ?? '–'}% · közös kassza ${item.potPercent ?? '–'}% · nettó ${signedCredits(item.netAmount ?? 0)}`;
+  }
+
+  return (
+    <div className="self-report-mini-card">
+      <span>{item.roundLabel}</span>
+      <strong>{main}</strong>
+      <small>{secondary}</small>
+    </div>
+  );
+}
+
+function DebriefGroupView({ session }: { session: GameSession }) {
+  const picture = useMemo(() => buildGroupPicture(session), [session]);
+
+  return (
+    <div className="debrief-workspace-body">
+      <section className="debrief-group-block">
+        <header>
+          <h3>Ultimátum</h3>
+          <div>
+            <strong>{picture.ultimatum.averageOffer === null ? '–' : formatCredits(picture.ultimatum.averageOffer)}</strong>
+            <span>átlagos ajánlat</span>
+          </div>
+          <div>
+            <strong>{picture.ultimatum.rejectedCount}</strong>
+            <span>elutasítás</span>
+          </div>
+        </header>
+        <div className="anonymous-values">
+          {picture.ultimatum.offers.length === 0 ? <span>–</span> : picture.ultimatum.offers.map((item, index) => (
+            <span className={item.accepted ? 'accepted' : 'rejected'} key={index}>
+              {formatCredits(item.amount)} {item.accepted ? '✓' : '×'}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section className="debrief-group-block">
+        <header>
+          <h3>Diktátor</h3>
+          <div>
+            <strong>{picture.dictator.averageGiven === null ? '–' : formatCredits(picture.dictator.averageGiven)}</strong>
+            <span>átlagos átadás</span>
+          </div>
+        </header>
+        <div className="anonymous-values">
+          {picture.dictator.amounts.length === 0 ? <span>–</span> : picture.dictator.amounts.map((item, index) => (
+            <span key={index}>{formatCredits(item.amount)}</span>
+          ))}
+        </div>
+      </section>
+
+      <section className="debrief-group-block">
+        <header>
+          <h3>Bizalom</h3>
+          <div>
+            <strong>{picture.trust.averageSent === null ? '–' : formatCredits(picture.trust.averageSent)}</strong>
+            <span>átlag elküldve</span>
+          </div>
+          <div>
+            <strong>{picture.trust.averageReturned === null ? '–' : formatCredits(picture.trust.averageReturned)}</strong>
+            <span>átlag vissza</span>
+          </div>
+        </header>
+        <div className="anonymous-values trust-anonymous-values">
+          {picture.trust.pairs.length === 0 ? <span>–</span> : picture.trust.pairs.map((item, index) => (
+            <span key={index}>{formatCredits(item.sent)} → {formatCredits(item.returned)}</span>
+          ))}
+        </div>
+      </section>
+
+      <section className="debrief-group-block">
+        <header>
+          <h3>Közös kassza</h3>
+        </header>
+        {picture.publicGoods.length === 0 ? (
+          <div className="summary-empty">Még nincs elszámolt kasszakör.</div>
+        ) : (
+          <div className="debrief-pool-rounds">
+            {picture.publicGoods.map((round) => {
+              const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? 'Csoport';
+              return (
+                <div className="debrief-pool-round" key={round.groupId + '-' + round.roundNumber}>
+                  <div className="debrief-pool-round-head">
+                    <strong>{round.roundNumber}. kör · {groupName}</strong>
+                    <span>
+                      Kassza {formatCredits(round.totalContribution)}
+                      {round.success ? ' → bank után ' + formatCredits(round.doubledPot) : ' · minimum nem teljesült'}
+                    </span>
+                  </div>
+                  <div className="anonymous-values pool-anonymous-values">
+                    {round.contributions.map((item, index) => (
+                      <span key={index}>
+                        {formatCredits(item.amount)}
+                        {item.ownWealthPercent !== null ? ' · saját ' + item.ownWealthPercent + '%' : ''}
+                        {item.potPercent !== null ? ' · kassza ' + item.potPercent + '%' : ''}
+                        {' · nettó '}{signedCredits(item.netAmount)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function DebriefEventsView({ session }: { session: GameSession }) {
+  const events = useMemo(() => buildInterestingEvents(session), [session]);
+  const pinnedIds = new Set(session.pinnedDebriefEventIds ?? []);
+  const pinned = events.filter((item) => pinnedIds.has(item.id));
+  const rest = events.filter((item) => !pinnedIds.has(item.id));
+  const toggle = (id: string) => gameStore.togglePinnedDebriefEvent(session.code, id);
+
+  return (
+    <div className="debrief-workspace-body">
+      {pinned.length > 0 && (
+        <section className="debrief-workspace-section">
+          <h3>★ Félretett eseményeim · {pinned.length}</h3>
+          <div className="debrief-note-grid">
+            {pinned.map((item) => (
+              <DebriefEventSummary
+                key={item.id}
+                session={session}
+                event={item}
+                pinned
+                onTogglePin={() => toggle(item.id)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="debrief-workspace-section">
+        <h3>Minden érdekes esemény · {events.length}</h3>
+        {rest.length === 0 ? (
+          <div className="summary-empty">Nincs további rendszer által kiemelt esemény.</div>
+        ) : (
+          <div className="debrief-note-grid">
+            {rest.map((item) => (
+              <DebriefEventSummary
+                key={item.id}
+                session={session}
+                event={item}
+                onTogglePin={() => toggle(item.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function DebriefParticipantsView({ session }: { session: GameSession }) {
+  const events = useMemo(() => buildInterestingEvents(session), [session]);
+  const participantRows = useMemo(() => session.players
+    .filter((player) => !player.isBot)
+    .map((player) => ({
+      player,
+      events: events.filter((item) => item.playerIds.includes(player.id)),
+      report: buildSelfReport(session, player.id),
+    }))
+    .sort((a, b) => b.events.length - a.events.length || a.player.name.localeCompare(b.player.name, 'hu')),
+  [session, events]);
+
+  return (
+    <div className="debrief-workspace-body participant-debrief-list">
+      {participantRows.map(({ player, events: playerEvents, report }) => (
+        <details className="participant-debrief-item" key={player.id}>
+          <summary>
+            <strong>{player.name}</strong>
+            <span>{playerEvents.length} érdekes esemény · {report.length} saját döntés</span>
+          </summary>
+          <div className="participant-debrief-content">
+            {playerEvents.length > 0 && (
+              <div className="participant-event-tags">
+                {playerEvents.map((item) => <span key={item.id}>{item.title}</span>)}
+              </div>
+            )}
+            <div className="self-report-mini-grid">
+              {report.map((item) => <SelfReportMiniCard item={item} key={item.id} />)}
+            </div>
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function DebriefWorkspace({ session }: { session: GameSession }) {
+  const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
+  const hasData =
+    session.closedRounds.length > 0 ||
+    session.publicGoodsRounds.some((round) => round.status === 'settled');
+  if (!hasData) return null;
+
+  return (
+    <section className="panel dashboard-section debrief-workspace">
+      <div className="section-title">
+        <div>
+          <p className="eyebrow">Kivezetés</p>
+          <h2>Játékértelmezés</h2>
+          <p className="debrief-workspace-intro">A rendszer előkészíti az adatokat. Te döntöd el, mihez térsz vissza és mit mutatsz meg.</p>
+        </div>
+      </div>
+
+      <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
+        <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
+        <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
+        <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+      </div>
+
+      {tab === 'group' && <DebriefGroupView session={session} />}
+      {tab === 'events' && <DebriefEventsView session={session} />}
+      {tab === 'participants' && <DebriefParticipantsView session={session} />}
+    </section>
+  );
+}
+
 function TrainerDashboard({ code, testMode = false }: { code: string; testMode?: boolean }) {
   const [session, setSession] = useState<GameSession | null>(() => gameStore.get(code));
   const [, setClock] = useState(0);
@@ -2457,6 +2710,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
       <LiveDebriefNotes session={session} />
+      <DebriefWorkspace session={session} />
 
       <ReportPanel session={session} />
       <PlayerTable session={session} />
