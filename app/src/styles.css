@@ -1367,3 +1367,5 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .bot-control-toggle.is-active{border-color:#f59e0b;background:#fff7ed;color:#9a3412}
 .row-bot-controlled{background:#fffbeb}
 .row-bot-controlled .presence-dot{background:#f59e0b!important}
+
+.self-report-bot-note{font-style:normal;font-size:8px;font-weight:900;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:3px 6px;align-self:flex-start}
