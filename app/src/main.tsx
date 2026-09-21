@@ -2686,6 +2686,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
   const rest = events.filter((item) => !pinnedIds.has(item.id));
   const toggle = (id: string) => gameStore.togglePinnedDebriefEvent(session.code, id);
   const [projection, setProjection] = useState<{
+    eventId: string;
     story: ProjectionStory;
     revealedSteps: number;
     showComments: boolean;
@@ -2694,7 +2695,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
 
   const project = (event: InterestingEvent) => {
     const story = buildProjectionStory(session, event);
-    const next = { story, revealedSteps: 1, showComments: false };
+    const next = { eventId: event.id, story, revealedSteps: 1, showComments: false };
     setProjectionError('');
     if (!renderProjectionWindow(story, 1, false)) {
       setProjectionError('A böngésző letiltotta a vetítőablakot. Engedélyezd a felugró ablakot, majd kattints újra a Kivetítés gombra.');
@@ -2704,6 +2705,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
   };
 
   const updateProjection = (next: {
+    eventId: string;
     story: ProjectionStory;
     revealedSteps: number;
     showComments: boolean;
@@ -2783,7 +2785,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
                 pinned
                 onTogglePin={() => toggle(item.id)}
                 onProject={() => project(item)}
-                projecting={projection?.story.eventId === item.id}
+                projecting={projection?.eventId === item.id}
               />
             ))}
           </div>
@@ -2803,7 +2805,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
                 event={item}
                 onTogglePin={() => toggle(item.id)}
                 onProject={() => project(item)}
-                projecting={projection?.story.eventId === item.id}
+                projecting={projection?.eventId === item.id}
               />
             ))}
           </div>
