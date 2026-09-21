@@ -1,3 +1,4 @@
+# main is the single source of truth for Kreditjatek
 name: Kreditjatek build and publish
 
 on:
