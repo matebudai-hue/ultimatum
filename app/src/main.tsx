@@ -3577,7 +3577,13 @@ function ParticipantReflectionPanel({
   );
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
   const submitted = ownReflections.length > 0;
+  const playerName = session.players.find((player) => player.id === playerId)?.name ?? '';
+  const currentPlayer = session.players.find((player) => player.id === playerId);
+  const firstStage = session.firstStageFinalBalance[playerId] ?? currentPlayer?.currentBalance ?? 0;
+  const finalWealth = currentPlayer?.currentBalance ?? firstStage;
+  const publicGoodsResult = finalWealth - firstStage;
 
   useEffect(() => {
     if (!sending || submitted) return;
@@ -3594,6 +3600,66 @@ function ParticipantReflectionPanel({
       </div>
     );
   }
+
+  const reportShareText = () => buildSelfReportShareText(
+    playerName,
+    report,
+    ownReflections,
+    { firstStage, publicGoodsResult, finalWealth },
+  );
+
+  const printReport = () => {
+    setExportStatus('');
+    const root = document.documentElement;
+    const previousTitle = document.title;
+    root.setAttribute('data-print-self-report', 'true');
+    document.title = 'Kreditjáték – saját riport' + (playerName ? ' – ' + playerName : '');
+
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      root.removeAttribute('data-print-self-report');
+      document.title = previousTitle;
+      window.removeEventListener('afterprint', cleanup);
+    };
+
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+    window.setTimeout(cleanup, 60_000);
+  };
+
+  const shareReport = async () => {
+    setExportStatus('');
+    const text = reportShareText();
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Kreditjáték – saját riport',
+          text,
+        });
+        setExportStatus('A megosztás elkészült.');
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        setExportStatus('A riport a vágólapra került. Innen bármelyik alkalmazásba beillesztheted.');
+        return;
+      }
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'kreditjatek-sajat-riport.txt';
+      link.click();
+      URL.revokeObjectURL(url);
+      setExportStatus('A riport szöveges fájlként elmentve.');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      setExportStatus('A megosztás nem sikerült. Próbáld meg újra.');
+    }
+  };
 
   if (submitted) {
     return (
@@ -3617,6 +3683,12 @@ function ParticipantReflectionPanel({
             );
           })}
         </div>
+        <div className="self-report-export-actions">
+          <button type="button" className="secondary" onClick={printReport}>PDF mentése</button>
+          <button type="button" className="primary" onClick={() => void shareReport()}>Megosztás</button>
+        </div>
+        <p className="self-report-export-help">PDF mentésnél a megnyíló rendszerablakban válaszd a PDF-ként mentést.</p>
+        {exportStatus && <div className="self-report-export-status">{exportStatus}</div>}
       </div>
     );
   }
@@ -3937,3 +4009,5 @@ function App() {
 }
 
 createRoot(document.getElementById('root')!).render(<App />);
+
+import { buildSelfReportShareText } from './selfReportExport';
