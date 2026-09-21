@@ -575,19 +575,59 @@ function TrainerPulse({ session }: { session: GameSession }) {
   let label = 'belépett';
 
   if (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) {
-    const progress = gameStore.roundProgress(session);
-    ready = progress.ready;
-    total = progress.total;
+    const roundProgress = gameStore.roundProgress(session);
+    ready = roundProgress.ready;
+    total = roundProgress.total;
     label = 'pár kész';
   } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open') {
-    const progress = gameStore.publicGoodsProgress(session);
-    ready = progress.ready;
-    total = progress.total;
+    const roundProgress = gameStore.publicGoodsProgress(session);
+    ready = roundProgress.ready;
+    total = roundProgress.total;
     label = 'tét bent';
   } else if (session.roundKey === '4' && session.publicGoodsPhase === 'locked') {
     ready = session.players.length;
     total = session.players.length;
     label = 'tét lezárva';
+  }
+
+  let timeValue = '–';
+  let timeLabel = 'nincs aktív visszaszámlálás';
+  let timeClass = 'neutral-card';
+
+  if (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound) && !session.closedRounds.includes(session.roundKey as StrategicRound)) {
+    const deadlines: string[] = [];
+    const currentPairings = session.pairings.filter((pairing) => pairing.roundKey === session.roundKey);
+    for (const pairing of currentPairings) {
+      for (const playerId of [pairing.playerA, pairing.playerB]) {
+        if (playerId === 'BOT') continue;
+        const deadline = gameStore.strategicDeadlineAt(session, pairing.id, playerId);
+        if (deadline) deadlines.push(deadline);
+      }
+    }
+
+    if (deadlines.length > 0) {
+      const seconds = Math.max(
+        0,
+        Math.min(...deadlines.map((deadline) => Math.ceil((new Date(deadline).getTime() - Date.now()) / 1000))),
+      );
+      timeValue = seconds + ' mp';
+      timeLabel = deadlines.length + ' aktív döntési idő · a legkevesebb';
+      timeClass = seconds <= 5 ? 'danger-card' : seconds <= 10 ? 'warning' : 'time-active';
+    } else {
+      const roundProgress = gameStore.roundProgress(session);
+      timeValue = roundProgress.complete ? 'kész' : '30 mp';
+      timeLabel = roundProgress.complete ? 'minden döntés beérkezett' : 'játékosonként, a feladat megjelenésétől';
+      timeClass = roundProgress.complete ? 'success' : 'neutral-card';
+    }
+  } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open') {
+    const seconds = gameStore.publicGoodsSecondsLeft(session);
+    timeValue = seconds + ' mp';
+    timeLabel = 'közös kassza · teljes kör';
+    timeClass = seconds <= 5 ? 'danger-card' : seconds <= 10 ? 'warning' : 'time-active';
+  } else if (session.roundKey === '4' && session.publicGoodsPhase === 'locked') {
+    timeValue = 'lezárva';
+    timeLabel = 'banki elszámolásra vár';
+    timeClass = 'neutral-card';
   }
 
   const progress = total > 0 ? Math.min(100, Math.round((ready / total) * 100)) : 0;
@@ -605,14 +645,19 @@ function TrainerPulse({ session }: { session: GameSession }) {
         <strong>{online}/{session.players.length}</strong>
         <small>{offline > 0 ? offline + ' offline' : 'mindenki online'}</small>
       </div>
+      <div className={'pulse-card trainer-time-card ' + timeClass}>
+        <span>Idő</span>
+        <strong>{timeValue}</strong>
+        <small>{timeLabel}</small>
+      </div>
       <div className={'pulse-card issue-card ' + (technical + currentTimeouts > 0 ? 'danger-card' : 'neutral-card')}>
         <span>Hibák</span>
         <strong>{technical + currentTimeouts}</strong>
         <small>
           {technical + currentTimeouts > 0
             ? [
-                technical > 0 ? `${technical} technikai hiba` : '',
-                currentTimeouts > 0 ? `${currentTimeouts} időtúllépés` : '',
+                technical > 0 ? technical + ' technikai hiba' : '',
+                currentTimeouts > 0 ? currentTimeouts + ' időtúllépés' : '',
               ].filter(Boolean).join(' · ')
             : 'nincs hiba'}
         </small>
@@ -878,10 +923,14 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
     primaryIcon = <RefreshCcw size={20} />;
     actionHint = 'A tétek már nem változnak. Az elszámolás módosítja a vagyonokat.';
   } else if (session.roundKey === '4') {
+    const groupsValid = session.groups.length > 0 && session.groups.every((group) => group.memberIds.length > 0);
     primaryLabel = session.publicGoodsRoundNumber === 0 ? 'Első kasszakör indítása' : 'Új kasszakör indítása';
+    primaryDisabled = !groupsValid;
     primaryAction = () => gameStore.startPublicGoodsRound(session.code);
     primaryIcon = <Play size={20} />;
-    actionHint = 'Ellenőrizd a csoportokat és az adott kör minimumait indulás előtt.';
+    actionHint = groupsValid
+      ? 'A csapatok rendben vannak. Ellenőrizd a minimumokat, majd indítható a kör.'
+      : 'A csapatbeosztás még nem érvényes: minden csapatban legyen legalább egy játékos.';
   } else {
     primaryLabel = 'Játék lezárva';
     primaryDisabled = true;
@@ -1017,28 +1066,129 @@ function MinimumSelector({
 function PoolPlanning({ session }: { session: GameSession }) {
   const [groupCount, setGroupCount] = useState(Math.max(1, session.groups.length || 1));
   const editableGroups = session.publicGoodsRoundNumber === 0 && session.publicGoodsPhase === 'setup';
+  const groupsValid = session.groups.length > 0 && session.groups.every((group) => group.memberIds.length > 0);
+  const activePlayers = session.players.filter((player) => !player.isBot && player.active);
 
   return (
-    <div className="pool-planning">
-      <div className="pool-config-grid compact">
-        <label className="compact-field">
-          <span>Csapatok száma · max. 25</span>
-          <input
-            type="number"
-            min={1}
-            max={Math.min(25, Math.max(1, session.players.length))}
-            value={groupCount}
-            disabled={!editableGroups}
-            onChange={(e) => setGroupCount(Number(e.target.value))}
-          />
-        </label>
-        <button className="secondary" disabled={!editableGroups} onClick={() => gameStore.randomizeGroups(session.code, groupCount)}>
-          <RefreshCcw size={17} />Csapatok sorsolása
-        </button>
-        <div className="pool-rule-note">
-          <strong>Csoportnevek:</strong> a rendszer automatikusan magyar helyneveket ad. A résztvevők ugyanezt a nevet látják a telefonjukon.
+    <div className="pool-planning pool-setup-flow">
+      <section className="pool-setup-step">
+        <header className="pool-setup-step-head">
+          <span className="pool-step-number">1</span>
+          <div>
+            <strong>Csapatok</strong>
+            <small>Véletlen sorsolás vagy teljes kézi beosztás.</small>
+          </div>
+          <span className={'pool-step-status ' + (groupsValid ? 'ready' : 'needs-action')}>
+            {groupsValid ? session.groups.length + ' csapat kész' : 'beállítás szükséges'}
+          </span>
+        </header>
+
+        <div className="pool-config-grid compact">
+          <label className="compact-field">
+            <span>Csapatok száma · max. 25</span>
+            <input
+              type="number"
+              min={1}
+              max={Math.min(25, Math.max(1, activePlayers.length))}
+              value={groupCount}
+              disabled={!editableGroups}
+              onChange={(e) => setGroupCount(Number(e.target.value))}
+            />
+          </label>
+          <button className="secondary" disabled={!editableGroups} onClick={() => gameStore.randomizeGroups(session.code, groupCount)}>
+            <RefreshCcw size={17} />Véletlen sorsolás
+          </button>
+          <button className="secondary manual-group-button" disabled={!editableGroups} onClick={() => gameStore.createManualGroups(session.code, groupCount)}>
+            <Users size={17} />Kézi beosztás
+          </button>
         </div>
-      </div>
+
+        {editableGroups && session.groups.length > 0 && (
+          <>
+            <div className="manual-assignment-head">
+              <strong>Játékosok kézi áthelyezése</strong>
+              <span>Válaszd ki mindenkinél a csapatot. Üres csapattal a kasszakör nem indítható.</span>
+            </div>
+            <div className="manual-assignment-grid">
+              {activePlayers.map((player) => {
+                const currentGroup = session.groups.find((group) => group.memberIds.includes(player.id));
+                return (
+                  <label key={player.id}>
+                    <span>{player.name}</span>
+                    <select
+                      value={currentGroup?.id ?? ''}
+                      onChange={(e) => gameStore.setPlayerGroup(session.code, player.id, e.target.value)}
+                    >
+                      {!currentGroup && <option value="">Válassz csapatot</option>}
+                      {session.groups.map((group) => (
+                        <option value={group.id} key={group.id}>
+                          {group.name} · {group.memberIds.length} fő
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="pool-setup-step">
+        <header className="pool-setup-step-head">
+          <span className="pool-step-number">2</span>
+          <div>
+            <strong>Minimum kassza</strong>
+            <small>Csapatonként külön állítható a következő körre.</small>
+          </div>
+        </header>
+
+        {session.groups.length === 0 ? (
+          <div className="pool-setup-empty">Előbb hozd létre a csapatokat.</div>
+        ) : (
+          <div className="minimum-setup-list">
+            {session.groups.map((group) => (
+              <div className={'minimum-setup-row ' + (group.memberIds.length === 0 ? 'empty-group' : '')} key={group.id}>
+                <div className="minimum-group-ident">
+                  <strong>{group.name}</strong>
+                  <span>{group.memberIds.length} fő · vagyon {formatCredits(gameStore.groupWealth(session, group))}</span>
+                </div>
+                <MinimumSelector
+                  mode={group.nextMinimumMode}
+                  custom={group.nextCustomMinimum}
+                  disabled={!editableMinimum}
+                  onMode={(mode) => gameStore.setGroupMinimum(session.code, group.id, mode, group.nextCustomMinimum)}
+                  onCustom={(value) => gameStore.setGroupMinimum(session.code, group.id, 'custom', value)}
+                />
+                <div className="minimum-result">
+                  {group.nextMinimumMode === 'none'
+                    ? 'nincs minimum'
+                    : group.nextMinimumMode === 'custom'
+                      ? formatCredits(group.nextCustomMinimum ?? 0)
+                      : group.nextMinimumMode + '% · ' + formatCredits(gameStore.minimumForGroup(session, group) ?? 0)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="pool-setup-step pool-start-step">
+        <header className="pool-setup-step-head">
+          <span className="pool-step-number">3</span>
+          <div>
+            <strong>Kör indítása</strong>
+            <small>
+              {groupsValid
+                ? 'A csapatok érvényesek. Ellenőrizd a minimumokat, majd indítsd a kört a felső fő gombbal.'
+                : 'Minden játékos legyen csapatban, és ne maradjon üres csapat.'}
+            </small>
+          </div>
+          <span className={'pool-step-status ' + (groupsValid ? 'ready' : 'needs-action')}>
+            {groupsValid ? 'indítható' : 'még nem indítható'}
+          </span>
+        </header>
+      </section>
     </div>
   );
 }
@@ -1129,42 +1279,6 @@ function GroupBox({ session, groupId }: { session: GameSession; groupId: string 
               <i style={{ width: minimumProgress + '%' }} />
             </div>
           )}
-        </div>
-      )}
-
-      <div className="group-minimum-bar">
-        <div>
-          <span className="mini-label">Következő kör minimum kasszája</span>
-          <strong>
-            {group.nextMinimumMode === 'none'
-              ? 'Nincs minimum'
-              : group.nextMinimumMode === 'custom'
-                ? formatCredits(group.nextCustomMinimum ?? 0)
-                : `${group.nextMinimumMode}% · ${formatCredits(gameStore.minimumForGroup(session, group) ?? 0)}`}
-          </strong>
-        </div>
-        <MinimumSelector
-          mode={group.nextMinimumMode}
-          custom={group.nextCustomMinimum}
-          disabled={!editableMinimum}
-          onMode={(mode) => gameStore.setGroupMinimum(session.code, group.id, mode, group.nextCustomMinimum)}
-          onCustom={(value) => gameStore.setGroupMinimum(session.code, group.id, 'custom', value)}
-        />
-      </div>
-
-      {session.publicGoodsRoundNumber === 0 && session.publicGoodsPhase === 'setup' && (
-        <div className="manual-group-list">
-          {memberPlayers.map((player) => (
-            <label key={player.id}>
-              <span>{player.name}</span>
-              <select
-                value={group.id}
-                onChange={(e) => gameStore.setPlayerGroup(session.code, player.id, e.target.value)}
-              >
-                {session.groups.map((option) => <option value={option.id} key={option.id}>{option.name}</option>)}
-              </select>
-            </label>
-          ))}
         </div>
       )}
 
