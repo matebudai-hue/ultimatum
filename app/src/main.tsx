@@ -30,7 +30,7 @@ import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
-import { buildHighlightedEvents, InterestingEvent } from './debriefEngine';
+import { buildHighlightedEvents, buildInterestingEvents, InterestingEvent } from './debriefEngine';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -2156,7 +2156,17 @@ const factNumber = (event: InterestingEvent, key: string) => {
 const signedCredits = (value: number) =>
   (value > 0 ? '+' : '') + formatCredits(value);
 
-function DebriefEventSummary({ session, event }: { session: GameSession; event: InterestingEvent }) {
+function DebriefEventSummary({
+  session,
+  event,
+  pinned = false,
+  onTogglePin,
+}: {
+  session: GameSession;
+  event: InterestingEvent;
+  pinned?: boolean;
+  onTogglePin?: () => void;
+}) {
   const participants = eventParticipantLabel(session, event);
   const offer = factNumber(event, 'offer');
   const amount = factNumber(event, 'amount');
@@ -2294,7 +2304,19 @@ function DebriefEventSummary({ session, event }: { session: GameSession; event: 
     <article className={'debrief-note-card priority-' + event.priority}>
       <header>
         <span>{eventRoundLabel(event)}</span>
-        <small>rendszer által kiemelt</small>
+        <div className="debrief-note-actions">
+          <small>{pinned ? 'félretéve' : 'rendszer által kiemelt'}</small>
+          {onTogglePin && (
+            <button
+              type="button"
+              className={'debrief-pin-button ' + (pinned ? 'is-pinned' : '')}
+              onClick={onTogglePin}
+              aria-pressed={pinned}
+            >
+              {pinned ? '★ Félretéve' : '☆ Félreteszem'}
+            </button>
+          )}
+        </div>
       </header>
       <h3>{event.title}</h3>
       <div className="debrief-note-facts">{detail}</div>
@@ -2303,8 +2325,12 @@ function DebriefEventSummary({ session, event }: { session: GameSession; event: 
 }
 
 function LiveDebriefNotes({ session }: { session: GameSession }) {
-  const events = buildHighlightedEvents(session);
-  if (events.length === 0) return null;
+  const highlightedEvents = buildHighlightedEvents(session);
+  const allEvents = buildInterestingEvents(session);
+  const pinnedIds = new Set(session.pinnedDebriefEventIds ?? []);
+  const pinnedEvents = allEvents.filter((item) => pinnedIds.has(item.id));
+
+  if (highlightedEvents.length === 0 && pinnedEvents.length === 0) return null;
 
   const roundOrder: Record<string, number> = {
     '1a': 1,
@@ -2315,7 +2341,7 @@ function LiveDebriefNotes({ session }: { session: GameSession }) {
     '3b': 6,
     '4': 7,
   };
-  const ordered = [...events].sort((a, b) => {
+  const byRecency = (a: InterestingEvent, b: InterestingEvent) => {
     const stage = (roundOrder[b.roundKey] ?? 0) - (roundOrder[a.roundKey] ?? 0);
     if (stage !== 0) return stage;
     if (a.roundKey === '4' && b.roundKey === '4') {
@@ -2323,29 +2349,71 @@ function LiveDebriefNotes({ session }: { session: GameSession }) {
       if (round !== 0) return round;
     }
     return a.priority - b.priority;
-  });
-  const latest = ordered.slice(0, 6);
-  const older = ordered.slice(6);
+  };
+
+  const pinned = [...pinnedEvents].sort(byRecency);
+  const unpinned = highlightedEvents.filter((item) => !pinnedIds.has(item.id)).sort(byRecency);
+  const latest = unpinned.slice(0, 6);
+  const older = unpinned.slice(6);
+
+  const togglePin = (eventId: string) => gameStore.togglePinnedDebriefEvent(session.code, eventId);
 
   return (
     <section className="panel dashboard-section live-debrief-panel">
       <div className="section-title debrief-section-title">
         <div>
           <p className="eyebrow">Kivezetés · élő gyűjtés</p>
-          <h2>Kivezetési jegyzetek · {events.length}</h2>
+          <h2>Kivezetési jegyzetek · {highlightedEvents.length}</h2>
           <p>A rendszer csak lezárt, elszámolt körökből emel ki helyzeteket. Ezt csak te látod.</p>
         </div>
+        {pinned.length > 0 && <span className="debrief-pinned-count">★ Félretett · {pinned.length}</span>}
       </div>
 
-      <div className="debrief-note-grid">
-        {latest.map((item) => <DebriefEventSummary session={session} event={item} key={item.id} />)}
-      </div>
+      {pinned.length > 0 && (
+        <div className="debrief-pinned-section">
+          <strong>Félretett eseményeim</strong>
+          <div className="debrief-note-grid">
+            {pinned.map((item) => (
+              <DebriefEventSummary
+                session={session}
+                event={item}
+                pinned
+                onTogglePin={() => togglePin(item.id)}
+                key={item.id}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {latest.length > 0 && (
+        <>
+          {pinned.length > 0 && <div className="debrief-subhead">Friss rendszerjelzések</div>}
+          <div className="debrief-note-grid">
+            {latest.map((item) => (
+              <DebriefEventSummary
+                session={session}
+                event={item}
+                onTogglePin={() => togglePin(item.id)}
+                key={item.id}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {older.length > 0 && (
         <details className="debrief-older-notes">
           <summary>Korábbi jelzések · {older.length}</summary>
           <div className="debrief-note-grid">
-            {older.map((item) => <DebriefEventSummary session={session} event={item} key={item.id} />)}
+            {older.map((item) => (
+              <DebriefEventSummary
+                session={session}
+                event={item}
+                onTogglePin={() => togglePin(item.id)}
+                key={item.id}
+              />
+            ))}
           </div>
         </details>
       )}
