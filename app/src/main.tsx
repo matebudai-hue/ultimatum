@@ -968,7 +968,7 @@ function TrainerCockpit({
             <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
               {primaryIcon}{primaryLabel}
             </button>
-            <button className="toolbar-button" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
+            <button className="toolbar-button debrief-toolbar-trigger" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             {canFinishGame(session) && (
               <button
