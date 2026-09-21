@@ -367,11 +367,11 @@ export const buildInterestingEvents = (session: GameSession): InterestingEvent[]
     const highestRejected = Math.max(...rejectedOffers);
     if (highestRejected <= lowestAccepted) {
       pushUnique(events, event({
-        idParts: [highestRejected, lowestAccepted],
+        idParts: ['group'],
         game: 'ultimatum',
         kind: 'ultimatum_acceptance_boundary',
         title: 'Elfogadási határ',
-        roundKey: '1b',
+        roundKey: session.closedRounds.includes('1b') ? '1b' : '1a',
         playerIds: [],
         selfDecisionIds: [],
         priority: 2,
