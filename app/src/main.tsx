@@ -1281,6 +1281,25 @@ function ReportPanel({ session }: { session: GameSession }) {
       }];
     });
 
+  const dictatorTransfers = session.pairings
+    .filter((pairing) => pairing.gameId === 'dictator')
+    .flatMap((pairing) => {
+      const decision = decisionsFor(session, pairing).find((item) => item.type === 'dictator_give');
+      if (!decision) return [];
+      const amount = decision.amount ?? 0;
+      const percent = session.startingCredit > 0 ? Math.round((amount / session.startingCredit) * 100) : 0;
+      const band = percent <= 30 ? 'low' : percent <= 51 ? 'mid' : 'high';
+      const bandLabel = percent <= 30 ? '0–30%' : percent <= 51 ? '31–51%' : '51% felett';
+      return [{
+        pairing,
+        amount,
+        percent,
+        band,
+        bandLabel,
+        timedOut: decision.timedOutRole === 'dictator',
+      }];
+    });
+
   return (
     <section className="panel report-panel dashboard-section">
       <div className="section-title">
@@ -1323,10 +1342,28 @@ function ReportPanel({ session }: { session: GameSession }) {
             })}
           </div>
         </div>
-        <div className="summary-stat">
+        <div className="summary-stat dictator-summary">
           <span>Diktátor</span>
-          <strong>{formatCredits(summary.dictator.givenAmount)}</strong>
-          <small>összes átadás · {summary.dictator.timeouts} időtúllépés</small>
+          <strong>{dictatorTransfers.length} átadás</strong>
+          <small>{formatCredits(summary.dictator.givenAmount)} összesen · {summary.dictator.timeouts} időtúllépés</small>
+          <div className="dictator-transfer-list">
+            {dictatorTransfers.length === 0 ? (
+              <div className="ultimatum-empty">Még nincs átadás.</div>
+            ) : dictatorTransfers.map(({ pairing, amount, percent, band, bandLabel, timedOut }) => (
+              <div className="dictator-transfer-row" key={pairing.id}>
+                <span className="offer-round">{pairing.roundKey}</span>
+                <span className="offer-route">
+                  <b>{playerName(session, pairing.playerA)}</b>
+                  <i>→</i>
+                  <b>{playerName(session, pairing.playerB)}</b>
+                </span>
+                <strong className="offer-amount">{formatCredits(amount)}</strong>
+                <span className={'dictator-band ' + band}>
+                  {timedOut ? 'idő → 0' : `${percent}% · ${bandLabel}`}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="summary-stat">
           <span>Bizalom</span>
