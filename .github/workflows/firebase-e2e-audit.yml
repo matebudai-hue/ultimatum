@@ -74,6 +74,7 @@ jobs:
               trainerUid:{stringValue:$uid},
               status:{stringValue:"lobby"},
               roundKey:{stringValue:"lobby"},
+              session:{mapValue:{fields:{roundKey:{stringValue:"lobby"}}}},
               code:{stringValue:$code}
             }}')
           PUBLIC_BODY=$(jq -nc --arg uid "$TRAINER_UID" '{
