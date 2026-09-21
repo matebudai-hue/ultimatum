@@ -138,6 +138,7 @@ export type ParticipantSelfReportItem = {
   potPercent?: number;
   payout?: number;
   netAmount?: number;
+  isBotDecision?: boolean;
 };
 
 export type ParticipantReflection = {
