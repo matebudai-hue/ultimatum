@@ -605,15 +605,17 @@ function TrainerPulse({ session }: { session: GameSession }) {
         <strong>{online}/{session.players.length}</strong>
         <small>{offline > 0 ? offline + ' offline' : 'mindenki online'}</small>
       </div>
-      <div className={'pulse-card ' + (technical > 0 ? 'danger-card' : 'success')}>
-        <span>Technikai hiba</span>
-        <strong>{technical}</strong>
-        <small>{technical > 0 ? 'beavatkozást kér' : 'nincs függő hiba'}</small>
-      </div>
-      <div className={'pulse-card ' + (currentTimeouts > 0 ? 'warning' : '')}>
-        <span>Időtúllépés</span>
-        <strong>{currentTimeouts}</strong>
-        <small>{STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound) ? 'aktuális kör' : '–'}</small>
+      <div className={'pulse-card issue-card ' + (technical + currentTimeouts > 0 ? 'danger-card' : 'neutral-card')}>
+        <span>Hibák</span>
+        <strong>{technical + currentTimeouts}</strong>
+        <small>
+          {technical + currentTimeouts > 0
+            ? [
+                technical > 0 ? `${technical} technikai hiba` : '',
+                currentTimeouts > 0 ? `${currentTimeouts} időtúllépés` : '',
+              ].filter(Boolean).join(' · ')
+            : 'nincs hiba'}
+        </small>
       </div>
       <div className="pulse-card">
         <span>Induló kredit</span>
@@ -626,23 +628,14 @@ function TrainerPulse({ session }: { session: GameSession }) {
 
 function TrainerAttention({ session }: { session: GameSession }) {
   const offline = session.players.filter((player) => !gameStore.isPlayerOnline(player));
-  const technical = session.strategicTechnicalIssues.filter((issue) => issue.roundKey === session.roundKey);
-  if (offline.length === 0 && technical.length === 0) return null;
+  if (offline.length === 0) return null;
 
   return (
     <div className="attention-strip">
-      {technical.length > 0 && (
-        <div className="attention-item danger-attention">
-          <strong>{technical.length} technikai döntés függőben</strong>
-          <span>A játékosok sorában a „30 mp újra” gombbal tudod rendezni.</span>
-        </div>
-      )}
-      {offline.length > 0 && (
-        <div className="attention-item warning-attention">
-          <strong>{offline.length} offline résztvevő</strong>
-          <span>{offline.slice(0, 5).map((player) => player.name).join(', ')}{offline.length > 5 ? '…' : ''}</span>
-        </div>
-      )}
+      <div className="attention-item warning-attention">
+        <strong>{offline.length} offline résztvevő</strong>
+        <span>{offline.slice(0, 5).map((player) => player.name).join(', ')}{offline.length > 5 ? '…' : ''}</span>
+      </div>
     </div>
   );
 }
