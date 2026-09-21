@@ -2646,30 +2646,46 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
 
 function DebriefWorkspace({ session }: { session: GameSession }) {
   const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
+  const [open, setOpen] = useState(session.roundKey === 'report');
   const hasData =
     session.closedRounds.length > 0 ||
     session.publicGoodsRounds.some((round) => round.status === 'settled');
+
+  useEffect(() => {
+    if (session.roundKey === 'report') setOpen(true);
+  }, [session.roundKey]);
+
   if (!hasData) return null;
 
   return (
     <section className="panel dashboard-section debrief-workspace">
-      <div className="section-title">
+      <button
+        type="button"
+        className="debrief-workspace-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
         <div>
           <p className="eyebrow">Kivezetés</p>
           <h2>Játékértelmezés</h2>
-          <p className="debrief-workspace-intro">A rendszer előkészíti az adatokat. Te döntöd el, mihez térsz vissza és mit mutatsz meg.</p>
+          <p className="debrief-workspace-intro">Csoportkép, érdekes események és egyéni történetek.</p>
         </div>
-      </div>
+        <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
+      </button>
 
-      <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
-        <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
-        <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
-        <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
-      </div>
+      {open && (
+        <>
+          <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
+            <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
+            <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
+            <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+          </div>
 
-      {tab === 'group' && <DebriefGroupView session={session} />}
-      {tab === 'events' && <DebriefEventsView session={session} />}
-      {tab === 'participants' && <DebriefParticipantsView session={session} />}
+          {tab === 'group' && <DebriefGroupView session={session} />}
+          {tab === 'events' && <DebriefEventsView session={session} />}
+          {tab === 'participants' && <DebriefParticipantsView session={session} />}
+        </>
+      )}
     </section>
   );
 }
