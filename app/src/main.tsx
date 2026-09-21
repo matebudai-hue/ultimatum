@@ -910,7 +910,17 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
               <strong>{session.code}</strong>
             </div>
             {canFinishPublicGoodsGame(session) && (
-              <button className="toolbar-button danger-action" onClick={() => gameStore.finish(session.code)}>Lezárás</button>
+              <button
+                className="toolbar-button danger-action"
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    'Biztosan lezárod a teljes Kreditjátékot? Ezt nem lehet visszavonni. Ha most fut egy még el nem számolt kasszakör, annak tétei nem kerülnek bele a végső eredménybe.',
+                  );
+                  if (confirmed) gameStore.finish(session.code);
+                }}
+              >
+                Lezárás
+              </button>
             )}
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             <button className="toolbar-button projector-trigger" onClick={() => setProjectorOpen(true)} title="QR-kód kivetítése"><QrCode size={16} />QR</button>
