@@ -172,6 +172,7 @@ const placeholderSession = (
   publicGoodsRoundNumber: 0,
   publicGoodsPhase: 'setup',
   publicGoodsRounds: [],
+  pinnedDebriefEventIds: [],
 });
 
 const emitSyncStatus = (status: 'ok' | 'error', message?: string) => {
@@ -719,6 +720,11 @@ export const firebaseSessionStore = {
   setPlayerGroup(code: string, playerId: string, groupId: string) {
     const session = localSessionStore.setPlayerGroup(code, playerId, groupId);
     return trainerMutation(code, () => session, allPlayers(session));
+  },
+
+  togglePinnedDebriefEvent(code: string, eventId: string) {
+    const session = localSessionStore.togglePinnedDebriefEvent(code, eventId);
+    return trainerMutation(code, () => session);
   },
 
   setGroupMinimum(code: string, groupId: string, mode: Parameters<typeof localSessionStore.setGroupMinimum>[2], customMinimum?: number) {
