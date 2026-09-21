@@ -33,6 +33,7 @@ import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
+import { buildDebriefEventGroups } from './debriefGrouping';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -2684,6 +2685,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
   const pinnedIds = new Set(session.pinnedDebriefEventIds ?? []);
   const pinned = events.filter((item) => pinnedIds.has(item.id));
   const rest = events.filter((item) => !pinnedIds.has(item.id));
+  const grouped = useMemo(() => buildDebriefEventGroups(rest), [rest]);
   const toggle = (id: string) => gameStore.togglePinnedDebriefEvent(session.code, id);
   const [projection, setProjection] = useState<{
     eventId: string;
@@ -2721,6 +2723,18 @@ function DebriefEventsView({ session }: { session: GameSession }) {
     setProjection(null);
     setProjectionError('');
   };
+
+  const renderEventCard = (item: InterestingEvent, isPinned = false) => (
+    <DebriefEventSummary
+      key={item.id}
+      session={session}
+      event={item}
+      pinned={isPinned}
+      onTogglePin={() => toggle(item.id)}
+      onProject={() => project(item)}
+      projecting={projection?.eventId === item.id}
+    />
+  );
 
   return (
     <div className="debrief-workspace-body">
@@ -2777,17 +2791,7 @@ function DebriefEventsView({ session }: { session: GameSession }) {
         <section className="debrief-workspace-section">
           <h3>★ Félretett eseményeim · {pinned.length}</h3>
           <div className="debrief-note-grid">
-            {pinned.map((item) => (
-              <DebriefEventSummary
-                key={item.id}
-                session={session}
-                event={item}
-                pinned
-                onTogglePin={() => toggle(item.id)}
-                onProject={() => project(item)}
-                projecting={projection?.eventId === item.id}
-              />
-            ))}
+            {pinned.map((item) => renderEventCard(item, true))}
           </div>
         </section>
       )}
@@ -2797,16 +2801,45 @@ function DebriefEventsView({ session }: { session: GameSession }) {
         {rest.length === 0 ? (
           <div className="summary-empty">Nincs további rendszer által kiemelt esemény.</div>
         ) : (
-          <div className="debrief-note-grid">
-            {rest.map((item) => (
-              <DebriefEventSummary
-                key={item.id}
-                session={session}
-                event={item}
-                onTogglePin={() => toggle(item.id)}
-                onProject={() => project(item)}
-                projecting={projection?.eventId === item.id}
-              />
+          <div className="debrief-event-game-groups">
+            {grouped.map((gameGroup) => (
+              <details className="debrief-event-game-group" key={gameGroup.game}>
+                <summary>
+                  <strong>{gameGroup.label}</strong>
+                  <span>{gameGroup.count} esemény · {gameGroup.stories.length} történetcsoport</span>
+                </summary>
+
+                <div className="debrief-event-story-groups">
+                  {gameGroup.stories.map((story) => {
+                    const featured = story.events.slice(0, 3);
+                    const remaining = story.events.slice(3);
+
+                    return (
+                      <details className="debrief-event-story-group" key={story.id}>
+                        <summary>
+                          <strong>{story.label}</strong>
+                          <span>{story.events.length} eset</span>
+                        </summary>
+
+                        <div className="debrief-event-story-content">
+                          <div className="debrief-note-grid">
+                            {featured.map((item) => renderEventCard(item))}
+                          </div>
+
+                          {remaining.length > 0 && (
+                            <details className="debrief-event-more">
+                              <summary>Mind a {story.events.length} eset megmutatása</summary>
+                              <div className="debrief-note-grid">
+                                {remaining.map((item) => renderEventCard(item))}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </div>
+              </details>
             ))}
           </div>
         )}
