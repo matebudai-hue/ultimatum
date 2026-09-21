@@ -28,9 +28,7 @@ import { buildSixRoundPairingSchedule, STRATEGIC_ROUNDS } from './pairingEngine'
 type Listener = (session: GameSession | null) => void;
 
 export const canFinishPublicGoodsGame = (session: GameSession) =>
-  session.roundKey === '4' &&
-  session.publicGoodsPhase === 'setup' &&
-  session.publicGoodsRoundNumber > 0;
+  session.roundKey === '4';
 
 const PREFIX = 'kreditjatek_session_';
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('kreditjatek_dev') : null;
@@ -1190,8 +1188,30 @@ export const localSessionStore = {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (session.roundKey !== '4') throw new Error('A játék innen nem zárható le.');
-    if (session.publicGoodsPhase !== 'setup') throw new Error('Előbb zárd le és számold el az aktuális kasszakört.');
-    if (session.publicGoodsRoundNumber < 1) throw new Error('Legalább egy közös kassza kör fusson le.');
+
+    // Ha a tréner futó, még el nem számolt kasszakör közben zárja le
+    // a teljes játékot, az aktuális kör nem kerül könyvelésre.
+    if (session.publicGoodsPhase !== 'setup') {
+      const unfinishedRound = session.publicGoodsRoundNumber;
+      session.publicGoodsRounds = session.publicGoodsRounds.filter(
+        (round) => round.roundNumber !== unfinishedRound || round.status === 'settled',
+      );
+      session.decisions = session.decisions.filter(
+        (decision) =>
+          decision.type !== 'public_goods_contribution' ||
+          decision.publicGoodsRound !== unfinishedRound,
+      );
+      const settledRoundNumbers = session.publicGoodsRounds
+        .filter((round) => round.status === 'settled')
+        .map((round) => round.roundNumber);
+      session.publicGoodsRoundNumber = settledRoundNumbers.length
+        ? Math.max(...settledRoundNumbers)
+        : 0;
+    }
+
+    session.publicGoodsPhase = 'setup';
+    session.roundStartedAt = undefined;
+    session.publicGoodsDeadlineAt = undefined;
     session.roundKey = 'report';
     session.status = 'finished';
     write(session);
