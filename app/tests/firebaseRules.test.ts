@@ -90,6 +90,20 @@ await assertSucceeds(updateDoc(doc(playerDb, 'games', code, 'players', playerId)
   },
 }));
 
+await assertSucceeds(updateDoc(doc(playerDb, 'games', code, 'players', playerId), {
+  commands: {
+    reflection1: {
+      id: 'reflection1',
+      nonce: 'reflection-nonce',
+      type: 'submitReflection',
+      payload: {
+        items: [{ decisionId: 'decision:ultimatum:proposer:pair-own', comment: 'Teszt reflexió' }],
+      },
+      createdAt: new Date().toISOString(),
+    },
+  },
+}));
+
 await assertFails(updateDoc(doc(playerDb, 'games', code, 'players', playerId), {
   view: { secret: true },
 }));
