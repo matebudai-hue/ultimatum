@@ -4224,6 +4224,14 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       </div>
 
       <section className="task-card participant-task-card">
+        {currentPlayer?.botControlled && session.status === 'active' ? (
+          <div className="participant-waiting-hero bot-controlled-participant">
+            <p className="eyebrow">BOT átvette az irányítást</p>
+            <h1>A játék folytatódik helyetted.</h1>
+            <p>Ha visszatértél, jelezd a trénernek. Ő tudja visszaadni neked az irányítást a következő még el nem döntött helyzetekre.</p>
+          </div>
+        ) : (
+          <>
         {session.roundKey === 'lobby' && (
           <div className="participant-waiting-hero">
             <div className="waiting-pulse" />
@@ -4259,6 +4267,8 @@ function ParticipantClient({ code: initial }: { code?: string }) {
             </div>
           );
         })()}
+          </>
+        )}
       </section>
 
       {currentPlayer && <ParticipantLedger session={session} playerId={playerId} />}
