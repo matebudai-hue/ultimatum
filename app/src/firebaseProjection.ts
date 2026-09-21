@@ -1,4 +1,5 @@
 import { GameSession } from './gameTypes';
+import { buildSelfReport } from './debriefEngine';
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -78,5 +79,7 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
         : { [playerId]: session.firstStageFinalBalance[playerId] },
     publicGoodsRounds,
     pinnedDebriefEventIds: [],
+    reflections: clone((session.reflections ?? []).filter((item) => item.playerId === playerId)),
+    selfReport: session.roundKey === 'report' ? clone(buildSelfReport(session, playerId)) : [],
   };
 };
