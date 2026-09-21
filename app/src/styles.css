@@ -206,7 +206,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .timeline-stage.done .timeline-index{background:var(--success);color:#fff}
 .timeline-line{height:2px;min-width:28px;flex:1;background:#dbe3ec;margin:0 8px}
 
-.trainer-pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:16px 20px}
+.trainer-pulse{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:16px 20px}
 .pulse-card{position:relative;border:1px solid var(--border);border-radius:15px;padding:12px 13px;background:#fff;overflow:hidden;min-width:0}
 .pulse-card>span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:900}
 .pulse-card>strong{display:block;margin-top:3px;font-size:24px;letter-spacing:-.02em;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -215,6 +215,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pulse-card.warning{background:var(--warning-bg);border-color:var(--warning-border)}
 .pulse-card.danger-card{background:var(--danger-bg);border-color:var(--danger-border)}
 .pulse-card.danger-card>strong{color:var(--danger)}
+.pulse-card.neutral-card{background:#f8fafc;border-color:#e2e8f0}
 .metric-credit{font-size:18px!important;white-space:nowrap}
 .metric-progress{position:absolute;left:0;right:0;bottom:0;height:4px;background:#e7edf4}
 .metric-progress i{display:block;height:100%;background:var(--turq);transition:width .25s ease}
