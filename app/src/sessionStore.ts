@@ -27,6 +27,11 @@ import { buildSixRoundPairingSchedule, STRATEGIC_ROUNDS } from './pairingEngine'
 
 type Listener = (session: GameSession | null) => void;
 
+export const canFinishPublicGoodsGame = (session: GameSession) =>
+  session.roundKey === '4' &&
+  session.publicGoodsPhase === 'setup' &&
+  session.publicGoodsRoundNumber > 0;
+
 const PREFIX = 'kreditjatek_session_';
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('kreditjatek_dev') : null;
 
