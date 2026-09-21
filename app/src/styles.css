@@ -1293,3 +1293,31 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .projection-controller{align-items:flex-start;flex-direction:column}
   .projection-controller-actions{justify-content:flex-start;width:100%}
 }
+
+
+/* Grouped debrief event browser */
+.debrief-event-game-groups{display:flex;flex-direction:column;gap:10px}
+.debrief-event-game-group{border:1px solid #dbe3ec;border-radius:13px;background:#f8fafc;overflow:hidden}
+.debrief-event-game-group>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;list-style:none;background:#f8fafc}
+.debrief-event-game-group>summary::-webkit-details-marker,
+.debrief-event-story-group>summary::-webkit-details-marker,
+.debrief-event-more>summary::-webkit-details-marker{display:none}
+.debrief-event-game-group>summary strong{font-size:13px;color:#0f172a}
+.debrief-event-game-group>summary span{font-size:9px;font-weight:800;color:#64748b}
+.debrief-event-game-group[open]>summary{background:#f1f5f9;border-bottom:1px solid #dbe3ec}
+.debrief-event-story-groups{display:flex;flex-direction:column;gap:8px;padding:10px}
+.debrief-event-story-group{border:1px solid #e2e8f0;border-radius:10px;background:#fff;overflow:hidden}
+.debrief-event-story-group>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 11px;cursor:pointer;list-style:none}
+.debrief-event-story-group>summary strong{font-size:11px;color:#1e293b}
+.debrief-event-story-group>summary span{font-size:9px;font-weight:900;color:#64748b;background:#f1f5f9;border-radius:999px;padding:4px 7px;white-space:nowrap}
+.debrief-event-story-group[open]>summary{border-bottom:1px solid #e2e8f0;background:#fcfdff}
+.debrief-event-story-content{padding:10px}
+.debrief-event-more{margin-top:9px;border-top:1px solid #e2e8f0;padding-top:8px}
+.debrief-event-more>summary{cursor:pointer;list-style:none;font-size:9px;font-weight:900;color:#475569;padding:3px 0 8px}
+.debrief-event-more>summary:after{content:' ›';color:#94a3b8}
+.debrief-event-more[open]>summary:after{content:' ↓'}
+@media(max-width:600px){
+  .debrief-event-game-group>summary,
+  .debrief-event-story-group>summary{align-items:flex-start}
+  .debrief-event-game-group>summary{flex-direction:column;gap:3px}
+}
