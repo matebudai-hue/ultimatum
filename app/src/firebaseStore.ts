@@ -644,6 +644,11 @@ export const firebaseSessionStore = {
 
   getPairingForPlayer: localSessionStore.getPairingForPlayer,
 
+  setPlayerBotControl(code: string, playerId: string, enabled: boolean) {
+    const session = localSessionStore.setPlayerBotControl(code, playerId, enabled);
+    return trainerMutation(code, () => session, allPlayers(session));
+  },
+
   ackStrategicTaskVisible(code: string, playerId: string) {
     if (role() === 'player') {
       void appendCommand(code, 'ackStrategicTaskVisible');
