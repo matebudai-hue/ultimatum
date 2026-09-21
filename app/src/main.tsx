@@ -6,7 +6,6 @@ import {
   BarChart3,
   Check,
   ChevronRight,
-  Copy,
   Download,
   Play,
   QrCode,
@@ -820,7 +819,6 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
 }
 
 function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: string }) {
-  const [copied, setCopied] = useState(false);
   const [projectorOpen, setProjectorOpen] = useState(false);
 
   useEffect(() => {
@@ -839,12 +837,6 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
   const strategicClosed = strategic && session.closedRounds.includes(session.roundKey as StrategicRound);
   const strategicProgress = strategic ? gameStore.roundProgress(session) : null;
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(joinUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1200);
-  };
 
   let primaryLabel = 'Játék indítása';
   let primaryDisabled = false;
@@ -921,7 +913,6 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
             )}
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             <button className="toolbar-button projector-trigger" onClick={() => setProjectorOpen(true)} title="QR-kód kivetítése"><QrCode size={16} />QR</button>
-            <button className="toolbar-button" onClick={copy} title="Belépési link másolása"><Copy size={16} />{copied ? 'Másolva' : 'Link'}</button>
             <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
               {primaryIcon}{primaryLabel}
             </button>
