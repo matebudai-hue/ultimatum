@@ -1321,3 +1321,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .debrief-event-story-group>summary{align-items:flex-start}
   .debrief-event-game-group>summary{flex-direction:column;gap:3px}
 }
+
+
+.debrief-empty-state{margin-top:12px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;padding:18px;display:flex;flex-direction:column;gap:5px}
+.debrief-empty-state strong{font-size:12px;color:#0f172a}
+.debrief-empty-state span{font-size:10px;line-height:1.45;color:#64748b}
