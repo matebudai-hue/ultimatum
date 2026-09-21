@@ -28,6 +28,7 @@ import {
 } from './gameTypes';
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
+import { canFinishPublicGoodsGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
 
 const formatCredits = (value: number) =>
@@ -908,7 +909,7 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
               <span>Kód</span>
               <strong>{session.code}</strong>
             </div>
-            {session.roundKey === '4' && session.publicGoodsPhase === 'setup' && session.publicGoodsRoundNumber > 0 && (
+            {canFinishPublicGoodsGame(session) && (
               <button className="toolbar-button danger-action" onClick={() => gameStore.finish(session.code)}>Lezárás</button>
             )}
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
