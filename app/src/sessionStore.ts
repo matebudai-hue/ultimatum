@@ -378,6 +378,21 @@ const makeGroups = (session: GameSession, count: number): PublicGoodsGroup[] => 
   return groups;
 };
 
+const makeManualGroups = (session: GameSession, count: number): PublicGoodsGroup[] => {
+  const players = session.players
+    .filter((player) => !player.isBot && player.active)
+    .map((player) => player.id);
+  const safeCount = Math.max(1, Math.min(count, players.length || 1, 25, HUNGARIAN_GROUP_NAMES.length));
+  const groups = Array.from({ length: safeCount }, (_, index) => ({
+    id: crypto.randomUUID(),
+    name: HUNGARIAN_GROUP_NAMES[index],
+    memberIds: [] as string[],
+    nextMinimumMode: 'none' as MinimumMode,
+  }));
+  if (groups[0]) groups[0].memberIds = [...players];
+  return groups;
+};
+
 const groupWealth = (session: GameSession, group: PublicGoodsGroup) =>
   group.memberIds.reduce((sum, id) => sum + (session.players.find((player) => player.id === id)?.currentBalance ?? 0), 0);
 
@@ -1014,6 +1029,18 @@ export const localSessionStore = {
       throw new Error('A csoportok csak az első kasszakör előtt módosíthatók.');
     }
     session.groups = makeGroups(session, count);
+    write(session);
+    return session;
+  },
+
+  createManualGroups(code: string, count: number): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    if (session.roundKey !== '4') throw new Error('Csoportokat a Közös kasszánál lehet beállítani.');
+    if (session.publicGoodsRoundNumber > 0 || session.publicGoodsPhase !== 'setup') {
+      throw new Error('A csoportok csak az első kasszakör előtt módosíthatók.');
+    }
+    session.groups = makeManualGroups(session, count);
     write(session);
     return session;
   },
