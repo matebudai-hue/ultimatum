@@ -1184,3 +1184,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .participant-debrief-item>summary{align-items:flex-start;flex-direction:column;gap:3px}
   .self-report-mini-grid{grid-template-columns:1fr}
 }
+
+.debrief-workspace-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:14px;border:0;background:transparent;padding:0 0 12px;text-align:left;cursor:pointer}
+.debrief-workspace-toggle>div{min-width:0}
+.debrief-workspace-toggle h2{margin:2px 0 0}
+.debrief-workspace-toggle>span{font-size:9px;font-weight:900;color:#475569;background:#f1f5f9;border-radius:999px;padding:6px 8px;white-space:nowrap}
+@media(max-width:600px){
+  .debrief-workspace-toggle{align-items:flex-start}
+}
