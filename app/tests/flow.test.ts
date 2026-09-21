@@ -642,6 +642,68 @@ function testManualCorrections() {
   console.log('MANUAL CORRECTIONS OK');
 }
 
+
+function testTenPlayerManualPoolSetup() {
+  const code = runStrategicStage(10);
+  let state = localSessionStore.get(code)!;
+
+  localSessionStore.createManualGroups(code, 2);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.groups.length, 2);
+  assert.deepEqual(
+    state.groups.map((group) => group.memberIds.length),
+    [10, 0],
+    'Kézi beosztásnál a tréner kapjon két üresen szerkeszthető célcsoportot úgy, hogy minden játékos kezdetben az elsőben van.',
+  );
+  assert.throws(
+    () => localSessionStore.startPublicGoodsRound(code),
+    /érvényes csapatokat/,
+    'Üres csapattal ne lehessen elindítani a kasszakört.',
+  );
+
+  const secondGroupId = state.groups[1].id;
+  for (const player of state.players.slice(5)) {
+    localSessionStore.setPlayerGroup(code, player.id, secondGroupId);
+  }
+
+  state = localSessionStore.get(code)!;
+  assert.deepEqual(
+    state.groups.map((group) => group.memberIds.length),
+    [5, 5],
+    '10 főből kézzel létrehozható legyen két 5 fős csapat.',
+  );
+
+  localSessionStore.setGroupMinimum(code, state.groups[0].id, '80');
+  localSessionStore.setGroupMinimum(code, state.groups[1].id, '95');
+  state = localSessionStore.get(code)!;
+  assert.equal(
+    localSessionStore.minimumForGroup(state, state.groups[0]),
+    Math.round(localSessionStore.groupWealth(state, state.groups[0]) * 0.8),
+  );
+  assert.equal(
+    localSessionStore.minimumForGroup(state, state.groups[1]),
+    Math.round(localSessionStore.groupWealth(state, state.groups[1]) * 0.95),
+  );
+
+  localSessionStore.setGroupMinimum(code, state.groups[1].id, 'custom', 123_400);
+  state = localSessionStore.get(code)!;
+  assert.equal(localSessionStore.minimumForGroup(state, state.groups[1]), 123_400);
+
+  localSessionStore.startPublicGoodsRound(code);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.publicGoodsPhase, 'open');
+  assert.equal(state.publicGoodsRounds.filter((round) => round.roundNumber === 1).length, 2);
+  assert.deepEqual(
+    state.publicGoodsRounds
+      .filter((round) => round.roundNumber === 1)
+      .map((round) => round.memberIds.length)
+      .sort((a, b) => a - b),
+    [5, 5],
+  );
+
+  console.log('10-PLAYER MANUAL GROUP + MINIMUM SETUP OK');
+}
+
 function testMissingStakeBecomesZero() {
   const code = runStrategicStage(4);
   let state = localSessionStore.get(code)!;
@@ -671,6 +733,7 @@ for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
   const code = runStrategicStage(count);
   testPublicGoodsControl(code, count);
 }
+testTenPlayerManualPoolSetup();
 testMissingStakeBecomesZero();
 testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
