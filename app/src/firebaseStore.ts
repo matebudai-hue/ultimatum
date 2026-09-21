@@ -711,6 +711,11 @@ export const firebaseSessionStore = {
     return trainerMutation(code, () => session, allPlayers(session));
   },
 
+  createManualGroups(code: string, count: number) {
+    const session = localSessionStore.createManualGroups(code, count);
+    return trainerMutation(code, () => session, allPlayers(session));
+  },
+
   setPlayerGroup(code: string, playerId: string, groupId: string) {
     const session = localSessionStore.setPlayerGroup(code, playerId, groupId);
     return trainerMutation(code, () => session, allPlayers(session));
