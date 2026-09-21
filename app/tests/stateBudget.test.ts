@@ -13,6 +13,7 @@ Object.defineProperty(globalThis, 'StorageEvent', { value: dom.window.StorageEve
 const { localSessionStore } = await import('../src/sessionStore.ts');
 const { STRATEGIC_ROUNDS } = await import('../src/pairingEngine.ts');
 const { buildParticipantProjection } = await import('../src/firebaseProjection.ts');
+const { buildSelfReport } = await import('../src/debriefEngine.ts');
 
 const game = localSessionStore.create(100_000, 100);
 for (let i = 1; i <= 100; i += 1) {
@@ -92,7 +93,7 @@ for (let poolRound = 1; poolRound <= 25; poolRound += 1) {
 localSessionStore.finish(game.code);
 let session = localSessionStore.get(game.code)!;
 for (const player of session.players) {
-  const report = (await import('../src/debriefEngine.ts')).buildSelfReport(session, player.id);
+  const report = buildSelfReport(session, player.id);
   const selected = report.slice(0, Math.min(3, report.length));
   if (selected.length > 0) {
     localSessionStore.submitReflection(
