@@ -151,6 +151,7 @@ const upsertPublicGoodsDecision = (
   groupId: string,
   roundNumber: number,
   amount: number,
+  isBotDecision = false,
 ) => {
   const existing = session.decisions.find((item) =>
     item.type === 'public_goods_contribution' &&
@@ -161,6 +162,7 @@ const upsertPublicGoodsDecision = (
 
   if (existing) {
     existing.amount = amount;
+    existing.isBotDecision = isBotDecision;
     existing.submittedAt = new Date().toISOString();
   } else {
     session.decisions.push({
@@ -171,6 +173,7 @@ const upsertPublicGoodsDecision = (
       amount,
       publicGoodsRound: roundNumber,
       groupId,
+      isBotDecision,
       submittedAt: new Date().toISOString(),
     });
   }
@@ -253,6 +256,57 @@ const reconcileStrategicTimeouts = (session: GameSession, nowMs = Date.now()) =>
   return changed;
 };
 
+const isBotControlledActor = (session: GameSession, playerId: string | 'BOT') =>
+  playerId === 'BOT' || Boolean(session.players.find((player) => player.id === playerId)?.botControlled);
+
+const botPublicGoodsContribution = (session: GameSession, playerId: string) => {
+  const round = currentPublicGoodsRounds(session).find((item) => item.memberIds.includes(playerId));
+  if (!round || round.status !== 'open') return;
+
+  const startingWealth = round.startingPlayerWealth?.[playerId] ?? 0;
+  if (startingWealth <= 0) {
+    round.contributions[playerId] = 0;
+    upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, 0, true);
+    return;
+  }
+
+  const currentHumanRatios = round.memberIds
+    .filter((id) => id !== playerId && !session.players.find((player) => player.id === id)?.botControlled)
+    .map((id) => {
+      const contribution = round.contributions[id];
+      const wealth = round.startingPlayerWealth?.[id] ?? 0;
+      return contribution !== undefined && wealth > 0 ? contribution / wealth : null;
+    })
+    .filter((value): value is number => value !== null);
+
+  const historicalHumanRatios = session.publicGoodsRounds
+    .filter((item) => item.status === 'settled' && item.roundNumber < round.roundNumber)
+    .flatMap((item) =>
+      Object.entries(item.contributions).map(([id, contribution]) => {
+        const decision = session.decisions.find((candidate) =>
+          candidate.type === 'public_goods_contribution' &&
+          candidate.playerId === id &&
+          candidate.groupId === item.groupId &&
+          candidate.publicGoodsRound === item.roundNumber
+        );
+        const wealth = item.startingPlayerWealth?.[id] ?? 0;
+        return decision?.isBotDecision || wealth <= 0 ? null : contribution / wealth;
+      })
+    )
+    .filter((value): value is number => value !== null);
+
+  const source = currentHumanRatios.length ? currentHumanRatios : historicalHumanRatios;
+  const ratio = source.length
+    ? source.reduce((sum, value) => sum + value, 0) / source.length
+    : 0.5;
+  const safeRatio = Math.max(0, Math.min(1, ratio));
+  const amount = Math.min(startingWealth, Math.round(startingWealth * safeRatio));
+
+  round.contributions[playerId] = amount;
+  round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
+  upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, amount, true);
+};
+
 const autoBotDecisions = (session: GameSession, pairingId: string) => {
   const pairing = session.pairings.find((item) => item.id === pairingId);
   if (!pairing) return;
@@ -260,12 +314,12 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
 
   const humanAmounts = (type: Decision['type']) =>
     session.decisions
-      .filter((decision) => decision.type === type && decision.playerId !== 'BOT' && decision.amount !== undefined)
+      .filter((decision) => decision.type === type && decision.playerId !== 'BOT' && !decision.isBotDecision && decision.amount !== undefined)
       .map((decision) => decision.amount as number);
 
   const humanTrustReturnRatios = () =>
     session.decisions
-      .filter((decision) => decision.type === 'trust_return' && decision.playerId !== 'BOT' && decision.amount !== undefined)
+      .filter((decision) => decision.type === 'trust_return' && decision.playerId !== 'BOT' && !decision.isBotDecision && decision.amount !== undefined)
       .map((decision) => {
         const sent = session.decisions.find(
           (candidate) => candidate.pairingId === decision.pairingId && candidate.type === 'trust_send',
@@ -273,11 +327,11 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
         return sent > 0 ? Math.round(((decision.amount ?? 0) / (sent * 3)) * 100) : 0;
       });
 
-  if (pairing.playerA === 'BOT') {
+  if (isBotControlledActor(session, pairing.playerA)) {
     if (pairing.gameId === 'ultimatum' && !pairDecisions().some((d) => d.type === 'ultimatum_offer')) {
       addDecision(session, {
         pairingId: pairing.id,
-        playerId: 'BOT',
+        playerId: pairing.playerA,
         roundKey: pairing.roundKey,
         type: 'ultimatum_offer',
         amount: botUltimatumOffer(humanAmounts('ultimatum_offer'), session.startingCredit),
@@ -287,7 +341,7 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
     if (pairing.gameId === 'dictator' && !pairDecisions().some((d) => d.type === 'dictator_give')) {
       addDecision(session, {
         pairingId: pairing.id,
-        playerId: 'BOT',
+        playerId: pairing.playerA,
         roundKey: pairing.roundKey,
         type: 'dictator_give',
         amount: botGiveAmount(humanAmounts('dictator_give'), session.startingCredit),
@@ -297,7 +351,7 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
     if (pairing.gameId === 'trust' && !pairDecisions().some((d) => d.type === 'trust_send')) {
       addDecision(session, {
         pairingId: pairing.id,
-        playerId: 'BOT',
+        playerId: pairing.playerA,
         roundKey: pairing.roundKey,
         type: 'trust_send',
         amount: botTrustSend(humanAmounts('trust_send'), session.startingCredit),
@@ -308,13 +362,13 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
 
   const current = pairDecisions();
 
-  if (pairing.playerB === 'BOT') {
+  if (isBotControlledActor(session, pairing.playerB)) {
     if (pairing.gameId === 'ultimatum' && !current.some((d) => d.type === 'ultimatum_response')) {
       const offer = current.find((d) => d.type === 'ultimatum_offer')?.amount;
       if (offer !== undefined) {
         addDecision(session, {
           pairingId: pairing.id,
-          playerId: 'BOT',
+          playerId: pairing.playerB,
           roundKey: pairing.roundKey,
           type: 'ultimatum_response',
           accepted: botUltimatumAccepts(offer, session.startingCredit, humanAmounts('ultimatum_offer')),
@@ -327,7 +381,7 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
       if (sent !== undefined) {
         addDecision(session, {
           pairingId: pairing.id,
-          playerId: 'BOT',
+          playerId: pairing.playerB,
           roundKey: pairing.roundKey,
           type: 'trust_return',
           amount: botTrustReturn(sent * 3, humanTrustReturnRatios()),
@@ -607,6 +661,29 @@ export const localSessionStore = {
     return session;
   },
 
+  setPlayerBotControl(code: string, playerId: string, enabled: boolean): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    if (session.roundKey === 'lobby' || session.roundKey === 'report') {
+      throw new Error('BOT-átvétel csak futó játék közben állítható.');
+    }
+    const player = session.players.find((item) => item.id === playerId && !item.isBot);
+    if (!player) throw new Error('A résztvevő nem található.');
+
+    player.botControlled = enabled;
+    if (enabled) player.online = false;
+
+    if (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) {
+      const pairing = this.getPairingForPlayer(session, playerId);
+      if (pairing) autoBotDecisions(session, pairing.id);
+    } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open' && enabled) {
+      botPublicGoodsContribution(session, playerId);
+    }
+
+    write(session);
+    return session;
+  },
+
   isPlayerOnline(player: GameSession['players'][number]) {
     if (!player.lastSeenAt) return false;
     return Date.now() - new Date(player.lastSeenAt).getTime() < 45_000;
@@ -748,6 +825,9 @@ export const localSessionStore = {
     if (reconcileStrategicTimeouts(session)) {
       write(session);
     }
+
+    const player = session.players.find((item) => item.id === playerId);
+    if (player?.botControlled) throw new Error('A játékost jelenleg BOT irányítja.');
 
     const pairing = this.getPairingForPlayer(session, playerId);
     if (!pairing) throw new Error('Nincs párosításod ebben a körben.');
@@ -1136,6 +1216,10 @@ export const localSessionStore = {
       });
     }
 
+    for (const player of session.players.filter((item) => item.botControlled)) {
+      botPublicGoodsContribution(session, player.id);
+    }
+
     write(session);
     return session;
   },
@@ -1148,6 +1232,7 @@ export const localSessionStore = {
 
     const player = session.players.find((item) => item.id === playerId);
     if (!player) throw new Error('A résztvevő nem található.');
+    if (player.botControlled) throw new Error('A játékost jelenleg BOT irányítja.');
     if (!Number.isFinite(amount) || amount < 0 || amount > player.currentBalance) {
       throw new Error('A saját vagyonodon belüli összeget adj meg.');
     }
@@ -1187,7 +1272,10 @@ export const localSessionStore = {
     const rounds = currentPublicGoodsRounds(session);
     for (const round of rounds) {
       for (const playerId of round.memberIds) {
-        if (round.contributions[playerId] === undefined) {
+        if (round.contributions[playerId] !== undefined) continue;
+        if (session.players.find((player) => player.id === playerId)?.botControlled) {
+          botPublicGoodsContribution(session, playerId);
+        } else {
           round.contributions[playerId] = 0;
           upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, 0);
         }
@@ -1276,7 +1364,7 @@ export const localSessionStore = {
     session.status = 'finished';
     session.reflections = session.reflections ?? [];
     const eligibleForReflection = session.players
-      .filter((player) => !player.isBot)
+      .filter((player) => !player.isBot && !player.botControlled)
       .some((player) => buildSelfReport(session, player.id).length > 0);
     session.debriefPhase = eligibleForReflection ? 'reflection' : 'complete';
     write(session);
@@ -1320,7 +1408,7 @@ export const localSessionStore = {
     ];
 
     const eligiblePlayerIds = session.players
-      .filter((item) => !item.isBot && buildSelfReport(session, item.id).length > 0)
+      .filter((item) => !item.isBot && !item.botControlled && buildSelfReport(session, item.id).length > 0)
       .map((item) => item.id);
     const completed = new Set((session.reflections ?? []).map((item) => item.playerId));
     session.debriefPhase = eligiblePlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
