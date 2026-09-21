@@ -105,6 +105,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .trust-transfer-row{grid-template-columns:28px 1fr}
   .trust-move{grid-template-columns:1fr}
   .trust-value{justify-self:start}
+  .public-goods-group-grid{grid-template-columns:1fr}
+  .public-goods-member-row{grid-template-columns:1fr}
+  .member-contribution,.member-wealth-change{white-space:normal}
 
   .choice-grid,.setup-grid{grid-template-columns:1fr}.cockpit-main{grid-template-columns:1fr}.status-strip{grid-template-columns:1fr 1fr}.pool-config-grid{grid-template-columns:1fr 1fr}.pool-config-grid button{grid-column:1/-1}.plan-row{grid-template-columns:1fr}.report-summary-grid{grid-template-columns:1fr 1fr}.qr-inline{align-items:flex-start;flex-direction:column}
 }
@@ -355,6 +358,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .trust-value.high{background:#ede9fe;border:1px solid #c4b5fd;color:#6d28d9}
 .trust-value.pending{background:#f8fafc;border:1px dashed #cbd5e1;color:#64748b}
 .trust-scale-note{margin-top:8px!important}
+.summary-stat.public-goods-summary{grid-column:1/-1}
+.public-goods-round-list{display:grid;gap:12px;margin-top:12px}
+.public-goods-round-card{border:1px solid var(--border);border-radius:13px;background:#f8fafc;overflow:hidden}
+.public-goods-round-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);background:#fff}
+.public-goods-round-head strong{margin:0;font-size:14px}
+.public-goods-round-head span{font-size:10px;color:var(--muted);font-weight:800}
+.public-goods-group-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
+.public-goods-group-summary{border:1px solid var(--border);border-radius:11px;background:#fff;overflow:hidden}
+.public-goods-group-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;padding:10px 11px;border-bottom:1px solid var(--border)}
+.public-goods-group-head>div:first-child{display:grid;gap:2px}
+.public-goods-group-head>div:first-child b{font-size:12px;color:var(--navy)}
+.public-goods-group-head>div:first-child small{margin:0;font-size:9px;color:var(--muted)}
+.pool-total{text-align:right}
+.pool-total span{font-size:9px!important;color:var(--muted);font-weight:800;text-transform:uppercase}
+.pool-total strong{margin:2px 0 0!important;font-size:15px!important;color:var(--navy)}
+.public-goods-member-list{display:grid}
+.public-goods-member-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(210px,auto) minmax(220px,auto);gap:10px;align-items:center;padding:8px 11px;border-bottom:1px solid var(--border);font-size:10px}
+.public-goods-member-row:last-child{border-bottom:0}
+.public-goods-member-row>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155}
+.member-contribution{color:var(--navy);font-weight:850;white-space:nowrap}
+.member-wealth-change{font-weight:850;white-space:nowrap}
+.member-wealth-change.positive{color:#166534}
+.member-wealth-change.negative{color:#991b1b}
+.member-wealth-change.pending{color:var(--muted);font-weight:700}
 
 /* Résztvevői kliens */
 .participant-v2{width:min(600px,calc(100% - 18px));padding-top:10px}
