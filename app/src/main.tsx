@@ -1300,6 +1300,42 @@ function ReportPanel({ session }: { session: GameSession }) {
       }];
     });
 
+  const trustTransfers = session.pairings
+    .filter((pairing) => pairing.gameId === 'trust')
+    .flatMap((pairing) => {
+      const decisions = decisionsFor(session, pairing);
+      const sendDecision = decisions.find((item) => item.type === 'trust_send');
+      if (!sendDecision) return [];
+      const returnDecision = decisions.find((item) => item.type === 'trust_return');
+
+      const sent = sendDecision.amount ?? 0;
+      const returned = returnDecision?.amount;
+      const sendPercent = session.startingCredit > 0
+        ? Math.round((sent / session.startingCredit) * 100)
+        : 0;
+      const returnBase = sent * 3;
+      const returnPercent = returned === undefined
+        ? undefined
+        : returnBase > 0
+          ? Math.round((returned / returnBase) * 100)
+          : 0;
+
+      const bandFor = (percent: number | undefined) =>
+        percent === undefined ? 'pending' : percent <= 30 ? 'low' : percent >= 70 ? 'high' : 'mid';
+
+      return [{
+        pairing,
+        sent,
+        returned,
+        sendPercent,
+        returnPercent,
+        sendBand: bandFor(sendPercent),
+        returnBand: bandFor(returnPercent),
+        sendTimedOut: sendDecision.timedOutRole === 'sender',
+        returnTimedOut: returnDecision?.timedOutRole === 'returner',
+      }];
+    });
+
   return (
     <section className="panel report-panel dashboard-section">
       <div className="section-title">
@@ -1365,10 +1401,52 @@ function ReportPanel({ session }: { session: GameSession }) {
             ))}
           </div>
         </div>
-        <div className="summary-stat">
+        <div className="summary-stat trust-summary">
           <span>Bizalom</span>
-          <strong>{formatCredits(summary.trust.sentAmount)}</strong>
-          <small>elküldve · {formatCredits(summary.trust.returnedAmount)} vissza</small>
+          <strong>{trustTransfers.length} kapcsolat</strong>
+          <small>{formatCredits(summary.trust.sentAmount)} elküldve · {formatCredits(summary.trust.returnedAmount)} vissza</small>
+          <div className="trust-transfer-list">
+            {trustTransfers.length === 0 ? (
+              <div className="ultimatum-empty">Még nincs bizalmi átadás.</div>
+            ) : trustTransfers.map(({
+              pairing,
+              sent,
+              returned,
+              sendPercent,
+              returnPercent,
+              sendBand,
+              returnBand,
+              sendTimedOut,
+              returnTimedOut,
+            }) => (
+              <div className="trust-transfer-row" key={pairing.id}>
+                <span className="offer-round">{pairing.roundKey}</span>
+                <div className="trust-moves">
+                  <div className="trust-move">
+                    <span className="trust-direction">
+                      <b>Oda:</b> {playerName(session, pairing.playerA)} <i>→</i> {playerName(session, pairing.playerB)}
+                    </span>
+                    <span className={'trust-value ' + sendBand}>
+                      {sendTimedOut ? 'idő → 0' : `${formatCredits(sent)} · ${sendPercent}%`}
+                    </span>
+                  </div>
+                  <div className="trust-move">
+                    <span className="trust-direction">
+                      <b>Vissza:</b> {playerName(session, pairing.playerB)} <i>→</i> {playerName(session, pairing.playerA)}
+                    </span>
+                    <span className={'trust-value ' + returnBand}>
+                      {returnTimedOut
+                        ? 'idő → 0'
+                        : returned === undefined
+                          ? 'folyamatban'
+                          : `${formatCredits(returned)} · ${returnPercent}%`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <small className="trust-scale-note">Szín: alacsony ≤30% · kiugróan magas ≥70%. Visszaadásnál a háromszorozott összeghez viszonyítva.</small>
         </div>
         <div className="summary-stat">
           <span>Közös kassza</span>
