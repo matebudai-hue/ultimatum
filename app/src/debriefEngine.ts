@@ -1,30 +1,8 @@
-import { GameSession, Pairing, PublicGoodsRound, StrategicRound } from './gameTypes';
+import { GameSession, Pairing, ParticipantSelfReportItem, PublicGoodsRound, StrategicRound } from './gameTypes';
 
 export type DebriefGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
 
-export type SelfReportItem = {
-  id: string;
-  game: DebriefGame;
-  roundKey: StrategicRound | '4';
-  roundLabel: string;
-  role: 'proposer' | 'receiver' | 'dictator' | 'sender' | 'returner' | 'contributor';
-  playerId: string;
-  pairingId?: string;
-  publicGoodsRound?: number;
-  groupId?: string;
-  amount?: number;
-  accepted?: boolean;
-  sentAmount?: number;
-  multipliedAmount?: number;
-  returnedAmount?: number;
-  keptAmount?: number;
-  startingWealth?: number;
-  contributionAmount?: number;
-  ownWealthPercent?: number;
-  potPercent?: number;
-  payout?: number;
-  netAmount?: number;
-};
+export type SelfReportItem = ParticipantSelfReportItem;
 
 export type GroupPicture = {
   ultimatum: {
