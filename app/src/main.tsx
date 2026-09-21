@@ -2325,8 +2325,8 @@ function DebriefEventSummary({
 }
 
 function LiveDebriefNotes({ session }: { session: GameSession }) {
-  const highlightedEvents = buildHighlightedEvents(session);
-  const allEvents = buildInterestingEvents(session);
+  const highlightedEvents = useMemo(() => buildHighlightedEvents(session), [session]);
+  const allEvents = useMemo(() => buildInterestingEvents(session), [session]);
   const pinnedIds = new Set(session.pinnedDebriefEventIds ?? []);
   const pinnedEvents = allEvents.filter((item) => pinnedIds.has(item.id));
 
