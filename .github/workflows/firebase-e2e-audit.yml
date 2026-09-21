@@ -99,7 +99,7 @@ jobs:
               authUid:{stringValue:$uid},
               name:{stringValue:"Audit Player Random"},
               joinedAt:{stringValue:"audit"},
-              lastSeenAt:{stringValue:"audit"},
+              lastSeenAt:{timestampValue:"2026-09-21T17:03:07Z"},
               commands:{mapValue:{fields:{}}}
             }}')
           PLAYER_BODY_UID=$(jq -nc --arg pid "$PLAYER_UID" --arg uid "$PLAYER_UID" '{
@@ -108,7 +108,7 @@ jobs:
               authUid:{stringValue:$uid},
               name:{stringValue:"Audit Player UID"},
               joinedAt:{stringValue:"audit"},
-              lastSeenAt:{stringValue:"audit"},
+              lastSeenAt:{timestampValue:"2026-09-21T17:03:07Z"},
               commands:{mapValue:{fields:{}}}
             }}')
 
