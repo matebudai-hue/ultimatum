@@ -447,7 +447,7 @@ function testPublicGoodsControl(code: string, count: number) {
     assert.ok(state.groups.every((group) => group.memberIds.length === 4), '100 fő / 25 csoport esetén minden csoport 4 fős.');
   }
 
-  assert.equal(canFinishPublicGoodsGame(state), false, 'A Közös kassza kezdetén még nem zárható le a teljes játék.');
+  assert.equal(canFinishPublicGoodsGame(state), true, 'A teljes játék lezárása már a Közös kassza kezdetétől elérhető.');
 
   // 1. kör: csoportonként eltérő minimum-beállítás.
   state.groups.forEach((group, index) => {
@@ -458,7 +458,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.startPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'open');
-  assert.equal(canFinishPublicGoodsGame(state), false, 'Futó kasszakör közben nem zárható le a teljes játék.');
+  assert.equal(canFinishPublicGoodsGame(state), true, 'Futó kasszakör közben is elérhető a teljes játék lezárása.');
   assert.ok(state.publicGoodsDeadlineAt);
   assert.ok(localSessionStore.publicGoodsSecondsLeft(state) <= 60);
 
@@ -479,7 +479,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.lockPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'locked');
-  assert.equal(canFinishPublicGoodsGame(state), false, 'Lezárt, még el nem számolt kasszakörnél nem zárható le a teljes játék.');
+  assert.equal(canFinishPublicGoodsGame(state), true, 'Lezárt, még el nem számolt kasszakörnél is elérhető a teljes játék lezárása.');
   assert.deepEqual(Object.fromEntries(state.players.map((p) => [p.id, p.currentBalance])), beforeSettle, 'Tétzáráskor még nincs könyvelés.');
   assert.throws(() => localSessionStore.submitPublicGoods(code, firstPlayer.id, 0));
 
@@ -487,7 +487,7 @@ function testPublicGoodsControl(code: string, count: number) {
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'setup');
   assert.equal(state.publicGoodsRoundNumber, 1);
-  assert.equal(canFinishPublicGoodsGame(state), true, 'Az első elszámolt kasszakör után, két kör között megjelenhet a teljes játék lezárása.');
+  assert.equal(canFinishPublicGoodsGame(state), true, 'Két kasszakör között is elérhető a teljes játék lezárása.');
   assert.ok(state.publicGoodsRounds.filter((r) => r.roundNumber === 1).every((r) => r.status === 'settled'));
   assert.ok(state.groups.every((group) => group.nextMinimumMode === 'none'), 'A következő kör minimuma alapból visszaáll: nincs minimum.');
 
@@ -534,6 +534,38 @@ function testPublicGoodsControl(code: string, count: number) {
   assert.ok(csv.includes('VAGYON'));
   assert.ok(csv.includes('KÖZÖS KASSZA'));
   console.log(`FLOW OK: ${count} résztvevő, 1a–3b, 3 trénervezérelt kasszakör, riport`);
+}
+
+function testPublicGoodsCanFinishImmediatelyOrMidRound() {
+  const immediateCode = runStrategicStage(4);
+  let state = localSessionStore.get(immediateCode)!;
+  assert.equal(canFinishPublicGoodsGame(state), true);
+  localSessionStore.finish(immediateCode);
+  state = localSessionStore.get(immediateCode)!;
+  assert.equal(state.roundKey, 'report');
+  assert.equal(state.status, 'finished');
+  assert.equal(state.publicGoodsRoundNumber, 0, 'A Közös kassza kör nélkül is lezárható.');
+
+  const midRoundCode = runStrategicStage(4);
+  state = localSessionStore.get(midRoundCode)!;
+  localSessionStore.randomizeGroups(midRoundCode, 1);
+  localSessionStore.startPublicGoodsRound(midRoundCode);
+  state = localSessionStore.get(midRoundCode)!;
+  localSessionStore.submitPublicGoods(midRoundCode, state.players[0].id, Math.min(1000, state.players[0].currentBalance));
+  assert.equal(canFinishPublicGoodsGame(localSessionStore.get(midRoundCode)!), true);
+  localSessionStore.finish(midRoundCode);
+  state = localSessionStore.get(midRoundCode)!;
+  assert.equal(state.roundKey, 'report');
+  assert.equal(state.status, 'finished');
+  assert.equal(state.publicGoodsRoundNumber, 0, 'A félbehagyott kasszakör ne számítson elszámolt körnek.');
+  assert.equal(state.publicGoodsRounds.length, 0, 'A félbehagyott kasszakör ne maradjon a riportban.');
+  assert.equal(
+    state.decisions.some((decision) => decision.type === 'public_goods_contribution'),
+    false,
+    'A félbehagyott kasszakör tétjei ne kerüljenek a végső riportba.',
+  );
+
+  console.log('PUBLIC GOODS FINISH ANYTIME OK');
 }
 
 function testManualCorrections() {
@@ -608,6 +640,7 @@ for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
   testPublicGoodsControl(code, count);
 }
 testMissingStakeBecomesZero();
+testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
 console.log('ALL FLOW TESTS PASSED');
 process.exit(0);
