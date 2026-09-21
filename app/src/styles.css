@@ -1244,3 +1244,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 
 .reflection-saving-note{margin:7px 0 0!important;text-align:center;font-size:9px;color:var(--muted)}
+
+
+/* Personal report export */
+.self-report-export-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.self-report-export-actions button{min-height:44px}
+.self-report-export-help{margin:7px 0 0!important;text-align:center;font-size:9px!important;color:var(--muted)!important}
+.self-report-export-status{margin-top:8px;padding:8px 10px;border:1px solid #bbf7d0;border-radius:9px;background:#f0fdf4;color:#166534;font-size:9px;line-height:1.4;text-align:center}
+
+@media(max-width:480px){
+  .self-report-export-actions{grid-template-columns:1fr}
+}
+
+@media print{
+  html[data-print-self-report="true"] body *{visibility:hidden!important}
+  html[data-print-self-report="true"] .game-finish,
+  html[data-print-self-report="true"] .game-finish *{visibility:visible!important}
+  html[data-print-self-report="true"] .game-finish{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;background:#fff!important;color:#111!important}
+  html[data-print-self-report="true"] .self-report-export-actions,
+  html[data-print-self-report="true"] .self-report-export-help,
+  html[data-print-self-report="true"] .self-report-export-status{display:none!important}
+  html[data-print-self-report="true"] .final-summary,
+  html[data-print-self-report="true"] .participant-own-report-item{break-inside:avoid;page-break-inside:avoid}
+  html[data-print-self-report="true"] .participant-own-report-grid{gap:6px}
+  html[data-print-self-report="true"] .participant-own-report-item{border:1px solid #d1d5db!important;background:#fff!important}
+  html[data-print-self-report="true"] .participant-own-report-item.highlighted{border:2px solid #d6b88a!important;background:#fffaf5!important}
+  @page{margin:14mm}
+}
