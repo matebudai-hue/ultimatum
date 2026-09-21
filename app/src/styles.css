@@ -26,7 +26,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .danger{background:#fee2e2;color:#991b1b}
 .big{width:100%;min-height:56px;font-size:16px}
 .field,.compact-field{display:grid;gap:7px;font-weight:800}
-.field input,.compact-field input,.custom-minimum input,.manual-group-list select{width:100%;min-height:48px;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;background:#fff}
+.field input,.compact-field input,.custom-minimum input,.manual-group-list select,.manual-assignment-grid select{width:100%;min-height:48px;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;background:#fff}
 .field small{font-weight:500;color:var(--muted);line-height:1.4}
 .choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .choice-card{min-height:180px;border:0;border-radius:22px;padding:24px;text-align:left;background:var(--navy);color:#fff;display:grid;align-content:start;gap:12px}
@@ -80,6 +80,34 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .public-goods-panel{padding:20px}
 .pool-planning{border:1px solid var(--border);border-radius:16px;background:var(--soft);padding:14px;margin-bottom:16px}
+.pool-setup-flow{display:grid;gap:10px;background:#f8fafc}
+.pool-setup-step{border:1px solid var(--border);border-radius:13px;background:#fff;overflow:hidden}
+.pool-setup-step-head{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:#fbfdff}
+.pool-setup-step-head>div{display:grid;gap:2px;min-width:0;flex:1}
+.pool-setup-step-head>div strong{font-size:13px;color:var(--navy)}
+.pool-setup-step-head>div small{font-size:9px;color:var(--muted);line-height:1.35}
+.pool-step-number{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:7px;background:var(--navy);color:#fff;font-size:10px;font-weight:950}
+.pool-step-status{flex:0 0 auto;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:950;text-transform:uppercase}
+.pool-step-status.ready{background:var(--success-bg);border:1px solid var(--success-border);color:#166534}
+.pool-step-status.needs-action{background:var(--warning-bg);border:1px solid var(--warning-border);color:#92400e}
+.pool-setup-step .pool-config-grid{padding:11px 12px;grid-template-columns:180px minmax(150px,1fr) minmax(150px,1fr);align-items:end}
+.manual-group-button{background:#e8eef6}
+.manual-assignment-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:9px 12px 5px;border-top:1px solid var(--border)}
+.manual-assignment-head strong{font-size:11px;color:var(--navy)}
+.manual-assignment-head span{font-size:9px;color:var(--muted)}
+.manual-assignment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:7px;padding:7px 12px 12px}
+.manual-assignment-grid label{display:grid;grid-template-columns:minmax(90px,1fr) minmax(130px,1fr);gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--border);border-radius:9px;background:#f8fafc;font-size:11px;font-weight:800}
+.manual-assignment-grid select{min-height:36px;padding:6px 8px;border-radius:8px;font-size:10px}
+.minimum-setup-list{display:grid}
+.minimum-setup-row{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(330px,1.7fr) minmax(120px,.7fr);gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border)}
+.minimum-setup-row:last-child{border-bottom:0}
+.minimum-setup-row.empty-group{background:#fff7ed}
+.minimum-group-ident{display:grid;gap:2px}
+.minimum-group-ident strong{font-size:12px;color:var(--navy)}
+.minimum-group-ident span{font-size:9px;color:var(--muted)}
+.minimum-result{text-align:right;font-size:10px;font-weight:900;color:#334155;white-space:nowrap}
+.pool-setup-empty{padding:12px;color:var(--muted);font-size:10px}
+.pool-start-step .pool-setup-step-head{border-bottom:0}
 .pool-config-grid{display:grid;grid-template-columns:180px 180px auto;gap:10px;align-items:end}
 .round-plan{display:grid;gap:7px;margin-top:14px}
 .plan-row{display:grid;grid-template-columns:70px 80px 1fr;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #e7ecf1}.plan-row.done{opacity:.55}
@@ -216,7 +244,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .timeline-stage.done .timeline-index{background:var(--success);color:#fff}
 .timeline-line{height:2px;min-width:28px;flex:1;background:#dbe3ec;margin:0 8px}
 
-.trainer-pulse{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:16px 20px}
+.trainer-pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:16px 20px}
 .pulse-card{position:relative;border:1px solid var(--border);border-radius:15px;padding:12px 13px;background:#fff;overflow:hidden;min-width:0}
 .pulse-card>span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:900}
 .pulse-card>strong{display:block;margin-top:3px;font-size:24px;letter-spacing:-.02em;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -226,6 +254,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pulse-card.danger-card{background:var(--danger-bg);border-color:var(--danger-border)}
 .pulse-card.danger-card>strong{color:var(--danger)}
 .pulse-card.neutral-card{background:#f8fafc;border-color:#e2e8f0}
+.pulse-card.time-active{background:#eff6ff;border-color:#bfdbfe}
+.pulse-card.time-active>strong{color:#1d4ed8}
 .metric-credit{font-size:18px!important;white-space:nowrap}
 .metric-progress{position:absolute;left:0;right:0;bottom:0;height:4px;background:#e7edf4}
 .metric-progress i{display:block;height:100%;background:var(--turq);transition:width .25s ease}
@@ -1034,4 +1064,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .public-goods-analysis .public-goods-member-row>b{grid-column:auto}
   .public-goods-group-head{align-items:flex-start;flex-direction:column}
   .pool-total{text-align:left}
+}
+
+@media(max-width:900px){
+  .pool-setup-step .pool-config-grid{grid-template-columns:1fr 1fr}
+  .pool-setup-step .pool-config-grid .compact-field{grid-column:1/-1}
+  .minimum-setup-row{grid-template-columns:1fr}
+  .minimum-result{text-align:left}
+}
+@media(max-width:560px){
+  .pool-setup-step .pool-config-grid{grid-template-columns:1fr}
+  .pool-setup-step .pool-config-grid .compact-field{grid-column:auto}
+  .manual-assignment-head{align-items:flex-start;flex-direction:column;gap:3px}
+  .manual-assignment-grid{grid-template-columns:1fr}
+  .manual-assignment-grid label{grid-template-columns:1fr}
+  .pool-step-status{display:none}
 }
