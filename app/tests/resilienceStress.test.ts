@@ -190,10 +190,13 @@ function mediumDropoutCase() {
   // 3a: harmadik játékost ideiglenesen BOT vesz át.
   const returnsLater = 'medium-5';
   localSessionStore.setPlayerBotControl(code, returnsLater, true);
-  closeAndAdvanceStrategic(code);
+  submitMissingStrategicDecisions(code);
+  localSessionStore.closeStrategicRound(code);
 
-  // 3b-ra visszatér, a tréner visszaadja az irányítást.
+  // 3b indulása ELŐTT visszatér: a tréner visszaadja az irányítást,
+  // így a következő még el nem döntött helyzetben ismét emberként játszik.
   localSessionStore.setPlayerBotControl(code, returnsLater, false);
+  localSessionStore.nextRound(code);
   closeAndAdvanceStrategic(code);
   state = localSessionStore.get(code)!;
   const pairing3b = state.pairings.find(
