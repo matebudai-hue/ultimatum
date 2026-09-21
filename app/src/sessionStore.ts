@@ -27,8 +27,8 @@ import { buildSixRoundPairingSchedule, STRATEGIC_ROUNDS } from './pairingEngine'
 
 type Listener = (session: GameSession | null) => void;
 
-export const canFinishPublicGoodsGame = (session: GameSession) =>
-  session.roundKey === '4';
+export const canFinishGame = (session: GameSession) =>
+  session.status === 'active' && session.roundKey !== 'lobby' && session.roundKey !== 'report';
 
 const PREFIX = 'kreditjatek_session_';
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('kreditjatek_dev') : null;
@@ -1187,11 +1187,21 @@ export const localSessionStore = {
   finish(code: string): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
-    if (session.roundKey !== '4') throw new Error('A játék innen nem zárható le.');
+    if (!canFinishGame(session)) throw new Error('A játék most nem zárható le.');
 
-    // Ha a tréner futó, még el nem számolt kasszakör közben zárja le
-    // a teljes játékot, az aktuális kör nem kerül könyvelésre.
-    if (session.publicGoodsPhase !== 'setup') {
+    if (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) {
+      const completedRounds = new Set(session.closedRounds);
+      session.decisions = session.decisions.filter((decision) =>
+        !STRATEGIC_ROUNDS.includes(decision.roundKey as StrategicRound) ||
+        completedRounds.has(decision.roundKey as StrategicRound)
+      );
+      session.pairings = session.pairings.filter((pairing) => completedRounds.has(pairing.roundKey));
+      session.strategicTaskSeenAt = {};
+      session.strategicSubmitIntentAt = {};
+      session.strategicTechnicalIssues = [];
+    }
+
+    if (session.roundKey === '4' && session.publicGoodsPhase !== 'setup') {
       const unfinishedRound = session.publicGoodsRoundNumber;
       session.publicGoodsRounds = session.publicGoodsRounds.filter(
         (round) => round.roundNumber !== unfinishedRound || round.status === 'settled',
