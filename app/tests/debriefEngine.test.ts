@@ -210,6 +210,12 @@ function testTrustSymmetryAndReciprocity() {
 
   assert.ok(highHigh, 'Az erős pozitív viszonzás legyen érdekes esemény.');
   assert.ok(symmetric, 'A közel azonos végeredmény legyen külön érdekes esemény.');
+  const boundary = events.find((item) => item.kind === 'ultimatum_acceptance_boundary');
+  assert.equal(
+    boundary?.id,
+    'debrief:ultimatum_acceptance_boundary:group',
+    'Az elfogadási határ csoportszintű eseményazonosítója maradjon stabil.',
+  );
   assert.equal(symmetric?.facts.senderOutcome, 150_000);
   assert.equal(symmetric?.facts.returnerOutcome, 150_000);
 
