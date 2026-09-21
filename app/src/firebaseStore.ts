@@ -21,7 +21,8 @@ type CommandType =
   | 'ackStrategicTaskVisible'
   | 'markStrategicSubmitIntent'
   | 'submitStrategicDecision'
-  | 'submitPublicGoods';
+  | 'submitPublicGoods'
+  | 'submitReflection';
 
 type PlayerCommand = {
   id: string;
@@ -173,6 +174,8 @@ const placeholderSession = (
   publicGoodsPhase: 'setup',
   publicGoodsRounds: [],
   pinnedDebriefEventIds: [],
+  reflections: [],
+  selfReport: [],
 });
 
 const emitSyncStatus = (status: 'ok' | 'error', message?: string) => {
@@ -296,8 +299,21 @@ const applyCommand = (
     return { session, affected };
   }
 
-  const amount = Number(command.payload?.amount ?? 0);
-  const session = localSessionStore.submitPublicGoods(code, playerId, amount);
+  if (command.type === 'submitPublicGoods') {
+    const amount = Number(command.payload?.amount ?? 0);
+    const session = localSessionStore.submitPublicGoods(code, playerId, amount);
+    return { session, affected: [playerId] };
+  }
+
+  const rawItems = Array.isArray(command.payload?.items) ? command.payload.items : [];
+  const items = rawItems.map((item) => {
+    const value = item as Record<string, unknown>;
+    return {
+      decisionId: String(value.decisionId ?? ''),
+      comment: String(value.comment ?? ''),
+    };
+  });
+  const session = localSessionStore.submitReflection(code, playerId, items);
   return { session, affected: [playerId] };
 };
 
@@ -767,6 +783,15 @@ export const firebaseSessionStore = {
   finish(code: string) {
     const session = localSessionStore.finish(code);
     return trainerMutation(code, () => session, allPlayers(session));
+  },
+
+  submitReflection(code: string, playerId: string, items: Array<{ decisionId: string; comment: string }>) {
+    if (role() === 'player') {
+      void appendCommand(code, 'submitReflection', { items });
+      return this.get(code) as GameSession;
+    }
+    const session = localSessionStore.submitReflection(code, playerId, items);
+    return trainerMutation(code, () => session, [playerId]);
   },
 
   subscribe(code: string, listener: Listener) {
