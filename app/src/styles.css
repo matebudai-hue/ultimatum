@@ -1242,3 +1242,5 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .reflection-selection-status{align-items:flex-start;flex-direction:column;gap:2px}
   .participant-reflection-comment{padding-left:12px}
 }
+
+.reflection-saving-note{margin:7px 0 0!important;text-align:center;font-size:9px;color:var(--muted)}
