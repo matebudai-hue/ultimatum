@@ -51,6 +51,7 @@ export const buildSelfReportShareText = (
   playerName: string,
   report: ParticipantSelfReportItem[],
   reflections: ParticipantReflection[],
+  summary?: { firstStage: number; publicGoodsResult: number; finalWealth: number },
 ): string => {
   const reflectionByDecision = new Map(reflections.map((item) => [item.decisionId, item]));
   const lines = [
@@ -58,6 +59,16 @@ export const buildSelfReportShareText = (
     playerName ? playerName : '',
     '',
   ].filter((line, index) => line || index !== 1);
+
+  if (summary) {
+    lines.push(
+      'ÖSSZESÍTÉS',
+      `Az első három játék után: ${credits(summary.firstStage)}`,
+      `Közös kassza eredménye: ${signedCredits(summary.publicGoodsResult)}`,
+      `Végső vagyon: ${credits(summary.finalWealth)}`,
+      '',
+    );
+  }
 
   for (const item of report) {
     lines.push(...selfReportItemText(item));
