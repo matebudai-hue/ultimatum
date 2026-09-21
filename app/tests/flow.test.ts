@@ -9,7 +9,7 @@ Object.defineProperty(globalThis, 'sessionStorage', { value: dom.window.sessionS
 Object.defineProperty(globalThis, 'CustomEvent', { value: dom.window.CustomEvent, configurable: true });
 Object.defineProperty(globalThis, 'StorageEvent', { value: dom.window.StorageEvent, configurable: true });
 
-const { localSessionStore, canFinishPublicGoodsGame } = await import('../src/sessionStore.ts');
+const { localSessionStore, canFinishGame } = await import('../src/sessionStore.ts');
 const { createCsv } = await import('../src/report.ts');
 const { pairingRepeatStats } = await import('../src/pairingEngine.ts');
 const { settleUltimatum, settleOneWayGive, settleTrust, settlePublicGoods } = await import('../src/gameEngine.ts');
@@ -432,6 +432,37 @@ function runStrategicStage(count: number) {
   return session.code;
 }
 
+function testFinishAvailableFromFirstActiveRound() {
+  const game = localSessionStore.create(100_000, 2);
+  localSessionStore.join(game.code, 'finish-a', 'A');
+  localSessionStore.join(game.code, 'finish-b', 'B');
+
+  let state = localSessionStore.get(game.code)!;
+  assert.equal(canFinishGame(state), false, 'A lobbyban a teljes játék lezárása még ne legyen aktív.');
+
+  state = localSessionStore.startGame(game.code);
+  assert.equal(state.roundKey, '1a');
+  assert.equal(canFinishGame(state), true, 'A Játék indítása után azonnal legyen aktív a teljes játék lezárása.');
+
+  const pairing = state.pairings.find((item) => item.roundKey === '1a')!;
+  localSessionStore.submitStrategicDecision(game.code, pairing.playerA, {
+    type: 'ultimatum_offer',
+    amount: 40_000,
+  });
+  state = localSessionStore.get(game.code)!;
+  assert.equal(state.decisions.length > 0, true, 'Legyen félkész döntés a lezárás előtt.');
+
+  localSessionStore.finish(game.code);
+  state = localSessionStore.get(game.code)!;
+  assert.equal(state.roundKey, 'report');
+  assert.equal(state.status, 'finished');
+  assert.equal(state.decisions.length, 0, 'A félbehagyott 1a döntései ne kerüljenek a végső riportba.');
+  assert.equal(state.pairings.length, 0, 'A még le nem játszott párosítások ne kerüljenek a végső riportba.');
+  assert.equal(canFinishGame(state), false, 'Lezárt játékot ne lehessen újra lezárni.');
+
+  console.log('FINISH AVAILABLE FROM 1A OK');
+}
+
 function testPublicGoodsControl(code: string, count: number) {
   let state = localSessionStore.get(code)!;
   const groupCount = count === 100 ? 25 : count >= 20 ? 5 : count >= 4 ? 2 : 1;
@@ -447,7 +478,7 @@ function testPublicGoodsControl(code: string, count: number) {
     assert.ok(state.groups.every((group) => group.memberIds.length === 4), '100 fő / 25 csoport esetén minden csoport 4 fős.');
   }
 
-  assert.equal(canFinishPublicGoodsGame(state), true, 'A teljes játék lezárása már a Közös kassza kezdetétől elérhető.');
+  assert.equal(canFinishGame(state), true, 'A teljes játék lezárása már a Közös kassza kezdetétől elérhető.');
 
   // 1. kör: csoportonként eltérő minimum-beállítás.
   state.groups.forEach((group, index) => {
@@ -458,7 +489,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.startPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'open');
-  assert.equal(canFinishPublicGoodsGame(state), true, 'Futó kasszakör közben is elérhető a teljes játék lezárása.');
+  assert.equal(canFinishGame(state), true, 'Futó kasszakör közben is elérhető a teljes játék lezárása.');
   assert.ok(state.publicGoodsDeadlineAt);
   assert.ok(localSessionStore.publicGoodsSecondsLeft(state) <= 60);
 
@@ -479,7 +510,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.lockPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'locked');
-  assert.equal(canFinishPublicGoodsGame(state), true, 'Lezárt, még el nem számolt kasszakörnél is elérhető a teljes játék lezárása.');
+  assert.equal(canFinishGame(state), true, 'Lezárt, még el nem számolt kasszakörnél is elérhető a teljes játék lezárása.');
   assert.deepEqual(Object.fromEntries(state.players.map((p) => [p.id, p.currentBalance])), beforeSettle, 'Tétzáráskor még nincs könyvelés.');
   assert.throws(() => localSessionStore.submitPublicGoods(code, firstPlayer.id, 0));
 
@@ -487,7 +518,7 @@ function testPublicGoodsControl(code: string, count: number) {
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'setup');
   assert.equal(state.publicGoodsRoundNumber, 1);
-  assert.equal(canFinishPublicGoodsGame(state), true, 'Két kasszakör között is elérhető a teljes játék lezárása.');
+  assert.equal(canFinishGame(state), true, 'Két kasszakör között is elérhető a teljes játék lezárása.');
   assert.ok(state.publicGoodsRounds.filter((r) => r.roundNumber === 1).every((r) => r.status === 'settled'));
   assert.ok(state.groups.every((group) => group.nextMinimumMode === 'none'), 'A következő kör minimuma alapból visszaáll: nincs minimum.');
 
@@ -539,7 +570,7 @@ function testPublicGoodsControl(code: string, count: number) {
 function testPublicGoodsCanFinishImmediatelyOrMidRound() {
   const immediateCode = runStrategicStage(4);
   let state = localSessionStore.get(immediateCode)!;
-  assert.equal(canFinishPublicGoodsGame(state), true);
+  assert.equal(canFinishGame(state), true);
   localSessionStore.finish(immediateCode);
   state = localSessionStore.get(immediateCode)!;
   assert.equal(state.roundKey, 'report');
@@ -552,7 +583,7 @@ function testPublicGoodsCanFinishImmediatelyOrMidRound() {
   localSessionStore.startPublicGoodsRound(midRoundCode);
   state = localSessionStore.get(midRoundCode)!;
   localSessionStore.submitPublicGoods(midRoundCode, state.players[0].id, Math.min(1000, state.players[0].currentBalance));
-  assert.equal(canFinishPublicGoodsGame(localSessionStore.get(midRoundCode)!), true);
+  assert.equal(canFinishGame(localSessionStore.get(midRoundCode)!), true);
   localSessionStore.finish(midRoundCode);
   state = localSessionStore.get(midRoundCode)!;
   assert.equal(state.roundKey, 'report');
@@ -635,6 +666,7 @@ testStrategicTechnicalProtectionBeyondUltimatum();
 testRecordedSubmitIntentSurvivesNetworkDelay();
 testSettlementRules();
 testPairingInvariantsForAllSupportedCounts();
+testFinishAvailableFromFirstActiveRound();
 for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
   const code = runStrategicStage(count);
   testPublicGoodsControl(code, count);
