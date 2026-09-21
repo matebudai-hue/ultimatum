@@ -51,6 +51,7 @@ const read = (code: string): GameSession | null => {
     firstStageFinalBalance: parsed.firstStageFinalBalance ?? {},
     publicGoodsRounds: parsed.publicGoodsRounds ?? [],
     groups: parsed.groups ?? [],
+    pinnedDebriefEventIds: parsed.pinnedDebriefEventIds ?? [],
   };
 };
 
@@ -524,6 +525,7 @@ export const localSessionStore = {
       publicGoodsRoundNumber: 0,
       publicGoodsPhase: 'setup',
       publicGoodsRounds: [],
+      pinnedDebriefEventIds: [],
     };
     write(session);
     return session;
@@ -1055,6 +1057,21 @@ export const localSessionStore = {
     const target = session.groups.find((group) => group.id === groupId);
     if (!target) throw new Error('Nincs ilyen csoport.');
     target.memberIds.push(playerId);
+    write(session);
+    return session;
+  },
+
+  togglePinnedDebriefEvent(code: string, eventId: string): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    const cleanId = eventId.trim();
+    if (!cleanId.startsWith('debrief:') || cleanId.length > 300) {
+      throw new Error('Érvénytelen kivezetési esemény.');
+    }
+    const pinned = new Set(session.pinnedDebriefEventIds ?? []);
+    if (pinned.has(cleanId)) pinned.delete(cleanId);
+    else pinned.add(cleanId);
+    session.pinnedDebriefEventIds = [...pinned];
     write(session);
     return session;
   },
