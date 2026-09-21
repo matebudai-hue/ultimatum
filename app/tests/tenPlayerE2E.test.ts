@@ -275,3 +275,4 @@ console.log('10-PLAYER END-TO-END ROOM TEST OK', {
   selfReportItemsPerPlayer: firstReport.length,
   projectionSteps: story.steps.length,
 });
+process.exit(0);
