@@ -36,6 +36,7 @@ export type GroupPicture = {
       ownWealthPercent: number | null;
       potPercent: number | null;
       netAmount: number;
+      automated: boolean;
     }>;
   }>;
 };
@@ -88,7 +89,8 @@ const humanPairings = (session: GameSession, gameId?: Pairing['gameId']) =>
     (!gameId || pairing.gameId === gameId) &&
     pairing.playerA !== 'BOT' &&
     pairing.playerB !== 'BOT' &&
-    session.closedRounds.includes(pairing.roundKey),
+    session.closedRounds.includes(pairing.roundKey) &&
+    !session.decisions.some((decision) => decision.pairingId === pairing.id && decision.isBotDecision),
   );
 
 const decisionsForPair = (session: GameSession, pairingId: string) =>
@@ -118,6 +120,13 @@ const publicGoodsFacts = (session: GameSession, round: PublicGoodsRound, playerI
   const contribution = round.contributions[playerId] ?? 0;
   const startingWealth = round.startingPlayerWealth?.[playerId] ?? 0;
   const total = round.totalContribution || Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
+  const automated = session.decisions.some((decision) =>
+    decision.type === 'public_goods_contribution' &&
+    decision.playerId === playerId &&
+    decision.groupId === round.groupId &&
+    decision.publicGoodsRound === round.roundNumber &&
+    decision.isBotDecision
+  );
   return {
     contribution,
     startingWealth,
@@ -125,6 +134,7 @@ const publicGoodsFacts = (session: GameSession, round: PublicGoodsRound, playerI
     potPercent: roundedPercent(contribution, total),
     payout: round.success ? round.payoutPerPlayer ?? 0 : 0,
     netAmount: publicGoodsNet(session, round, playerId),
+    automated,
   };
 };
 
@@ -137,9 +147,11 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
     const isA = pairing.playerA === playerId;
 
     if (pairing.gameId === 'ultimatum') {
-      const offer = decisions.find((item) => item.type === 'ultimatum_offer')?.amount ?? 0;
+      const offerDecision = decisions.find((item) => item.type === 'ultimatum_offer');
+      const responseDecision = decisions.find((item) => item.type === 'ultimatum_response');
+      const offer = offerDecision?.amount ?? 0;
       const timedOut = decisions.some((item) => item.type === 'ultimatum_timeout');
-      const accepted = timedOut ? false : decisions.find((item) => item.type === 'ultimatum_response')?.accepted ?? false;
+      const accepted = timedOut ? false : responseDecision?.accepted ?? false;
       items.push({
         id: selfDecisionId('ultimatum', isA ? 'proposer' : 'receiver', pairing.id),
         game: 'ultimatum',
@@ -150,13 +162,15 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
         pairingId: pairing.id,
         amount: offer,
         accepted,
+        isBotDecision: isA ? Boolean(offerDecision?.isBotDecision) : Boolean(responseDecision?.isBotDecision),
       });
       continue;
     }
 
     if (pairing.gameId === 'dictator') {
       if (!isA) continue;
-      const amount = decisions.find((item) => item.type === 'dictator_give')?.amount ?? 0;
+      const dictatorDecision = decisions.find((item) => item.type === 'dictator_give');
+      const amount = dictatorDecision?.amount ?? 0;
       items.push({
         id: selfDecisionId('dictator', 'dictator', pairing.id),
         game: 'dictator',
@@ -167,12 +181,15 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
         pairingId: pairing.id,
         amount,
         keptAmount: Math.max(0, session.startingCredit - amount),
+        isBotDecision: Boolean(dictatorDecision?.isBotDecision),
       });
       continue;
     }
 
-    const sentAmount = decisions.find((item) => item.type === 'trust_send')?.amount ?? 0;
-    const returnedAmount = decisions.find((item) => item.type === 'trust_return')?.amount ?? 0;
+    const sendDecision = decisions.find((item) => item.type === 'trust_send');
+    const returnDecision = decisions.find((item) => item.type === 'trust_return');
+    const sentAmount = sendDecision?.amount ?? 0;
+    const returnedAmount = returnDecision?.amount ?? 0;
     const multipliedAmount = sentAmount * 3;
     items.push({
       id: selfDecisionId('trust', isA ? 'sender' : 'returner', pairing.id),
@@ -186,6 +203,7 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
       multipliedAmount,
       returnedAmount,
       keptAmount: isA ? undefined : Math.max(0, multipliedAmount - returnedAmount),
+      isBotDecision: isA ? Boolean(sendDecision?.isBotDecision) : Boolean(returnDecision?.isBotDecision),
     });
   }
 
@@ -206,6 +224,7 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
       potPercent: facts.potPercent ?? undefined,
       payout: facts.payout,
       netAmount: facts.netAmount,
+      isBotDecision: facts.automated,
     });
   }
 
@@ -255,6 +274,7 @@ export const buildGroupPicture = (session: GameSession): GroupPicture => {
           ownWealthPercent: facts.ownWealthPercent,
           potPercent: facts.potPercent,
           netAmount: facts.netAmount,
+          automated: facts.automated,
         };
       }),
     }));
@@ -512,7 +532,9 @@ export const buildInterestingEvents = (session: GameSession): InterestingEvent[]
 
   const settledPoolRounds = session.publicGoodsRounds.filter((round) => round.status === 'settled');
   for (const round of settledPoolRounds) {
-    const rows = round.memberIds.map((playerId) => ({ playerId, ...publicGoodsFacts(session, round, playerId) }));
+    const rows = round.memberIds
+      .map((playerId) => ({ playerId, ...publicGoodsFacts(session, round, playerId) }))
+      .filter((row) => !row.automated);
     const ownRatios = rows.map((row) => row.ownWealthPercent ?? 0);
     const minOwnRatio = ownRatios.length ? Math.min(...ownRatios) : 0;
     const maxOwnRatio = ownRatios.length ? Math.max(...ownRatios) : 0;
