@@ -1264,6 +1264,23 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
 
 function ReportPanel({ session }: { session: GameSession }) {
   const summary = reportSummary(session);
+  const ultimatumOffers = session.pairings
+    .filter((pairing) => pairing.gameId === 'ultimatum')
+    .flatMap((pairing) => {
+      const decisions = decisionsFor(session, pairing);
+      const offer = decisions.find((decision) => decision.type === 'ultimatum_offer');
+      if (!offer) return [];
+      const response = decisions.find((decision) => decision.type === 'ultimatum_response');
+      const timeout = decisions.find((decision) => decision.type === 'ultimatum_timeout');
+      const timedOut = timeout !== undefined;
+      return [{
+        pairing,
+        amount: offer.amount ?? 0,
+        accepted: response?.accepted,
+        timedOut,
+      }];
+    });
+
   return (
     <section className="panel report-panel dashboard-section">
       <div className="section-title">
@@ -1271,10 +1288,40 @@ function ReportPanel({ session }: { session: GameSession }) {
         <button className="secondary" onClick={() => downloadCsv(session)}><BarChart3 size={17} />Teljes CSV</button>
       </div>
       <div className="report-summary-grid report-summary-v2">
-        <div className="summary-stat">
+        <div className="summary-stat ultimatum-summary">
           <span>Ultimátum</span>
-          <strong>{summary.ultimatum.accepted} / {summary.ultimatum.rejected}</strong>
-          <small>elfogadott / elutasított · {summary.ultimatum.timeouts} időtúllépés</small>
+          <strong>{ultimatumOffers.length} ajánlat</strong>
+          <small>{summary.ultimatum.accepted} elfogadott · {summary.ultimatum.rejected} elutasított · {summary.ultimatum.timeouts} időtúllépés</small>
+          <div className="ultimatum-offer-list">
+            {ultimatumOffers.length === 0 ? (
+              <div className="ultimatum-empty">Még nincs ajánlat.</div>
+            ) : ultimatumOffers.map(({ pairing, amount, accepted, timedOut }) => {
+              const statusClass = timedOut || accepted === false
+                ? 'rejected'
+                : accepted === true
+                  ? 'accepted'
+                  : 'pending';
+              const statusLabel = timedOut
+                ? 'időtúllépés'
+                : accepted === true
+                  ? 'elfogadott'
+                  : accepted === false
+                    ? 'elutasított'
+                    : 'folyamatban';
+              return (
+                <div className="ultimatum-offer-row" key={pairing.id}>
+                  <span className="offer-round">{pairing.roundKey}</span>
+                  <span className="offer-route">
+                    <b>{playerName(session, pairing.playerA)}</b>
+                    <i>→</i>
+                    <b>{playerName(session, pairing.playerB)}</b>
+                  </span>
+                  <strong className="offer-amount">{formatCredits(amount)}</strong>
+                  <span className={'offer-status ' + statusClass}>{statusLabel}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div className="summary-stat">
           <span>Diktátor</span>
