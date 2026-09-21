@@ -21,6 +21,7 @@ export type Player = {
   online?: boolean;
   lastSeenAt?: string;
   isBot?: boolean;
+  botControlled?: boolean;
 };
 
 export type Pairing = {
