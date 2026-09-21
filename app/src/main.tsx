@@ -710,7 +710,7 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
               </div>
               <div className="pair-names">
                 <strong>{playerName(session, pairing.playerA)}</strong>
-                <span>↔</span>
+                <span>→</span>
                 <strong>{playerName(session, pairing.playerB)}</strong>
               </div>
               <p>{detail}</p>
@@ -724,74 +724,79 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
 
 function PlayerTable({ session }: { session: GameSession }) {
   return (
-    <section className="panel player-table-panel dashboard-section">
-      <div className="section-title player-table-title">
+    <details className="panel player-table-panel dashboard-section diagnostic-details">
+      <summary className="diagnostic-summary">
         <div>
-          <p className="eyebrow">Élő helyzetkép</p>
-          <h2>Résztvevők és döntések</h2>
+          <p className="eyebrow">Diagnosztikai nézet</p>
+          <strong>Résztvevők és egyéni történet</strong>
         </div>
-        <div className="status-legend">
+        <span>{session.players.length} fő</span>
+      </summary>
+
+      <div className="diagnostic-body">
+        <div className="status-legend diagnostic-legend">
           <span className="legend-chip success-chip">kész / sikeres</span>
           <span className="legend-chip wait-chip">várakozik</span>
           <span className="legend-chip fail-chip">sikertelen / időtúllépés</span>
           <span className="legend-chip technical-chip">technikai hiba</span>
         </div>
-      </div>
-      <div className="trainer-table-wrap">
-        <table className="trainer-table trainer-table-v2">
-          <thead>
-            <tr>
-              <th className="sticky-player">Játékos / most</th>
-              <th>Ultimátum · 1a/1b</th>
-              <th>Diktátor · 2a/2b</th>
-              <th>Bizalom · 3a/3b</th>
-              <th>Vagyon</th>
-              <th>Párok · 1a–3b</th>
-            </tr>
-          </thead>
-          <tbody>
-            {session.players.map((player, index) => {
-              const online = gameStore.isPlayerOnline(player);
-              const currentPairing = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)
-                ? gameStore.getPairingForPlayer(session, player.id)
-                : undefined;
-              const tech = currentPairing && session.strategicTechnicalIssues.some(
-                (issue) => issue.pairingId === currentPairing.id && issue.playerId === player.id,
-              );
-              const timeout = currentPairing && session.decisions.some(
-                (decision) => decision.pairingId === currentPairing.id && decision.playerId === player.id && decision.timedOutRole !== undefined,
-              );
-              const rowClass = tech ? 'row-technical' : timeout ? 'row-failed' : !online ? 'row-offline' : '';
-              return (
-                <tr key={player.id} className={rowClass}>
-                  <td className="sticky-player player-ident">
-                    <span className={'presence-dot ' + (online ? 'online' : 'offline')} />
-                    <span className="row-number">{index + 1}</span>
-                    <div>
-                      <strong>{player.name}</strong>
-                      <div className="player-sub">
-                        <PlayerRoundState session={session} playerId={player.id} />
-                        <span>{online ? 'online' : 'offline'}</span>
+
+        <div className="trainer-table-wrap">
+          <table className="trainer-table trainer-table-v2">
+            <thead>
+              <tr>
+                <th className="sticky-player">Játékos / most</th>
+                <th>Ultimátum · 1a/1b</th>
+                <th>Diktátor · 2a/2b</th>
+                <th>Bizalom · 3a/3b</th>
+                <th>Vagyon</th>
+                <th>Párok · 1a–3b</th>
+              </tr>
+            </thead>
+            <tbody>
+              {session.players.map((player, index) => {
+                const online = gameStore.isPlayerOnline(player);
+                const currentPairing = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)
+                  ? gameStore.getPairingForPlayer(session, player.id)
+                  : undefined;
+                const tech = currentPairing && session.strategicTechnicalIssues.some(
+                  (issue) => issue.pairingId === currentPairing.id && issue.playerId === player.id,
+                );
+                const timeout = currentPairing && session.decisions.some(
+                  (decision) => decision.pairingId === currentPairing.id && decision.playerId === player.id && decision.timedOutRole !== undefined,
+                );
+                const rowClass = tech ? 'row-technical' : timeout ? 'row-failed' : !online ? 'row-offline' : '';
+                return (
+                  <tr key={player.id} className={rowClass}>
+                    <td className="sticky-player player-ident">
+                      <span className={'presence-dot ' + (online ? 'online' : 'offline')} />
+                      <span className="row-number">{index + 1}</span>
+                      <div>
+                        <strong>{player.name}</strong>
+                        <div className="player-sub">
+                          <PlayerRoundState session={session} playerId={player.id} />
+                          <span>{online ? 'online' : 'offline'}</span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td><UltimatumCell session={session} playerId={player.id} /></td>
-                  <td><DictatorCell session={session} playerId={player.id} /></td>
-                  <td><TrustCell session={session} playerId={player.id} /></td>
-                  <td className="wealth-cell">
-                    <strong>{formatCredits(player.currentBalance)}</strong>
-                    {session.firstStageFinalBalance[player.id] !== undefined && (
-                      <small>3b után {formatCredits(session.firstStageFinalBalance[player.id])}</small>
-                    )}
-                  </td>
-                  <td><PairHistoryCell session={session} playerId={player.id} /></td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td><UltimatumCell session={session} playerId={player.id} /></td>
+                    <td><DictatorCell session={session} playerId={player.id} /></td>
+                    <td><TrustCell session={session} playerId={player.id} /></td>
+                    <td className="wealth-cell">
+                      <strong>{formatCredits(player.currentBalance)}</strong>
+                      {session.firstStageFinalBalance[player.id] !== undefined && (
+                        <small>3b után {formatCredits(session.firstStageFinalBalance[player.id])}</small>
+                      )}
+                    </td>
+                    <td><PairHistoryCell session={session} playerId={player.id} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -1263,7 +1268,55 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
 }
 
 function ReportPanel({ session }: { session: GameSession }) {
+  type SummaryGame = 'ultimatum' | 'dictator' | 'trust' | 'pool';
+
   const summary = reportSummary(session);
+  const currentSummaryGame: SummaryGame | null =
+    session.roundKey === '1a' || session.roundKey === '1b' ? 'ultimatum' :
+    session.roundKey === '2a' || session.roundKey === '2b' ? 'dictator' :
+    session.roundKey === '3a' || session.roundKey === '3b' ? 'trust' :
+    session.roundKey === '4' ? 'pool' :
+    null;
+
+  const [openGames, setOpenGames] = useState<Record<SummaryGame, boolean>>(() => ({
+    ultimatum: currentSummaryGame === 'ultimatum',
+    dictator: currentSummaryGame === 'dictator',
+    trust: currentSummaryGame === 'trust',
+    pool: currentSummaryGame === 'pool',
+  }));
+  const [autoGame, setAutoGame] = useState<SummaryGame | null>(currentSummaryGame);
+  const [openPoolRound, setOpenPoolRound] = useState<number | null>(() =>
+    session.publicGoodsRoundNumber > 0 ? session.publicGoodsRoundNumber : null,
+  );
+
+  useEffect(() => {
+    if (currentSummaryGame && currentSummaryGame !== autoGame) {
+      setOpenGames({
+        ultimatum: currentSummaryGame === 'ultimatum',
+        dictator: currentSummaryGame === 'dictator',
+        trust: currentSummaryGame === 'trust',
+        pool: currentSummaryGame === 'pool',
+      });
+      setAutoGame(currentSummaryGame);
+    }
+  }, [currentSummaryGame, autoGame]);
+
+  useEffect(() => {
+    if (session.roundKey === '4' && session.publicGoodsRoundNumber > 0) {
+      setOpenPoolRound(session.publicGoodsRoundNumber);
+    }
+  }, [session.roundKey, session.publicGoodsRoundNumber]);
+
+  const toggleGame = (game: SummaryGame) => {
+    setOpenGames((current) => ({ ...current, [game]: !current[game] }));
+  };
+
+  const roundState = (round: StrategicRound) => {
+    if (session.closedRounds.includes(round)) return { className: 'done', label: 'kész' };
+    if (session.roundKey === round) return { className: 'active', label: 'aktuális' };
+    return { className: 'upcoming', label: 'következik' };
+  };
+
   const ultimatumOffers = session.pairings
     .filter((pairing) => pairing.gameId === 'ultimatum')
     .flatMap((pairing) => {
@@ -1272,12 +1325,11 @@ function ReportPanel({ session }: { session: GameSession }) {
       if (!offer) return [];
       const response = decisions.find((decision) => decision.type === 'ultimatum_response');
       const timeout = decisions.find((decision) => decision.type === 'ultimatum_timeout');
-      const timedOut = timeout !== undefined;
       return [{
         pairing,
         amount: offer.amount ?? 0,
         accepted: response?.accepted,
-        timedOut,
+        timedOut: timeout !== undefined,
       }];
     });
 
@@ -1349,197 +1401,339 @@ function ReportPanel({ session }: { session: GameSession }) {
         }),
     }));
 
+  const gameDone = {
+    ultimatum: ['1a', '1b'].every((round) => session.closedRounds.includes(round as StrategicRound)),
+    dictator: ['2a', '2b'].every((round) => session.closedRounds.includes(round as StrategicRound)),
+    trust: ['3a', '3b'].every((round) => session.closedRounds.includes(round as StrategicRound)),
+    pool: session.roundKey === 'report',
+  };
+
+  const blockClass = (game: SummaryGame) =>
+    'game-summary-block' +
+    (currentSummaryGame === game ? ' is-current' : '') +
+    (gameDone[game] ? ' is-done' : '') +
+    (openGames[game] ? ' is-open' : '');
+
   return (
-    <section className="panel report-panel dashboard-section">
-      <div className="section-title">
-        <div><p className="eyebrow">Gyors összesítő</p><h2>Játékadatok</h2></div>
-        <button className="secondary" onClick={() => downloadCsv(session)}><BarChart3 size={17} />Teljes CSV</button>
+    <section className="panel report-panel dashboard-section game-summary-panel">
+      <div className="section-title game-summary-title">
+        <div>
+          <p className="eyebrow">Tréneri elemzés</p>
+          <h2>Játékösszesítő</h2>
+        </div>
+        <button className="secondary" onClick={() => downloadCsv(session)}>
+          <BarChart3 size={17} />Teljes CSV
+        </button>
       </div>
-      <div className="report-summary-grid report-summary-v2">
-        <div className="summary-stat ultimatum-summary">
-          <span>Ultimátum</span>
-          <strong>{ultimatumOffers.length} ajánlat</strong>
-          <small>{summary.ultimatum.accepted} elfogadott · {summary.ultimatum.rejected} elutasított · {summary.ultimatum.timeouts} időtúllépés</small>
-          <div className="ultimatum-offer-list">
-            {ultimatumOffers.length === 0 ? (
-              <div className="ultimatum-empty">Még nincs ajánlat.</div>
-            ) : ultimatumOffers.map(({ pairing, amount, accepted, timedOut }) => {
-              const statusClass = timedOut || accepted === false
-                ? 'rejected'
-                : accepted === true
-                  ? 'accepted'
-                  : 'pending';
-              const statusLabel = timedOut
-                ? 'időtúllépés'
-                : accepted === true
-                  ? 'elfogadott'
-                  : accepted === false
-                    ? 'elutasított'
-                    : 'folyamatban';
-              return (
-                <div className="ultimatum-offer-row" key={pairing.id}>
-                  <span className="offer-round">{pairing.roundKey}</span>
-                  <span className="offer-route">
-                    <b>{playerName(session, pairing.playerA)}</b>
-                    <i>→</i>
-                    <b>{playerName(session, pairing.playerB)}</b>
-                  </span>
-                  <strong className="offer-amount">{formatCredits(amount)}</strong>
-                  <span className={'offer-status ' + statusClass}>{statusLabel}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="summary-stat dictator-summary">
-          <span>Diktátor</span>
-          <strong>{dictatorTransfers.length} átadás</strong>
-          <small>{formatCredits(summary.dictator.givenAmount)} összesen · {summary.dictator.timeouts} időtúllépés</small>
-          <div className="dictator-transfer-list">
-            {dictatorTransfers.length === 0 ? (
-              <div className="ultimatum-empty">Még nincs átadás.</div>
-            ) : dictatorTransfers.map(({ pairing, amount, percent, band, bandLabel, timedOut }) => (
-              <div className="dictator-transfer-row" key={pairing.id}>
-                <span className="offer-round">{pairing.roundKey}</span>
-                <span className="offer-route">
-                  <b>{playerName(session, pairing.playerA)}</b>
-                  <i>→</i>
-                  <b>{playerName(session, pairing.playerB)}</b>
-                </span>
-                <strong className="offer-amount">{formatCredits(amount)}</strong>
-                <span className={'dictator-band ' + band}>
-                  {timedOut ? 'idő → 0' : `${percent}% · ${bandLabel}`}
-                </span>
+
+      <div className="game-summary-stack">
+        <section className={blockClass('ultimatum')}>
+          <button className="game-summary-toggle" type="button" onClick={() => toggleGame('ultimatum')} aria-expanded={openGames.ultimatum}>
+            <div className="game-summary-heading">
+              <span className="game-summary-index">1</span>
+              <div>
+                <strong>Ultimátum</strong>
+                <small>{ultimatumOffers.length} ajánlat · {summary.ultimatum.accepted} elfogadott · {summary.ultimatum.rejected} elutasított</small>
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="summary-stat trust-summary">
-          <span>Bizalom</span>
-          <strong>{trustTransfers.length} kapcsolat</strong>
-          <small>{formatCredits(summary.trust.sentAmount)} elküldve · {formatCredits(summary.trust.returnedAmount)} vissza</small>
-          <div className="trust-transfer-list">
-            {trustTransfers.length === 0 ? (
-              <div className="ultimatum-empty">Még nincs bizalmi átadás.</div>
-            ) : trustTransfers.map(({
-              pairing,
-              sent,
-              returned,
-              sendPercent,
-              returnPercent,
-              sendBand,
-              returnBand,
-              sendTimedOut,
-              returnTimedOut,
-            }) => (
-              <div className="trust-transfer-row" key={pairing.id}>
-                <span className="offer-round">{pairing.roundKey}</span>
-                <div className="trust-moves">
-                  <div className="trust-move">
-                    <span className="trust-direction">
-                      <b>Oda:</b> {playerName(session, pairing.playerA)} <i>→</i> {playerName(session, pairing.playerB)}
-                    </span>
-                    <span className={'trust-value ' + sendBand}>
-                      {sendTimedOut ? 'idő → 0' : `${formatCredits(sent)} · ${sendPercent}%`}
-                    </span>
-                  </div>
-                  <div className="trust-move">
-                    <span className="trust-direction">
-                      <b>Vissza:</b> {playerName(session, pairing.playerB)} <i>→</i> {playerName(session, pairing.playerA)}
-                    </span>
-                    <span className={'trust-value ' + returnBand}>
-                      {returnTimedOut
-                        ? 'idő → 0'
-                        : returned === undefined
-                          ? 'folyamatban'
-                          : `${formatCredits(returned)} · ${returnPercent}%`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <small className="trust-scale-note">Szín: alacsony ≤30% · kiugróan magas ≥70%. Visszaadásnál a háromszorozott összeghez viszonyítva.</small>
-        </div>
-        <div className="summary-stat public-goods-summary">
-          <span>Közös kassza</span>
-          <strong>{publicGoodsRounds.length} kör</strong>
-          <small>
-            Csapatonkénti kassza, egyéni befizetések és vagyonváltozás.
-            A százalék az adott játékos kör eleji vagyonához viszonyított befizetés.
-          </small>
-          <div className="public-goods-round-list">
-            {publicGoodsRounds.length === 0 ? (
-              <div className="ultimatum-empty">Még nincs kasszakör.</div>
-            ) : publicGoodsRounds.map(({ roundNumber, groups }) => (
-              <section className="public-goods-round-card" key={roundNumber}>
-                <header className="public-goods-round-head">
-                  <strong>{roundNumber}. kör</strong>
-                  <span>{groups.length} csapat</span>
-                </header>
-                <div className="public-goods-group-grid">
-                  {groups.map((round) => {
-                    const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? round.groupId;
-                    return (
-                      <div className="public-goods-group-summary" key={round.id}>
-                        <div className="public-goods-group-head">
-                          <div>
-                            <b>{groupName}</b>
-                            <small>{round.memberIds.length} fő</small>
+            </div>
+            <div className="game-summary-toggle-state">
+              {gameDone.ultimatum && <span className="summary-done-chip">kész</span>}
+              {currentSummaryGame === 'ultimatum' && <span className="summary-current-chip">most</span>}
+              <ChevronRight size={18} className="summary-chevron" />
+            </div>
+          </button>
+
+          {openGames.ultimatum && (
+            <div className="game-summary-body">
+              <p className="game-summary-note">1a + 1b: mindenki egyszer ajánlattevő és egyszer fogadó; a partner körönként változhat.</p>
+              {(['1a', '1b'] as const).map((round) => {
+                const state = roundState(round);
+                const rows = ultimatumOffers.filter((item) => item.pairing.roundKey === round);
+                return (
+                  <section className="summary-round-section" key={round}>
+                    <header className="summary-round-head">
+                      <div><strong>{round} kör</strong><span>{rows.length} ajánlat</span></div>
+                      <span className={'round-state-chip ' + state.className}>{state.label}</span>
+                    </header>
+                    <div className="decision-summary-list">
+                      {rows.length === 0 ? (
+                        <div className="summary-empty">Még nincs adat ebben a körben.</div>
+                      ) : rows.map(({ pairing, amount, accepted, timedOut }) => {
+                        const statusClass = timedOut || accepted === false ? 'rejected' : accepted === true ? 'accepted' : 'pending';
+                        const statusLabel = timedOut ? 'időtúllépés' : accepted === true ? 'elfogadott' : accepted === false ? 'elutasított' : 'folyamatban';
+                        return (
+                          <div className="ultimatum-offer-row" key={pairing.id}>
+                            <span className="offer-route">
+                              <b>{playerName(session, pairing.playerA)}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
+                            </span>
+                            <strong className="offer-amount">{formatCredits(amount)}</strong>
+                            <span className={'offer-status ' + statusClass}>{statusLabel}</span>
                           </div>
-                          <div className="pool-total">
-                            <span>Teljes kassza</span>
-                            <strong>{formatCredits(round.totalContribution)}</strong>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className={blockClass('dictator')}>
+          <button className="game-summary-toggle" type="button" onClick={() => toggleGame('dictator')} aria-expanded={openGames.dictator}>
+            <div className="game-summary-heading">
+              <span className="game-summary-index">2</span>
+              <div>
+                <strong>Diktátor</strong>
+                <small>{dictatorTransfers.length} átadás · {formatCredits(summary.dictator.givenAmount)} összesen</small>
+              </div>
+            </div>
+            <div className="game-summary-toggle-state">
+              {gameDone.dictator && <span className="summary-done-chip">kész</span>}
+              {currentSummaryGame === 'dictator' && <span className="summary-current-chip">most</span>}
+              <ChevronRight size={18} className="summary-chevron" />
+            </div>
+          </button>
+
+          {openGames.dictator && (
+            <div className="game-summary-body">
+              <p className="game-summary-note">2a + 2b: mindenki egyszer adó és egyszer fogadó; a fogadó itt nem dönt.</p>
+              {(['2a', '2b'] as const).map((round) => {
+                const state = roundState(round);
+                const rows = dictatorTransfers.filter((item) => item.pairing.roundKey === round);
+                return (
+                  <section className="summary-round-section" key={round}>
+                    <header className="summary-round-head">
+                      <div><strong>{round} kör</strong><span>{rows.length} átadás</span></div>
+                      <span className={'round-state-chip ' + state.className}>{state.label}</span>
+                    </header>
+                    <div className="decision-summary-list">
+                      {rows.length === 0 ? (
+                        <div className="summary-empty">Még nincs adat ebben a körben.</div>
+                      ) : rows.map(({ pairing, amount, percent, band, bandLabel, timedOut }) => (
+                        <div className="dictator-transfer-row" key={pairing.id}>
+                          <span className="offer-route">
+                            <b>{playerName(session, pairing.playerA)}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
+                          </span>
+                          <strong className="offer-amount">{formatCredits(amount)}</strong>
+                          <span className={'dictator-band ' + band}>
+                            {timedOut ? 'idő → 0' : percent + '% · ' + bandLabel}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className={blockClass('trust')}>
+          <button className="game-summary-toggle" type="button" onClick={() => toggleGame('trust')} aria-expanded={openGames.trust}>
+            <div className="game-summary-heading">
+              <span className="game-summary-index">3</span>
+              <div>
+                <strong>Bizalom</strong>
+                <small>{trustTransfers.length} kapcsolat · {formatCredits(summary.trust.sentAmount)} elküldve · {formatCredits(summary.trust.returnedAmount)} vissza</small>
+              </div>
+            </div>
+            <div className="game-summary-toggle-state">
+              {gameDone.trust && <span className="summary-done-chip">kész</span>}
+              {currentSummaryGame === 'trust' && <span className="summary-current-chip">most</span>}
+              <ChevronRight size={18} className="summary-chevron" />
+            </div>
+          </button>
+
+          {openGames.trust && (
+            <div className="game-summary-body">
+              <p className="game-summary-note">3a + 3b: mindenki egyszer küldő és egyszer fogadó. Az „oda” az induló kredithez, a „vissza” a háromszorozott összeghez viszonyított arány.</p>
+              {(['3a', '3b'] as const).map((round) => {
+                const state = roundState(round);
+                const rows = trustTransfers.filter((item) => item.pairing.roundKey === round);
+                return (
+                  <section className="summary-round-section" key={round}>
+                    <header className="summary-round-head">
+                      <div><strong>{round} kör</strong><span>{rows.length} kapcsolat</span></div>
+                      <span className={'round-state-chip ' + state.className}>{state.label}</span>
+                    </header>
+                    <div className="decision-summary-list">
+                      {rows.length === 0 ? (
+                        <div className="summary-empty">Még nincs adat ebben a körben.</div>
+                      ) : rows.map(({
+                        pairing,
+                        sent,
+                        returned,
+                        sendPercent,
+                        returnPercent,
+                        sendBand,
+                        returnBand,
+                        sendTimedOut,
+                        returnTimedOut,
+                      }) => (
+                        <div className="trust-transfer-row" key={pairing.id}>
+                          <div className="trust-moves">
+                            <div className="trust-move">
+                              <span className="trust-direction">
+                                <b>Oda:</b> {playerName(session, pairing.playerA)} <i>→</i> {playerName(session, pairing.playerB)}
+                              </span>
+                              <span className={'trust-value ' + sendBand}>
+                                {sendTimedOut ? 'idő → 0' : formatCredits(sent) + ' · ' + sendPercent + '%'}
+                              </span>
+                            </div>
+                            <div className="trust-move">
+                              <span className="trust-direction">
+                                <b>Vissza:</b> {playerName(session, pairing.playerB)} <i>→</i> {playerName(session, pairing.playerA)}
+                              </span>
+                              <span className={'trust-value ' + returnBand}>
+                                {returnTimedOut
+                                  ? 'idő → 0'
+                                  : returned === undefined
+                                    ? 'folyamatban'
+                                    : formatCredits(returned) + ' · ' + returnPercent + '%'}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="public-goods-member-list">
-                          {round.memberIds.map((playerId) => {
-                            const contribution = round.contributions[playerId];
-                            const startWealth = round.startingPlayerWealth?.[playerId] ?? 0;
-                            const contributionPercent = contribution === undefined
-                              ? undefined
-                              : startWealth > 0
-                                ? Math.round((contribution / startWealth) * 100)
-                                : 0;
-                            const poolSharePercent = contribution === undefined
-                              ? undefined
-                              : round.totalContribution > 0
-                                ? Math.round((contribution / round.totalContribution) * 100)
-                                : 0;
-                            const delta = contribution !== undefined && round.status === 'settled'
-                              ? (round.payoutPerPlayer ?? 0) - contribution
-                              : undefined;
-                            const endWealth = delta === undefined ? undefined : startWealth + delta;
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className={blockClass('pool')}>
+          <button className="game-summary-toggle" type="button" onClick={() => toggleGame('pool')} aria-expanded={openGames.pool}>
+            <div className="game-summary-heading">
+              <span className="game-summary-index">4</span>
+              <div>
+                <strong>Közös kassza</strong>
+                <small>{publicGoodsRounds.length} kör · {session.publicGoodsRounds.filter((round) => round.status === 'settled' && round.success).length} sikeres csoportkör</small>
+              </div>
+            </div>
+            <div className="game-summary-toggle-state">
+              {gameDone.pool && <span className="summary-done-chip">kész</span>}
+              {currentSummaryGame === 'pool' && <span className="summary-current-chip">most</span>}
+              <ChevronRight size={18} className="summary-chevron" />
+            </div>
+          </button>
+
+          {openGames.pool && (
+            <div className="game-summary-body public-goods-analysis">
+              <p className="game-summary-note">Játékosonként látszik a befizetés összege, a saját kör eleji vagyonából vállalt arány, a teljes csapatkasszából adott rész és a vagyonváltozás.</p>
+              <div className="public-goods-round-list">
+                {publicGoodsRounds.length === 0 ? (
+                  <div className="summary-empty">Még nincs kasszakör.</div>
+                ) : publicGoodsRounds.map(({ roundNumber, groups }) => {
+                  const isOpen = openPoolRound === roundNumber;
+                  const isCurrent = session.roundKey === '4' && session.publicGoodsRoundNumber === roundNumber;
+                  return (
+                    <section className={'public-goods-round-card' + (isCurrent ? ' is-current' : '')} key={roundNumber}>
+                      <button
+                        className="public-goods-round-toggle"
+                        type="button"
+                        onClick={() => setOpenPoolRound(isOpen ? null : roundNumber)}
+                        aria-expanded={isOpen}
+                      >
+                        <div>
+                          <strong>{roundNumber}. kör</strong>
+                          <span>{groups.length} csapat</span>
+                        </div>
+                        <div>
+                          {isCurrent && <span className="summary-current-chip">aktuális</span>}
+                          <ChevronRight size={17} className={'pool-round-chevron' + (isOpen ? ' is-open' : '')} />
+                        </div>
+                      </button>
+
+                      {isOpen && (
+                        <div className="public-goods-group-grid">
+                          {groups.map((round) => {
+                            const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? round.groupId;
+                            const resultClass =
+                              round.status === 'settled'
+                                ? round.success ? 'pool-summary-success' : 'pool-summary-failed'
+                                : 'pool-summary-live';
+                            const resultText =
+                              round.status === 'settled'
+                                ? round.success
+                                  ? 'Bank ' + formatCredits(round.totalContribution * 2) + ' · ' + formatCredits(round.payoutPerPlayer ?? 0) + '/fő'
+                                  : 'Sikertelen · a befizetés elveszett'
+                                : round.status === 'locked'
+                                  ? 'Tétek lezárva · elszámolásra vár'
+                                  : 'Döntés folyamatban';
                             return (
-                              <div className="public-goods-member-row" key={playerId}>
-                                <b>{playerName(session, playerId)}</b>
-                                <span className="member-contribution">
-                                  {contribution === undefined
-                                    ? 'még nincs tét'
-                                    : `${formatCredits(contribution)} · vagyon ${contributionPercent}% · kassza ${poolSharePercent}%`}
-                                </span>
-                                <span className={'member-wealth-change ' + (delta === undefined ? 'pending' : delta >= 0 ? 'positive' : 'negative')}>
-                                  {delta === undefined
-                                    ? 'vagyon: elszámolásra vár'
-                                    : `${formatCredits(startWealth)} → ${formatCredits(endWealth ?? startWealth)} · ${delta >= 0 ? '+' : ''}${formatCredits(delta)}`}
-                                </span>
+                              <div className={'public-goods-group-summary ' + resultClass} key={round.id}>
+                                <div className="public-goods-group-head">
+                                  <div>
+                                    <b>{groupName}</b>
+                                    <small>{round.memberIds.length} fő · {resultText}</small>
+                                  </div>
+                                  <div className="pool-total">
+                                    <span>Teljes kassza</span>
+                                    <strong>{formatCredits(round.totalContribution)}</strong>
+                                  </div>
+                                </div>
+
+                                <div className="public-goods-member-head">
+                                  <span>Játékos</span>
+                                  <span>Befizetés</span>
+                                  <span>Arányok</span>
+                                  <span>Vagyonváltozás</span>
+                                </div>
+
+                                <div className="public-goods-member-list">
+                                  {round.memberIds.map((playerId) => {
+                                    const contribution = round.contributions[playerId];
+                                    const startWealth = round.startingPlayerWealth?.[playerId] ?? 0;
+                                    const contributionPercent = contribution === undefined
+                                      ? undefined
+                                      : startWealth > 0
+                                        ? Math.round((contribution / startWealth) * 100)
+                                        : 0;
+                                    const poolSharePercent = contribution === undefined
+                                      ? undefined
+                                      : round.totalContribution > 0
+                                        ? Math.round((contribution / round.totalContribution) * 100)
+                                        : 0;
+                                    const delta = contribution !== undefined && round.status === 'settled'
+                                      ? (round.payoutPerPlayer ?? 0) - contribution
+                                      : undefined;
+                                    const endWealth = delta === undefined ? undefined : startWealth + delta;
+
+                                    return (
+                                      <div className="public-goods-member-row" key={playerId}>
+                                        <b>{playerName(session, playerId)}</b>
+                                        <span className="member-contribution">
+                                          {contribution === undefined ? 'még nincs tét' : formatCredits(contribution)}
+                                        </span>
+                                        <span className="member-ratios">
+                                          {contribution === undefined
+                                            ? '–'
+                                            : 'vagyon ' + contributionPercent + '% · kassza ' + poolSharePercent + '%'}
+                                        </span>
+                                        <span className={'member-wealth-change ' + (delta === undefined ? 'pending' : delta >= 0 ? 'positive' : 'negative')}>
+                                          {delta === undefined
+                                            ? 'elszámolásra vár'
+                                            : formatCredits(startWealth) + ' → ' + formatCredits(endWealth ?? startWealth) + ' · ' + (delta >= 0 ? '+' : '') + formatCredits(delta)}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             );
                           })}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
-        </div>
-        <div className="summary-stat">
-          <span>Korrekció</span>
-          <strong>{session.manualCorrections.length}</strong>
-          <small>auditált kézi módosítás</small>
-        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </section>
   );
@@ -1622,7 +1816,7 @@ function TrainerCorrectionPanel({ session }: { session: GameSession }) {
   return (
     <details className="panel correction-panel">
       <summary>
-        <strong>Kézi korrekció</strong>
+        <strong>Adminisztráció és kézi korrekció</strong>
         <span>{session.manualCorrections.length} rögzített módosítás</span>
       </summary>
 
@@ -1858,11 +2052,13 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <FirebaseSyncBanner />
       <TrainerCockpit session={session} joinUrl={joinUrl} />
       {testMode && <TestHarness session={session} />}
+
       <CurrentPairsBoard session={session} />
+      {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
+
+      <ReportPanel session={session} />
       <PlayerTable session={session} />
       <TrainerCorrectionPanel session={session} />
-      {session.roundKey === '4' || session.roundKey === 'report' ? <PublicGoodsDashboard session={session} /> : null}
-      <ReportPanel session={session} />
     </main>
   );
 }
