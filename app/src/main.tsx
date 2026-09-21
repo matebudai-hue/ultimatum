@@ -905,10 +905,6 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
           </div>
 
           <div className="compact-controls">
-            <div className="compact-code" title="Játékkód">
-              <span>Kód</span>
-              <strong>{session.code}</strong>
-            </div>
             {canFinishGame(session) && (
               <button
                 className="toolbar-button danger-action"
