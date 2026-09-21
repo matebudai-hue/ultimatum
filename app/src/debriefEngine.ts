@@ -125,19 +125,6 @@ const selfDecisionId = (
 const publicGoodsDecisionId = (round: PublicGoodsRound, playerId: string) =>
   `decision:publicGoods:r${round.roundNumber}:${round.groupId}:${playerId}`;
 
-const latestTransaction = (
-  session: GameSession,
-  playerId: string,
-  roundKey: StrategicRound | '4',
-  reason?: string,
-) => [...session.transactions]
-  .reverse()
-  .find((transaction) =>
-    transaction.playerId === playerId &&
-    transaction.roundKey === roundKey &&
-    (!reason || transaction.reason === reason),
-  );
-
 const publicGoodsNet = (session: GameSession, round: PublicGoodsRound, playerId: string) => {
   const transaction = session.transactions.find((item) =>
     item.playerId === playerId &&
@@ -166,7 +153,7 @@ const publicGoodsFacts = (session: GameSession, round: PublicGoodsRound, playerI
 export const buildSelfReport = (session: GameSession, playerId: string): SelfReportItem[] => {
   const items: SelfReportItem[] = [];
 
-  for (const pairing of humanPairings(session)) {
+  for (const pairing of session.pairings.filter((item) => session.closedRounds.includes(item.roundKey))) {
     if (pairing.playerA !== playerId && pairing.playerB !== playerId) continue;
     const decisions = decisionsForPair(session, pairing.id);
     const isA = pairing.playerA === playerId;
