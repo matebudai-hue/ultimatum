@@ -3575,6 +3575,7 @@ function ParticipantReflectionPanel({
     Object.fromEntries(ownReflections.map((item) => [item.decisionId, item.comment])),
   );
   const [submitError, setSubmitError] = useState('');
+  const [sending, setSending] = useState(false);
   const submitted = ownReflections.length > 0;
 
   if (report.length === 0) {
@@ -3636,6 +3637,7 @@ function ParticipantReflectionPanel({
       setSubmitError('Minden kiválasztott döntéshez válaszolj arra, hogy mi célból döntöttél így.');
       return;
     }
+    setSending(true);
     gameStore.submitReflection(session.code, playerId, items);
   };
 
@@ -3662,9 +3664,15 @@ function ParticipantReflectionPanel({
         ))}
       </div>
       {submitError && <div className="error">{submitError}</div>}
-      <button className="primary big participant-reflection-submit" type="button" onClick={submit}>
-        Reflexió elküldése
+      <button
+        className="primary big participant-reflection-submit"
+        type="button"
+        onClick={submit}
+        disabled={sending}
+      >
+        {sending ? 'Reflexió mentése…' : 'Reflexió elküldése'}
       </button>
+      {sending && <p className="reflection-saving-note">A mentés után automatikusan megjelenik a saját riportod.</p>}
     </div>
   );
 }
