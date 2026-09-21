@@ -9,7 +9,7 @@ Object.defineProperty(globalThis, 'sessionStorage', { value: dom.window.sessionS
 Object.defineProperty(globalThis, 'CustomEvent', { value: dom.window.CustomEvent, configurable: true });
 Object.defineProperty(globalThis, 'StorageEvent', { value: dom.window.StorageEvent, configurable: true });
 
-const { localSessionStore } = await import('../src/sessionStore.ts');
+const { localSessionStore, canFinishPublicGoodsGame } = await import('../src/sessionStore.ts');
 const { createCsv } = await import('../src/report.ts');
 const { pairingRepeatStats } = await import('../src/pairingEngine.ts');
 const { settleUltimatum, settleOneWayGive, settleTrust, settlePublicGoods } = await import('../src/gameEngine.ts');
@@ -447,6 +447,8 @@ function testPublicGoodsControl(code: string, count: number) {
     assert.ok(state.groups.every((group) => group.memberIds.length === 4), '100 fő / 25 csoport esetén minden csoport 4 fős.');
   }
 
+  assert.equal(canFinishPublicGoodsGame(state), false, 'A Közös kassza kezdetén még nem zárható le a teljes játék.');
+
   // 1. kör: csoportonként eltérő minimum-beállítás.
   state.groups.forEach((group, index) => {
     const mode = index % 3 === 0 ? 'none' : index % 3 === 1 ? '80' : '95';
@@ -456,6 +458,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.startPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'open');
+  assert.equal(canFinishPublicGoodsGame(state), false, 'Futó kasszakör közben nem zárható le a teljes játék.');
   assert.ok(state.publicGoodsDeadlineAt);
   assert.ok(localSessionStore.publicGoodsSecondsLeft(state) <= 60);
 
@@ -476,6 +479,7 @@ function testPublicGoodsControl(code: string, count: number) {
   localSessionStore.lockPublicGoodsRound(code);
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'locked');
+  assert.equal(canFinishPublicGoodsGame(state), false, 'Lezárt, még el nem számolt kasszakörnél nem zárható le a teljes játék.');
   assert.deepEqual(Object.fromEntries(state.players.map((p) => [p.id, p.currentBalance])), beforeSettle, 'Tétzáráskor még nincs könyvelés.');
   assert.throws(() => localSessionStore.submitPublicGoods(code, firstPlayer.id, 0));
 
@@ -483,6 +487,7 @@ function testPublicGoodsControl(code: string, count: number) {
   state = localSessionStore.get(code)!;
   assert.equal(state.publicGoodsPhase, 'setup');
   assert.equal(state.publicGoodsRoundNumber, 1);
+  assert.equal(canFinishPublicGoodsGame(state), true, 'Az első elszámolt kasszakör után, két kör között megjelenhet a teljes játék lezárása.');
   assert.ok(state.publicGoodsRounds.filter((r) => r.roundNumber === 1).every((r) => r.status === 'settled'));
   assert.ok(state.groups.every((group) => group.nextMinimumMode === 'none'), 'A következő kör minimuma alapból visszaáll: nincs minimum.');
 
