@@ -814,7 +814,7 @@ function PlayerTable({ session }: { session: GameSession }) {
                 const timeout = currentPairing && session.decisions.some(
                   (decision) => decision.pairingId === currentPairing.id && decision.playerId === player.id && decision.timedOutRole !== undefined,
                 );
-                const rowClass = tech ? 'row-technical' : timeout ? 'row-failed' : !online ? 'row-offline' : '';
+                const rowClass = player.botControlled ? 'row-bot-controlled' : tech ? 'row-technical' : timeout ? 'row-failed' : !online ? 'row-offline' : '';
                 return (
                   <tr key={player.id} className={rowClass}>
                     <td className="sticky-player player-ident">
@@ -824,7 +824,16 @@ function PlayerTable({ session }: { session: GameSession }) {
                         <strong>{player.name}</strong>
                         <div className="player-sub">
                           <PlayerRoundState session={session} playerId={player.id} />
-                          <span>{online ? 'online' : 'offline'}</span>
+                          <span>{player.botControlled ? 'BOT irányítja' : online ? 'online' : 'offline'}</span>
+                          {session.status === 'active' && session.roundKey !== 'lobby' && session.roundKey !== 'report' && (
+                            <button
+                              type="button"
+                              className={'bot-control-toggle ' + (player.botControlled ? 'is-active' : '')}
+                              onClick={() => gameStore.setPlayerBotControl(session.code, player.id, !player.botControlled)}
+                            >
+                              {player.botControlled ? 'Irányítás visszaadása' : 'BOT vegye át'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -2927,7 +2936,7 @@ function DebriefWorkspace({
   const [tab, setTab] = useState<'group' | 'events' | 'participants'>(finalMode ? 'group' : 'events');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
-    (player) => !player.isBot && buildSelfReport(session, player.id).length > 0,
+    (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
   ).length;
   const hasData =
     session.closedRounds.length > 0 ||
