@@ -135,6 +135,7 @@ const session: GameSession = {
   },
   publicGoodsRoundNumber: 2,
   publicGoodsPhase: 'setup',
+  pinnedDebriefEventIds: ['debrief:ultimatum_rejection:pair-own'],
   publicGoodsRounds: [
     {
       id: 'pg1',
@@ -187,6 +188,11 @@ assert.deepEqual(view.pairings, [], 'Közös kasszánál stratégiai párosítá
 assert.deepEqual(view.transactions.map((transaction) => transaction.id), ['t1']);
 assert.deepEqual(view.manualCorrections.map((correction) => correction.id), ['m1']);
 assert.deepEqual(view.firstStageFinalBalance, { p1: 100_000 });
+assert.deepEqual(
+  view.pinnedDebriefEventIds,
+  [],
+  'A tréner félretett kivezetési eseményei ne kerüljenek ki a résztvevői klienshez.',
+);
 
 assert.equal(view.groups.length, 1);
 assert.equal(view.groups[0].name, 'Balaton');
