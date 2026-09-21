@@ -47,10 +47,17 @@ const reflections: ParticipantReflection[] = [
   },
 ];
 
-const text = buildSelfReportShareText('Teszt Elek', report, reflections);
+const text = buildSelfReportShareText('Teszt Elek', report, reflections, {
+  firstStage: 120_000,
+  publicGoodsResult: 30_000,
+  finalWealth: 150_000,
+});
 
 assert.ok(text.includes('KREDITJÁTÉK – SAJÁT RIPORT'));
 assert.ok(text.includes('Teszt Elek'));
+assert.ok(text.includes('Az első három játék után: 120 000 kredit'));
+assert.ok(text.includes('Közös kassza eredménye: +30 000 kredit'));
+assert.ok(text.includes('Végső vagyon: 150 000 kredit'));
 assert.ok(text.includes('40 000 kredit ajánlat'));
 assert.ok(text.includes('50 000 kredit elküldve → 150 000 kredit a bank után'));
 assert.ok(text.includes('saját vagyon 80% · közös kassza 12% · nettó -10 000 kredit'));
