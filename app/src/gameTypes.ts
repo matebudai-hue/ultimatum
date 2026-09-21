@@ -115,6 +115,37 @@ export type PublicGoodsRound = {
   settledAt?: string;
 };
 
+export type ParticipantSelfReportItem = {
+  id: string;
+  game: 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
+  roundKey: StrategicRound | '4';
+  roundLabel: string;
+  role: 'proposer' | 'receiver' | 'dictator' | 'sender' | 'returner' | 'contributor';
+  playerId: string;
+  pairingId?: string;
+  publicGoodsRound?: number;
+  groupId?: string;
+  amount?: number;
+  accepted?: boolean;
+  sentAmount?: number;
+  multipliedAmount?: number;
+  returnedAmount?: number;
+  keptAmount?: number;
+  startingWealth?: number;
+  contributionAmount?: number;
+  ownWealthPercent?: number;
+  potPercent?: number;
+  payout?: number;
+  netAmount?: number;
+};
+
+export type ParticipantReflection = {
+  playerId: string;
+  decisionId: string;
+  comment: string;
+  submittedAt: string;
+};
+
 export type GameSession = {
   code: string;
   status: 'lobby' | 'active' | 'finished';
@@ -139,6 +170,9 @@ export type GameSession = {
   publicGoodsPhase: PublicGoodsPhase;
   publicGoodsRounds: PublicGoodsRound[];
   pinnedDebriefEventIds?: string[];
+  debriefPhase?: 'reflection' | 'complete';
+  reflections?: ParticipantReflection[];
+  selfReport?: ParticipantSelfReportItem[];
 };
 
 export const ROUND_ORDER: RoundKey[] = ['lobby', '1a', '1b', '2a', '2b', '3a', '3b', '4', 'report'];
