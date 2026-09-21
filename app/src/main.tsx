@@ -2595,6 +2595,7 @@ function SelfReportMiniCard({
       <span>{item.roundLabel}</span>
       <strong>{main}</strong>
       <small>{secondary}</small>
+      {item.isBotDecision && <em className="self-report-bot-note">BOT döntése</em>}
     </div>
   );
 }
@@ -2685,6 +2686,7 @@ function DebriefGroupView({ session }: { session: GameSession }) {
                         {item.ownWealthPercent !== null ? ' · saját ' + item.ownWealthPercent + '%' : ''}
                         {item.potPercent !== null ? ' · kassza ' + item.potPercent + '%' : ''}
                         {' · nettó '}{signedCredits(item.netAmount)}
+                        {item.automated ? ' · BOT' : ''}
                       </span>
                     ))}
                   </div>
