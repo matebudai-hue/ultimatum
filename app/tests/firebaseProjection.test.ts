@@ -136,6 +136,11 @@ const session: GameSession = {
   publicGoodsRoundNumber: 2,
   publicGoodsPhase: 'setup',
   pinnedDebriefEventIds: ['debrief:ultimatum_rejection:pair-own'],
+  debriefPhase: 'reflection',
+  reflections: [
+    { playerId: 'p1', decisionId: 'decision:ultimatum:proposer:pair-own', comment: 'Saját megjegyzés', submittedAt: new Date().toISOString() },
+    { playerId: 'p2', decisionId: 'decision:ultimatum:receiver:pair-own', comment: 'Másik megjegyzése', submittedAt: new Date().toISOString() },
+  ],
   publicGoodsRounds: [
     {
       id: 'pg1',
@@ -193,6 +198,16 @@ assert.deepEqual(
   [],
   'A tréner félretett kivezetési eseményei ne kerüljenek ki a résztvevői klienshez.',
 );
+assert.deepEqual(
+  view.reflections?.map((item) => item.playerId),
+  ['p1'],
+  'A résztvevő csak a saját reflexióját kaphatja meg.',
+);
+assert.equal(
+  JSON.stringify(view.reflections).includes('Másik megjegyzése'),
+  false,
+  'Más résztvevő reflexiós szövege nem szivároghat ki.',
+);
 
 assert.equal(view.groups.length, 1);
 assert.equal(view.groups[0].name, 'Balaton');
@@ -212,5 +227,21 @@ assert.equal(failed.memberIds.includes('p2'), false);
 const success = view.publicGoodsRounds.find((round) => round.roundNumber === 2)!;
 assert.equal(success.totalContribution, 30_000, 'Sikeres körben a teljes kassza látható.');
 assert.deepEqual(success.contributions, { p1: 10_000 });
+
+const reportView = buildParticipantProjection(
+  { ...session, roundKey: 'report', status: 'finished' },
+  'p1',
+);
+assert.ok((reportView.selfReport?.length ?? 0) > 0, 'A játék végén a saját riport kerüljön ki a kliensre.');
+assert.equal(
+  reportView.selfReport?.every((item) => item.playerId === 'p1'),
+  true,
+  'A saját riport minden eleme kizárólag a résztvevőhöz tartozzon.',
+);
+assert.equal(
+  JSON.stringify(reportView.selfReport).includes('p2'),
+  false,
+  'A saját riport ne tartalmazzon másik játékos azonosítót.',
+);
 
 console.log('PARTICIPANT FIREBASE PROJECTION PRIVACY OK');
