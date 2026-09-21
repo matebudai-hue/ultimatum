@@ -1274,8 +1274,11 @@ export const localSessionStore = {
     session.publicGoodsDeadlineAt = undefined;
     session.roundKey = 'report';
     session.status = 'finished';
-    session.debriefPhase = 'reflection';
     session.reflections = session.reflections ?? [];
+    const eligibleForReflection = session.players
+      .filter((player) => !player.isBot)
+      .some((player) => buildSelfReport(session, player.id).length > 0);
+    session.debriefPhase = eligibleForReflection ? 'reflection' : 'complete';
     write(session);
     return session;
   },
@@ -1316,9 +1319,11 @@ export const localSessionStore = {
       ...reflections,
     ];
 
-    const humanPlayerIds = session.players.filter((item) => !item.isBot).map((item) => item.id);
+    const eligiblePlayerIds = session.players
+      .filter((item) => !item.isBot && buildSelfReport(session, item.id).length > 0)
+      .map((item) => item.id);
     const completed = new Set((session.reflections ?? []).map((item) => item.playerId));
-    session.debriefPhase = humanPlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
+    session.debriefPhase = eligiblePlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
     write(session);
     return session;
   },
