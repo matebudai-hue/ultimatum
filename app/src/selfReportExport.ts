@@ -1,10 +1,14 @@
 import { ParticipantReflection, ParticipantSelfReportItem } from './gameTypes';
 
-const credits = (value: number) =>
-  new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(Math.round(value)) + ' kredit';
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 })
+    .format(Math.round(value))
+    .replace(/[\u00A0\u202F]/g, ' ');
+
+const credits = (value: number) => formatNumber(value) + ' kredit';
 
 const signedCredits = (value: number) =>
-  (value > 0 ? '+' : '') + new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(Math.round(value)) + ' kredit';
+  (value > 0 ? '+' : '') + formatNumber(value) + ' kredit';
 
 export const selfReportItemText = (item: ParticipantSelfReportItem): string[] => {
   if (item.game === 'ultimatum') {
