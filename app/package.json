@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsc --noEmit",
+    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/debriefGrouping.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsc --noEmit",
     "preview": "vite preview",
     "test:rules": "tsx tests/firebaseRules.test.ts",
     "test:projection": "tsx tests/firebaseProjection.test.ts",
@@ -14,7 +14,8 @@
     "test:self-report-export": "tsx tests/selfReportExport.test.ts",
     "test:projection-story": "tsx tests/projectionStory.test.ts",
     "test:ten-player-e2e": "tsx tests/tenPlayerE2E.test.ts",
-    "test:27-player-e2e": "tsx tests/twentySevenPlayerE2E.test.ts"
+    "test:27-player-e2e": "tsx tests/twentySevenPlayerE2E.test.ts",
+    "test:debrief-grouping": "tsx tests/debriefGrouping.test.ts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
