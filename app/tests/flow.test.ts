@@ -13,6 +13,7 @@ const { localSessionStore, canFinishGame } = await import('../src/sessionStore.t
 const { createCsv } = await import('../src/report.ts');
 const { pairingRepeatStats } = await import('../src/pairingEngine.ts');
 const { settleUltimatum, settleOneWayGive, settleTrust, settlePublicGoods } = await import('../src/gameEngine.ts');
+const { buildSelfReport } = await import('../src/debriefEngine.ts');
 
 const strategic = ['1a', '1b', '2a', '2b', '3a', '3b'] as const;
 
@@ -724,6 +725,71 @@ function testDebriefPinPersistence() {
   console.log('DEBRIEF PIN PERSISTENCE OK');
 }
 
+function testParticipantReflections() {
+  const code = runStrategicStage(4);
+  localSessionStore.finish(code);
+  let state = localSessionStore.get(code)!;
+  assert.equal(state.roundKey, 'report');
+  assert.equal(state.debriefPhase, 'reflection');
+
+  const player = state.players[0];
+  const report = buildSelfReport(state, player.id);
+  assert.ok(report.length >= 5, 'A lezárt teljes stratégiai szakasz után legyen elég saját döntés a reflexióhoz.');
+
+  localSessionStore.submitReflection(code, player.id, [
+    { decisionId: report[0].id, comment: 'Ezt akartam kipróbálni.' },
+    { decisionId: report[1].id, comment: 'A másik reakciójára voltam kíváncsi.' },
+  ]);
+  state = localSessionStore.get(code)!;
+  const own = state.reflections?.filter((item) => item.playerId === player.id) ?? [];
+  assert.equal(own.length, 2);
+  assert.equal(own[0].comment, 'Ezt akartam kipróbálni.');
+
+  assert.throws(
+    () => localSessionStore.submitReflection(code, player.id, []),
+    /Legalább 1, legfeljebb 3/,
+  );
+  assert.throws(
+    () => localSessionStore.submitReflection(code, player.id, [
+      { decisionId: report[0].id, comment: '' },
+    ]),
+    /mi célból/,
+  );
+  assert.throws(
+    () => localSessionStore.submitReflection(code, player.id, [
+      { decisionId: 'decision:trust:sender:not-own', comment: 'Teszt' },
+    ]),
+    /saját döntéseid/,
+  );
+  assert.throws(
+    () => localSessionStore.submitReflection(code, player.id, [
+      { decisionId: report[0].id, comment: 'A' },
+      { decisionId: report[0].id, comment: 'B' },
+    ]),
+    /csak egyszer/,
+  );
+  assert.throws(
+    () => localSessionStore.submitReflection(code, player.id, [
+      { decisionId: report[0].id, comment: 'A' },
+      { decisionId: report[1].id, comment: 'B' },
+      { decisionId: report[2].id, comment: 'C' },
+      { decisionId: report[3].id, comment: 'D' },
+    ]),
+    /Legalább 1, legfeljebb 3/,
+  );
+
+  for (const other of state.players.slice(1)) {
+    const otherReport = buildSelfReport(state, other.id);
+    localSessionStore.submitReflection(code, other.id, [
+      { decisionId: otherReport[0].id, comment: 'Saját reflexió.' },
+    ]);
+  }
+  state = localSessionStore.get(code)!;
+  assert.equal(state.debriefPhase, 'complete', 'Ha minden résztvevő válaszolt, a reflexiós szakasz legyen teljes.');
+
+  console.log('PARTICIPANT REFLECTIONS OK');
+}
+
 function testMissingStakeBecomesZero() {
   const code = runStrategicStage(4);
   let state = localSessionStore.get(code)!;
@@ -755,6 +821,7 @@ for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
 }
 testTenPlayerManualPoolSetup();
 testDebriefPinPersistence();
+testParticipantReflections();
 testMissingStakeBecomesZero();
 testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
