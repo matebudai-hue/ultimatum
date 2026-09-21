@@ -1112,3 +1112,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .debrief-note-grid{grid-template-columns:1fr}
   .debrief-note-card header{align-items:flex-start}
 }
+
+
+.debrief-note-actions{display:flex;align-items:center;gap:7px}
+.debrief-note-actions small{font-size:8px;color:var(--muted);font-weight:800;white-space:nowrap}
+.debrief-pin-button{border:1px solid var(--border);background:#f8fafc;color:#475569;border-radius:999px;padding:4px 7px;font-size:9px;font-weight:900;cursor:pointer;white-space:nowrap}
+.debrief-pin-button:hover{background:#f1f5f9}
+.debrief-pin-button.is-pinned{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.debrief-pinned-count{font-size:10px;font-weight:900;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:6px 9px;white-space:nowrap}
+.debrief-pinned-section{margin-bottom:12px;padding:10px;border:1px solid #fed7aa;background:#fffaf5;border-radius:12px}
+.debrief-pinned-section>strong{display:block;margin-bottom:8px;font-size:10px;color:#9a3412;text-transform:uppercase;letter-spacing:.04em}
+.debrief-subhead{margin:2px 0 8px;font-size:10px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:600px){
+  .debrief-section-title{flex-direction:column;gap:8px}
+  .debrief-note-card header{gap:6px}
+  .debrief-note-actions{align-items:flex-end;flex-direction:column;gap:4px}
+}
