@@ -99,6 +99,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .cockpit-main{grid-template-columns:1fr 1fr}.cockpit-actions{grid-column:1/-1}.status-strip{grid-template-columns:repeat(3,1fr)}.report-summary-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:760px){
+  .summary-stat.ultimatum-summary{grid-column:1/-1}
+  .ultimatum-offer-row{grid-template-columns:28px 1fr auto}
+  .ultimatum-offer-row .offer-status{grid-column:2/-1;justify-self:start}
+
   .choice-grid,.setup-grid{grid-template-columns:1fr}.cockpit-main{grid-template-columns:1fr}.status-strip{grid-template-columns:1fr 1fr}.pool-config-grid{grid-template-columns:1fr 1fr}.pool-config-grid button{grid-column:1/-1}.plan-row{grid-template-columns:1fr}.report-summary-grid{grid-template-columns:1fr 1fr}.qr-inline{align-items:flex-start;flex-direction:column}
 }
 @media(max-width:520px){
@@ -308,6 +312,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .report-summary-v2{grid-template-columns:repeat(5,1fr)}
 .report-summary-v2 .summary-stat{background:#fff}
 .summary-stat small{display:block;margin-top:4px;color:var(--muted);font-size:10px;line-height:1.35}
+.summary-stat.ultimatum-summary{grid-column:span 2}
+.ultimatum-offer-list{display:grid;gap:6px;margin-top:10px;max-height:280px;overflow:auto;padding-right:2px}
+.ultimatum-offer-row{display:grid;grid-template-columns:30px minmax(150px,1fr) minmax(90px,auto) minmax(90px,auto);gap:8px;align-items:center;padding:8px 9px;border:1px solid var(--border);border-radius:10px;background:#f8fafc}
+.ultimatum-offer-row .offer-round{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase}
+.ultimatum-offer-row .offer-route{display:flex;align-items:center;gap:6px;min-width:0;font-size:11px;color:#334155;text-transform:none}
+.ultimatum-offer-row .offer-route b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ultimatum-offer-row .offer-route i{font-style:normal;color:#94a3b8;flex:0 0 auto}
+.ultimatum-offer-row .offer-amount{margin:0;font-size:13px;white-space:nowrap;text-align:right}
+.offer-status{display:inline-flex!important;align-items:center;justify-content:center;border-radius:999px;padding:5px 8px;font-size:9px!important;font-weight:900;text-transform:uppercase;white-space:nowrap}
+.offer-status.accepted{background:var(--success-bg);border:1px solid var(--success-border);color:#166534}
+.offer-status.rejected{background:var(--danger-bg);border:1px solid var(--danger-border);color:#991b1b}
+.offer-status.pending{background:#f1f5f9;border:1px solid #cbd5e1;color:#64748b}
+.ultimatum-empty{padding:10px;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font-size:11px}
 
 /* Résztvevői kliens */
 .participant-v2{width:min(600px,calc(100% - 18px));padding-top:10px}
