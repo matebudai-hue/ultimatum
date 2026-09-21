@@ -2923,7 +2923,8 @@ function DebriefWorkspace({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
+  const finalMode = session.roundKey === 'report';
+  const [tab, setTab] = useState<'group' | 'events' | 'participants'>(finalMode ? 'group' : 'events');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && buildSelfReport(session, player.id).length > 0,
@@ -2932,8 +2933,71 @@ function DebriefWorkspace({
     session.closedRounds.length > 0 ||
     session.publicGoodsRounds.some((round) => round.status === 'settled');
 
+  useEffect(() => {
+    if (finalMode) setTab('group');
+  }, [finalMode]);
+
+  useEffect(() => {
+    if (finalMode || !open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [finalMode, open, onOpenChange]);
+
+  const content = hasData ? (
+    <>
+      <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
+        <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
+        <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
+        <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+      </div>
+
+      {tab === 'group' && <DebriefGroupView session={session} />}
+      {tab === 'events' && <DebriefEventsView session={session} />}
+      {tab === 'participants' && <DebriefParticipantsView session={session} />}
+    </>
+  ) : (
+    <div className="debrief-empty-state">
+      <strong>Még nincs kivezetési adat.</strong>
+      <span>Az első lezárt kör után itt jelenik meg a csoportkép, az érdekes események és a résztvevői történet.</span>
+    </div>
+  );
+
+  if (!finalMode) {
+    if (!open) return null;
+    return createPortal(
+      <div
+        className="debrief-drawer-backdrop"
+        role="presentation"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) onOpenChange(false);
+        }}
+      >
+        <aside className="debrief-drawer" role="dialog" aria-modal="true" aria-label="Kivezetés">
+          <header className="debrief-drawer-head">
+            <div>
+              <p className="eyebrow">Tréneri backstage</p>
+              <h2>Kivezetés</h2>
+              <span>Csak te látod. A játék fő vezérlése a háttérben változatlan marad.</span>
+            </div>
+            <button type="button" className="debrief-drawer-close" onClick={() => onOpenChange(false)} aria-label="Kivezetés bezárása">×</button>
+          </header>
+          <div className="debrief-drawer-content">{content}</div>
+        </aside>
+      </div>,
+      document.body,
+    );
+  }
+
   return (
-    <section className="panel dashboard-section debrief-workspace" id="debrief-workspace">
+    <section className="panel dashboard-section debrief-workspace debrief-workspace-final" id="debrief-workspace">
       <button
         type="button"
         className="debrief-workspace-toggle"
@@ -2941,36 +3005,16 @@ function DebriefWorkspace({
         aria-expanded={open}
       >
         <div>
-          <p className="eyebrow">Tréneri nézet</p>
+          <p className="eyebrow">Játék lezárva · tréneri nézet</p>
           <h2>Kivezetés</h2>
-          <p className="debrief-workspace-intro">Csoportkép, érdekes események és egyéni történetek.</p>
+          <p className="debrief-workspace-intro">Most ez a fő munkafelület: csoportkép, érdekes események és egyéni történetek.</p>
         </div>
         <div className="debrief-workspace-status">
-          {session.roundKey === 'report' && <b>Reflexió {reflectedPlayers}/{eligiblePlayers}</b>}
+          <b>Reflexió {reflectedPlayers}/{eligiblePlayers}</b>
           <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
         </div>
       </button>
-
-      {open && (
-        hasData ? (
-          <>
-            <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
-              <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
-              <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
-              <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
-            </div>
-
-            {tab === 'group' && <DebriefGroupView session={session} />}
-            {tab === 'events' && <DebriefEventsView session={session} />}
-            {tab === 'participants' && <DebriefParticipantsView session={session} />}
-          </>
-        ) : (
-          <div className="debrief-empty-state">
-            <strong>Még nincs kivezetési adat.</strong>
-            <span>Az első lezárt kör után itt jelenik meg a csoportkép, az érdekes események és a résztvevői történet.</span>
-          </div>
-        )
-      )}
+      {open && content}
     </section>
   );
 }
@@ -2997,6 +3041,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
 
   const openDebrief = () => {
     setDebriefOpen(true);
+    if (session?.roundKey !== 'report') return;
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         document.getElementById('debrief-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3024,7 +3069,6 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
 
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
-      <LiveDebriefNotes session={session} />
       <DebriefWorkspace session={session} open={debriefOpen} onOpenChange={setDebriefOpen} />
 
       <ReportPanel session={session} />
