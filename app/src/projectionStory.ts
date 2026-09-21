@@ -2,7 +2,6 @@ import { GameSession } from './gameTypes';
 import { InterestingEvent } from './debriefEngine';
 
 export type ProjectionStory = {
-  eventId: string;
   roundLabel: string;
   title: string;
   steps: string[];
@@ -125,7 +124,6 @@ export const buildProjectionStory = (
     .filter(Boolean);
 
   return {
-    eventId: event.id,
     roundLabel: roundLabel(event),
     title: event.title,
     steps: steps.length ? steps : ['Érdekes esemény'],
