@@ -3488,9 +3488,10 @@ function ParticipantStageRail({ session }: { session: GameSession }) {
     session.roundKey === 'lobby' ? 0 :
     session.roundKey === '1a' || session.roundKey === '1b' ? 1 :
     session.roundKey === '2a' || session.roundKey === '2b' ? 2 :
-    session.roundKey === '3a' || session.roundKey === '3b' ? 3 : 4;
+    session.roundKey === '3a' || session.roundKey === '3b' ? 3 :
+    session.roundKey === '4' ? 4 : 5;
 
-  const stages = ['Belépés', 'Ultimátum', 'Diktátor', 'Bizalom', 'Kassza'];
+  const stages = ['Belépés', 'Ultimátum', 'Diktátor', 'Bizalom', 'Kassza', 'Reflexió'];
   return (
     <div className="participant-stage-rail">
       {stages.map((label, index) => (
@@ -3577,6 +3578,12 @@ function ParticipantReflectionPanel({
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
   const submitted = ownReflections.length > 0;
+
+  useEffect(() => {
+    if (!sending || submitted) return;
+    const timeout = window.setTimeout(() => setSending(false), 10_000);
+    return () => window.clearTimeout(timeout);
+  }, [sending, submitted]);
 
   if (report.length === 0) {
     return (
@@ -3827,7 +3834,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
 
       <div className="participant-context-bar">
         <div>
-          <span className="context-round">{ROUND_LABELS[session.roundKey]}</span>
+          <span className="context-round">{session.roundKey === 'report' ? 'Reflexió' : ROUND_LABELS[session.roundKey]}</span>
           <strong>{participantRole(session, playerId)}</strong>
         </div>
         {currentPlayer && (
