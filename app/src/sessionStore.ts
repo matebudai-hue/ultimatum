@@ -24,6 +24,7 @@ import {
   settleUltimatum,
 } from './gameEngine';
 import { buildSixRoundPairingSchedule, STRATEGIC_ROUNDS } from './pairingEngine';
+import { buildSelfReport } from './debriefEngine';
 
 type Listener = (session: GameSession | null) => void;
 
@@ -52,6 +53,9 @@ const read = (code: string): GameSession | null => {
     publicGoodsRounds: parsed.publicGoodsRounds ?? [],
     groups: parsed.groups ?? [],
     pinnedDebriefEventIds: parsed.pinnedDebriefEventIds ?? [],
+    debriefPhase: parsed.debriefPhase,
+    reflections: parsed.reflections ?? [],
+    selfReport: parsed.selfReport ?? [],
   };
 };
 
@@ -526,6 +530,8 @@ export const localSessionStore = {
       publicGoodsPhase: 'setup',
       publicGoodsRounds: [],
       pinnedDebriefEventIds: [],
+      reflections: [],
+      selfReport: [],
     };
     write(session);
     return session;
@@ -1268,6 +1274,51 @@ export const localSessionStore = {
     session.publicGoodsDeadlineAt = undefined;
     session.roundKey = 'report';
     session.status = 'finished';
+    session.debriefPhase = 'reflection';
+    session.reflections = session.reflections ?? [];
+    write(session);
+    return session;
+  },
+
+  submitReflection(
+    code: string,
+    playerId: string,
+    items: Array<{ decisionId: string; comment: string }>,
+  ): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    if (session.roundKey !== 'report' || session.status !== 'finished') {
+      throw new Error('Reflexiót csak a játék lezárása után lehet beküldeni.');
+    }
+    const player = session.players.find((item) => item.id === playerId && !item.isBot);
+    if (!player) throw new Error('A résztvevő nem található.');
+
+    if (!Array.isArray(items) || items.length < 1 || items.length > 3) {
+      throw new Error('Legalább 1, legfeljebb 3 döntést válassz.');
+    }
+
+    const reportIds = new Set(buildSelfReport(session, playerId).map((item) => item.id));
+    const seen = new Set<string>();
+    const now = new Date().toISOString();
+    const reflections = items.map((item) => {
+      const decisionId = String(item.decisionId ?? '').trim();
+      const comment = String(item.comment ?? '').trim();
+      if (!reportIds.has(decisionId)) throw new Error('Csak a saját döntéseid közül választhatsz.');
+      if (seen.has(decisionId)) throw new Error('Ugyanazt a döntést csak egyszer választhatod.');
+      seen.add(decisionId);
+      if (!comment) throw new Error('Minden kiválasztott döntéshez írd le, mi célból döntöttél így.');
+      if (comment.length > 300) throw new Error('A válasz legfeljebb 300 karakter lehet.');
+      return { playerId, decisionId, comment, submittedAt: now };
+    });
+
+    session.reflections = [
+      ...(session.reflections ?? []).filter((item) => item.playerId !== playerId),
+      ...reflections,
+    ];
+
+    const humanPlayerIds = session.players.filter((item) => !item.isBot).map((item) => item.id);
+    const completed = new Set((session.reflections ?? []).map((item) => item.playerId));
+    session.debriefPhase = humanPlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
     write(session);
     return session;
   },
