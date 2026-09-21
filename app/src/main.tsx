@@ -1501,6 +1501,11 @@ function ReportPanel({ session }: { session: GameSession }) {
                               : startWealth > 0
                                 ? Math.round((contribution / startWealth) * 100)
                                 : 0;
+                            const poolSharePercent = contribution === undefined
+                              ? undefined
+                              : round.totalContribution > 0
+                                ? Math.round((contribution / round.totalContribution) * 100)
+                                : 0;
                             const delta = contribution !== undefined && round.status === 'settled'
                               ? (round.payoutPerPlayer ?? 0) - contribution
                               : undefined;
@@ -1511,7 +1516,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                                 <span className="member-contribution">
                                   {contribution === undefined
                                     ? 'még nincs tét'
-                                    : `${formatCredits(contribution)} · ${contributionPercent}%`}
+                                    : `${formatCredits(contribution)} · vagyon ${contributionPercent}% · kassza ${poolSharePercent}%`}
                                 </span>
                                 <span className={'member-wealth-change ' + (delta === undefined ? 'pending' : delta >= 0 ? 'positive' : 'negative')}>
                                   {delta === undefined
