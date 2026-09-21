@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function gameDoc(code) {
+      return get(/databases/$(database)/documents/games/$(code));
+    }
+
+    function isTrainer(code) {
+      return signedIn() &&
+        gameDoc(code).data.trainerUid == request.auth.uid;
+    }
+
+    function isLobby(code) {
+      return gameDoc(code).data.session.roundKey == 'lobby';
+    }
+
+    match /publicGames/{code} {
+      allow read: if signedIn();
+
+      allow create: if signedIn() &&
+        request.resource.data.trainerUid == request.auth.uid;
+
+      allow update: if signedIn() &&
+        resource.data.trainerUid == request.auth.uid &&
+        request.resource.data.trainerUid == resource.data.trainerUid;
+
+      allow delete: if signedIn() &&
+        resource.data.trainerUid == request.auth.uid;
+    }
+
+    match /games/{code} {
+      allow create: if signedIn() &&
+        request.resource.data.trainerUid == request.auth.uid;
+
+      allow read, update, delete: if signedIn() &&
+        resource.data.trainerUid == request.auth.uid;
+
+      match /players/{playerId} {
+        allow create: if signedIn() &&
+          isLobby(code) &&
+          request.resource.data.authUid == request.auth.uid &&
+          request.resource.data.playerId == playerId &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 60 &&
+          request.resource.data.commands is map &&
+          request.resource.data.commands.size() == 0 &&
+          request.resource.data.keys().hasOnly([
+            'playerId',
+            'authUid',
+            'name',
+            'joinedAt',
+            'lastSeenAt',
+            'commands'
+          ]);
+
+        allow read: if signedIn() &&
+          (resource.data.authUid == request.auth.uid || isTrainer(code));
+
+        allow update: if isTrainer(code) ||
+          (
+            signedIn() &&
+            resource.data.authUid == request.auth.uid &&
+            request.resource.data.authUid == resource.data.authUid &&
+            request.resource.data.playerId == resource.data.playerId &&
+            request.resource.data.name is string &&
+            request.resource.data.name.size() > 0 &&
+            request.resource.data.name.size() <= 60 &&
+            request.resource.data.commands is map &&
+            request.resource.data.commands.size() <= 20 &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'name',
+              'joinedAt',
+              'lastSeenAt',
+              'commands'
+            ])
+          );
+
+        allow delete: if isTrainer(code);
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "kreditjatek",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsc --noEmit",
+    "preview": "vite preview",
+    "test:rules": "tsx tests/firebaseRules.test.ts",
+    "test:projection": "tsx tests/firebaseProjection.test.ts"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "firebase": "latest",
+    "lucide-react": "latest",
+    "qrcode.react": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/jsdom": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "jsdom": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "@firebase/rules-unit-testing": "latest"
+  }
+}
