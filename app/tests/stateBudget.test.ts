@@ -89,7 +89,23 @@ for (let poolRound = 1; poolRound <= 25; poolRound += 1) {
   }
 }
 
-const session = localSessionStore.get(game.code)!;
+localSessionStore.finish(game.code);
+let session = localSessionStore.get(game.code)!;
+for (const player of session.players) {
+  const report = (await import('../src/debriefEngine.ts')).buildSelfReport(session, player.id);
+  const selected = report.slice(0, Math.min(3, report.length));
+  if (selected.length > 0) {
+    localSessionStore.submitReflection(
+      game.code,
+      player.id,
+      selected.map((item, index) => ({
+        decisionId: item.id,
+        comment: ('R' + index + ' ').padEnd(300, 'x'),
+      })),
+    );
+  }
+}
+session = localSessionStore.get(game.code)!;
 const rawBytes = Buffer.byteLength(JSON.stringify(session), 'utf8');
 const compressedBytes = gzipSync(JSON.stringify(session)).byteLength;
 const participantProjectionBytes = Math.max(
@@ -106,6 +122,7 @@ console.log('FIRESTORE MASTER STATE SIZE', {
   after25PoolRoundsGzip: compressedBytes,
   compressionRatio: Number((compressedBytes / rawBytes).toFixed(3)),
   largestParticipantProjection: participantProjectionBytes,
+  reflections: session.reflections?.length ?? 0,
 });
 
 assert.ok(
