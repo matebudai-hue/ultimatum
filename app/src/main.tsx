@@ -32,6 +32,7 @@ import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
+import { buildProjectionStory, ProjectionStory } from './projectionStory';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -2138,6 +2139,90 @@ function FirebaseSyncBanner() {
 }
 
 
+let projectionWindow: Window | null = null;
+
+function ensureProjectionWindow() {
+  if (projectionWindow && !projectionWindow.closed) return projectionWindow;
+  projectionWindow = window.open(
+    '',
+    'kreditjatek-projection',
+    'popup=yes,width=1280,height=820,resizable=yes,scrollbars=yes',
+  );
+  return projectionWindow;
+}
+
+function renderProjectionWindow(
+  story: ProjectionStory,
+  revealedSteps: number,
+  showComments: boolean,
+) {
+  const target = ensureProjectionWindow();
+  if (!target) return false;
+
+  const doc = target.document;
+  doc.title = 'Kreditjáték – kivetítés';
+
+  if (!doc.getElementById('kreditjatek-projection-style')) {
+    const style = doc.createElement('style');
+    style.id = 'kreditjatek-projection-style';
+    style.textContent = `
+      :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a;background:#f8fafc}
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#fff 0,#f8fafc 58%,#eef2f7 100%);display:grid;place-items:center;padding:5vw}
+      main{width:min(1180px,100%);min-height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+      .round{font-size:clamp(18px,2vw,30px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4vh}
+      .steps{width:100%;display:flex;flex-direction:column;gap:clamp(20px,3vh,38px);align-items:center}
+      .step{font-size:clamp(34px,5vw,72px);line-height:1.08;font-weight:850;color:#0f172a;max-width:1050px}
+      .step:not(:last-child){font-size:clamp(25px,3.4vw,48px);color:#475569}
+      .reflection{margin-top:6vh;width:min(920px,100%);border-top:2px solid #cbd5e1;padding-top:3vh}
+      .reflection-label{font-size:clamp(14px,1.5vw,22px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:2vh}
+      blockquote{margin:1.2vh 0;font-size:clamp(24px,3.3vw,46px);line-height:1.25;font-weight:650;color:#1e293b}
+      .blank{font-size:clamp(24px,3vw,42px);color:#94a3b8;font-weight:750}
+    `;
+    doc.head.appendChild(style);
+  }
+
+  const main = doc.createElement('main');
+  const round = doc.createElement('div');
+  round.className = 'round';
+  round.textContent = story.roundLabel;
+  main.appendChild(round);
+
+  const steps = doc.createElement('div');
+  steps.className = 'steps';
+  story.steps.slice(0, Math.max(1, revealedSteps)).forEach((text) => {
+    const node = doc.createElement('div');
+    node.className = 'step';
+    node.textContent = text;
+    steps.appendChild(node);
+  });
+  main.appendChild(steps);
+
+  if (showComments && story.comments.length > 0) {
+    const reflection = doc.createElement('section');
+    reflection.className = 'reflection';
+    const label = doc.createElement('div');
+    label.className = 'reflection-label';
+    label.textContent = 'Résztvevői reflexió';
+    reflection.appendChild(label);
+    story.comments.forEach((comment) => {
+      const quote = doc.createElement('blockquote');
+      quote.textContent = '„' + comment + '”';
+      reflection.appendChild(quote);
+    });
+    main.appendChild(reflection);
+  }
+
+  doc.body.replaceChildren(main);
+  target.focus();
+  return true;
+}
+
+function closeProjectionWindow() {
+  if (projectionWindow && !projectionWindow.closed) projectionWindow.close();
+  projectionWindow = null;
+}
+
 const eventRoundLabel = (event: InterestingEvent) =>
   event.game === 'publicGoods'
     ? `Kassza ${event.publicGoodsRound ?? ''}. kör`
@@ -2162,11 +2247,15 @@ function DebriefEventSummary({
   event,
   pinned = false,
   onTogglePin,
+  onProject,
+  projecting = false,
 }: {
   session: GameSession;
   event: InterestingEvent;
   pinned?: boolean;
   onTogglePin?: () => void;
+  onProject?: () => void;
+  projecting?: boolean;
 }) {
   const participants = eventParticipantLabel(session, event);
   const offer = factNumber(event, 'offer');
@@ -2315,6 +2404,15 @@ function DebriefEventSummary({
               aria-pressed={pinned}
             >
               {pinned ? '★ Félretéve' : '☆ Félreteszem'}
+            </button>
+          )}
+          {onProject && (
+            <button
+              type="button"
+              className={'debrief-project-button ' + (projecting ? 'is-projecting' : '')}
+              onClick={onProject}
+            >
+              {projecting ? '● Kivetítve' : 'Kivetítés'}
             </button>
           )}
         </div>
@@ -2587,9 +2685,92 @@ function DebriefEventsView({ session }: { session: GameSession }) {
   const pinned = events.filter((item) => pinnedIds.has(item.id));
   const rest = events.filter((item) => !pinnedIds.has(item.id));
   const toggle = (id: string) => gameStore.togglePinnedDebriefEvent(session.code, id);
+  const [projection, setProjection] = useState<{
+    story: ProjectionStory;
+    revealedSteps: number;
+    showComments: boolean;
+  } | null>(null);
+  const [projectionError, setProjectionError] = useState('');
+
+  const project = (event: InterestingEvent) => {
+    const story = buildProjectionStory(session, event);
+    const next = { story, revealedSteps: 1, showComments: false };
+    setProjectionError('');
+    if (!renderProjectionWindow(story, 1, false)) {
+      setProjectionError('A böngésző letiltotta a vetítőablakot. Engedélyezd a felugró ablakot, majd kattints újra a Kivetítés gombra.');
+      return;
+    }
+    setProjection(next);
+  };
+
+  const updateProjection = (next: {
+    story: ProjectionStory;
+    revealedSteps: number;
+    showComments: boolean;
+  }) => {
+    setProjection(next);
+    if (!renderProjectionWindow(next.story, next.revealedSteps, next.showComments)) {
+      setProjectionError('A vetítőablak nem érhető el. Kattints újra az esemény Kivetítés gombjára.');
+    }
+  };
+
+  const closeProjection = () => {
+    closeProjectionWindow();
+    setProjection(null);
+    setProjectionError('');
+  };
 
   return (
     <div className="debrief-workspace-body">
+      {projection && (
+        <section className="projection-controller">
+          <div className="projection-controller-copy">
+            <span>Kivetítve</span>
+            <strong>{projection.story.title}</strong>
+            <small>{projection.story.roundLabel} · {projection.revealedSteps}/{projection.story.steps.length} adat látható</small>
+          </div>
+          <div className="projection-controller-actions">
+            <button
+              type="button"
+              className="secondary"
+              disabled={projection.revealedSteps <= 1}
+              onClick={() => updateProjection({
+                ...projection,
+                revealedSteps: Math.max(1, projection.revealedSteps - 1),
+              })}
+            >
+              Előző adat
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={projection.revealedSteps >= projection.story.steps.length}
+              onClick={() => updateProjection({
+                ...projection,
+                revealedSteps: Math.min(projection.story.steps.length, projection.revealedSteps + 1),
+              })}
+            >
+              Következő adat
+            </button>
+            {projection.story.comments.length > 0 && (
+              <button
+                type="button"
+                className={projection.showComments ? 'secondary active' : 'secondary'}
+                onClick={() => updateProjection({
+                  ...projection,
+                  showComments: !projection.showComments,
+                })}
+              >
+                {projection.showComments ? 'Komment elrejtése' : 'Komment mutatása'}
+              </button>
+            )}
+            <button type="button" className="danger-subtle" onClick={closeProjection}>Kivetítés bezárása</button>
+          </div>
+        </section>
+      )}
+
+      {projectionError && <div className="error">{projectionError}</div>}
+
       {pinned.length > 0 && (
         <section className="debrief-workspace-section">
           <h3>★ Félretett eseményeim · {pinned.length}</h3>
@@ -2601,6 +2782,8 @@ function DebriefEventsView({ session }: { session: GameSession }) {
                 event={item}
                 pinned
                 onTogglePin={() => toggle(item.id)}
+                onProject={() => project(item)}
+                projecting={projection?.story.eventId === item.id}
               />
             ))}
           </div>
@@ -2619,6 +2802,8 @@ function DebriefEventsView({ session }: { session: GameSession }) {
                 session={session}
                 event={item}
                 onTogglePin={() => toggle(item.id)}
+                onProject={() => project(item)}
+                projecting={projection?.story.eventId === item.id}
               />
             ))}
           </div>
