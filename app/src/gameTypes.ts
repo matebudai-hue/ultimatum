@@ -138,6 +138,7 @@ export type GameSession = {
   publicGoodsRoundNumber: number;
   publicGoodsPhase: PublicGoodsPhase;
   publicGoodsRounds: PublicGoodsRound[];
+  pinnedDebriefEventIds?: string[];
 };
 
 export const ROUND_ORDER: RoundKey[] = ['lobby', '1a', '1b', '2a', '2b', '3a', '3b', '4', 'report'];
