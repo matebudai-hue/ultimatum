@@ -905,6 +905,11 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
           </div>
 
           <div className="compact-controls">
+            <button className="toolbar-button projector-trigger" onClick={() => setProjectorOpen(true)} title="QR-kód kivetítése"><QrCode size={16} />QR</button>
+            <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
+              {primaryIcon}{primaryLabel}
+            </button>
+            <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             {canFinishGame(session) && (
               <button
                 className="toolbar-button danger-action"
@@ -915,14 +920,9 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
                   if (confirmed) gameStore.finish(session.code);
                 }}
               >
-                Lezárás
+                Játék lezárása
               </button>
             )}
-            <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
-            <button className="toolbar-button projector-trigger" onClick={() => setProjectorOpen(true)} title="QR-kód kivetítése"><QrCode size={16} />QR</button>
-            <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
-              {primaryIcon}{primaryLabel}
-            </button>
           </div>
         </div>
 
