@@ -30,6 +30,7 @@ import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
 import { downloadCsv, reportSummary } from './report';
+import { buildHighlightedEvents, InterestingEvent } from './debriefEngine';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -2135,6 +2136,223 @@ function FirebaseSyncBanner() {
   );
 }
 
+
+const eventRoundLabel = (event: InterestingEvent) =>
+  event.game === 'publicGoods'
+    ? `Kassza ${event.publicGoodsRound ?? ''}. kör`
+    : ROUND_LABELS[event.roundKey];
+
+const eventParticipantLabel = (session: GameSession, event: InterestingEvent) =>
+  event.playerIds
+    .map((id) => session.players.find((player) => player.id === id)?.name)
+    .filter(Boolean)
+    .join(' · ');
+
+const factNumber = (event: InterestingEvent, key: string) => {
+  const value = event.facts[key];
+  return typeof value === 'number' ? value : undefined;
+};
+
+const signedCredits = (value: number) =>
+  (value > 0 ? '+' : '') + formatCredits(value);
+
+function DebriefEventSummary({ session, event }: { session: GameSession; event: InterestingEvent }) {
+  const participants = eventParticipantLabel(session, event);
+  const offer = factNumber(event, 'offer');
+  const amount = factNumber(event, 'amount');
+  const sent = factNumber(event, 'sent');
+  const multiplied = factNumber(event, 'multiplied');
+  const returned = factNumber(event, 'returned');
+  const contribution = factNumber(event, 'contribution');
+  const ownWealthPercent = factNumber(event, 'ownWealthPercent');
+  const potPercent = factNumber(event, 'potPercent');
+  const netAmount = factNumber(event, 'netAmount');
+
+  let detail: React.ReactNode = null;
+
+  if (event.kind === 'ultimatum_rejection' || event.kind === 'ultimatum_extreme_offer') {
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        {offer !== undefined && <strong>{formatCredits(offer)}</strong>}
+        {event.kind === 'ultimatum_extreme_offer' && typeof event.facts.accepted === 'boolean' && (
+          <span>{event.facts.accepted ? 'elfogadva' : 'elutasítva'}</span>
+        )}
+      </>
+    );
+  } else if (event.kind === 'ultimatum_acceptance_boundary') {
+    const rejected = factNumber(event, 'highestRejected');
+    const accepted = factNumber(event, 'lowestAccepted');
+    detail = (
+      <>
+        {rejected !== undefined && <span>legmagasabb elutasított <b>{formatCredits(rejected)}</b></span>}
+        {accepted !== undefined && <span>legalacsonyabb elfogadott <b>{formatCredits(accepted)}</b></span>}
+      </>
+    );
+  } else if (event.kind === 'dictator_extreme_give') {
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        {amount !== undefined && <strong>{formatCredits(amount)}</strong>}
+      </>
+    );
+  } else if (event.kind === 'ultimatum_dictator_shift') {
+    const ultimatumAmount = factNumber(event, 'ultimatumAmount');
+    const dictatorAmount = factNumber(event, 'dictatorAmount');
+    const shift = factNumber(event, 'shiftPercentagePoints');
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        <strong>
+          {ultimatumAmount !== undefined ? formatCredits(ultimatumAmount) : '–'}
+          {' → '}
+          {dictatorAmount !== undefined ? formatCredits(dictatorAmount) : '–'}
+        </strong>
+        {shift !== undefined && <span>{shift > 0 ? '+' : ''}{shift} százalékpont</span>}
+      </>
+    );
+  } else if (
+    event.kind === 'trust_high_high' ||
+    event.kind === 'trust_high_low' ||
+    event.kind === 'trust_low_high' ||
+    event.kind === 'trust_near_equal_outcome'
+  ) {
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        <strong>
+          {sent !== undefined ? formatCredits(sent) : '–'}
+          {' → '}
+          {multiplied !== undefined ? formatCredits(multiplied) : '–'}
+          {' → '}
+          {returned !== undefined ? formatCredits(returned) : '–'}
+        </strong>
+      </>
+    );
+  } else if (
+    event.kind === 'pool_personal_vs_group_share' ||
+    event.kind === 'pool_high_contribution_net_loss' ||
+    event.kind === 'pool_low_contribution_net_gain'
+  ) {
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        {contribution !== undefined && <strong>{formatCredits(contribution)}</strong>}
+        <span>
+          saját vagyon {ownWealthPercent ?? '–'}% · közös kassza {potPercent ?? '–'}%
+          {netAmount !== undefined ? ' · nettó ' + signedCredits(netAmount) : ''}
+        </span>
+      </>
+    );
+  } else if (event.kind === 'pool_pivotal_minimum') {
+    const total = factNumber(event, 'totalContribution');
+    const minimum = factNumber(event, 'minimumAmount');
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        {contribution !== undefined && <strong>{formatCredits(contribution)}</strong>}
+        <span>
+          kassza {total !== undefined ? formatCredits(total) : '–'}
+          {' · minimum '}
+          {minimum !== undefined ? formatCredits(minimum) : '–'}
+        </span>
+      </>
+    );
+  } else if (event.kind === 'pool_large_shift') {
+    const previous = factNumber(event, 'previousPercent');
+    const current = factNumber(event, 'currentPercent');
+    detail = (
+      <>
+        {participants && <span>{participants}</span>}
+        <strong>{previous ?? '–'}% → {current ?? '–'}%</strong>
+      </>
+    );
+  } else if (event.kind === 'pool_group_minimum_transition') {
+    const previousTotal = factNumber(event, 'previousTotal');
+    const currentTotal = factNumber(event, 'currentTotal');
+    const previousMinimum = factNumber(event, 'previousMinimum');
+    const currentMinimum = factNumber(event, 'currentMinimum');
+    const groupName = session.groups.find((group) => group.id === event.groupId)?.name ?? 'Csoport';
+    detail = (
+      <>
+        <span>{groupName}</span>
+        <strong>
+          {previousTotal !== undefined ? formatCredits(previousTotal) : '–'}
+          {' → '}
+          {currentTotal !== undefined ? formatCredits(currentTotal) : '–'}
+        </strong>
+        <span>
+          minimum {previousMinimum !== undefined ? formatCredits(previousMinimum) : '–'}
+          {' → '}
+          {currentMinimum !== undefined ? formatCredits(currentMinimum) : '–'}
+        </span>
+      </>
+    );
+  }
+
+  return (
+    <article className={'debrief-note-card priority-' + event.priority}>
+      <header>
+        <span>{eventRoundLabel(event)}</span>
+        <small>rendszer által kiemelt</small>
+      </header>
+      <h3>{event.title}</h3>
+      <div className="debrief-note-facts">{detail}</div>
+    </article>
+  );
+}
+
+function LiveDebriefNotes({ session }: { session: GameSession }) {
+  const events = buildHighlightedEvents(session);
+  if (events.length === 0) return null;
+
+  const roundOrder: Record<string, number> = {
+    '1a': 1,
+    '1b': 2,
+    '2a': 3,
+    '2b': 4,
+    '3a': 5,
+    '3b': 6,
+    '4': 7,
+  };
+  const ordered = [...events].sort((a, b) => {
+    const stage = (roundOrder[b.roundKey] ?? 0) - (roundOrder[a.roundKey] ?? 0);
+    if (stage !== 0) return stage;
+    if (a.roundKey === '4' && b.roundKey === '4') {
+      const round = (b.publicGoodsRound ?? 0) - (a.publicGoodsRound ?? 0);
+      if (round !== 0) return round;
+    }
+    return a.priority - b.priority;
+  });
+  const latest = ordered.slice(0, 6);
+  const older = ordered.slice(6);
+
+  return (
+    <section className="panel dashboard-section live-debrief-panel">
+      <div className="section-title debrief-section-title">
+        <div>
+          <p className="eyebrow">Kivezetés · élő gyűjtés</p>
+          <h2>Kivezetési jegyzetek · {events.length}</h2>
+          <p>A rendszer csak lezárt, elszámolt körökből emel ki helyzeteket. Ezt csak te látod.</p>
+        </div>
+      </div>
+
+      <div className="debrief-note-grid">
+        {latest.map((item) => <DebriefEventSummary session={session} event={item} key={item.id} />)}
+      </div>
+
+      {older.length > 0 && (
+        <details className="debrief-older-notes">
+          <summary>Korábbi jelzések · {older.length}</summary>
+          <div className="debrief-note-grid">
+            {older.map((item) => <DebriefEventSummary session={session} event={item} key={item.id} />)}
+          </div>
+        </details>
+      )}
+    </section>
+  );
+}
+
 function TrainerDashboard({ code, testMode = false }: { code: string; testMode?: boolean }) {
   const [session, setSession] = useState<GameSession | null>(() => gameStore.get(code));
   const [, setClock] = useState(0);
@@ -2168,6 +2386,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <TrainerCockpit session={session} joinUrl={joinUrl} />
       {testMode && <TestHarness session={session} />}
 
+      <LiveDebriefNotes session={session} />
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
 
