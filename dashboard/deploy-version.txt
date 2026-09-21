@@ -1,3 +1,0 @@
-Kreditjatek dashboard deployment
-source: b72b8ced56c8af1dda2d8f8cfd44df894f8c047f
-ui: bauhaus-compact + qr-portal + participant-waiting
