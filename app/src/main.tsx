@@ -2688,7 +2688,9 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
 function DebriefWorkspace({ session }: { session: GameSession }) {
   const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
-  const humanPlayers = session.players.filter((player) => !player.isBot).length;
+  const eligiblePlayers = session.players.filter(
+    (player) => !player.isBot && buildSelfReport(session, player.id).length > 0,
+  ).length;
   const [open, setOpen] = useState(session.roundKey === 'report');
   const hasData =
     session.closedRounds.length > 0 ||
@@ -2714,7 +2716,7 @@ function DebriefWorkspace({ session }: { session: GameSession }) {
           <p className="debrief-workspace-intro">Csoportkép, érdekes események és egyéni történetek.</p>
         </div>
         <div className="debrief-workspace-status">
-          {session.roundKey === 'report' && <b>Reflexió {reflectedPlayers}/{humanPlayers}</b>}
+          {session.roundKey === 'report' && <b>Reflexió {reflectedPlayers}/{eligiblePlayers}</b>}
           <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
         </div>
       </button>
@@ -3574,6 +3576,16 @@ function ParticipantReflectionPanel({
   );
   const [submitError, setSubmitError] = useState('');
   const submitted = ownReflections.length > 0;
+
+  if (report.length === 0) {
+    return (
+      <div className="participant-own-report">
+        <p className="eyebrow">Játék vége</p>
+        <h1>Nincs lezárt saját döntésed.</h1>
+        <p>A játék ebben az állapotban úgy ért véget, hogy még nem készült saját döntési történeted.</p>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
