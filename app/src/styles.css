@@ -922,3 +922,116 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .trainer-pulse .pulse-card:last-child{grid-column:1/-1}
   .game-timeline{padding:7px 8px}
 }
+
+
+/* --- Trainer dashboard UX hierarchy: 2026-09-21 --- */
+.game-summary-panel{padding:0;overflow:hidden}
+.game-summary-title{padding:18px 20px 14px;margin:0;border-bottom:1px solid var(--border)}
+.game-summary-stack{display:grid;gap:0}
+.game-summary-block{border-bottom:1px solid var(--border);background:#fff}
+.game-summary-block:last-child{border-bottom:0}
+.game-summary-block.is-current{background:#fbfdff;box-shadow:inset 4px 0 0 var(--turq)}
+.game-summary-block.is-done:not(.is-current){background:#fcfdfc}
+.game-summary-toggle{width:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px 18px;text-align:left;color:inherit}
+.game-summary-toggle:hover{background:#f8fafc}
+.game-summary-heading{display:flex;align-items:center;gap:12px;min-width:0}
+.game-summary-index{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:grid;place-items:center;background:#e8eef6;color:var(--navy);font-size:12px;font-weight:950}
+.game-summary-block.is-current .game-summary-index{background:var(--navy);color:#fff}
+.game-summary-heading>div{min-width:0}
+.game-summary-heading strong{display:block;font-size:16px;color:var(--navy)}
+.game-summary-heading small{display:block;margin-top:3px;color:var(--muted);font-size:10px;line-height:1.35;white-space:normal}
+.game-summary-toggle-state{display:flex;align-items:center;gap:7px;flex:0 0 auto}
+.summary-done-chip,.summary-current-chip{display:inline-flex;align-items:center;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em}
+.summary-done-chip{background:var(--success-bg);border:1px solid var(--success-border);color:#166534}
+.summary-current-chip{background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8}
+.summary-chevron{color:#64748b;transition:transform .18s ease}
+.game-summary-block.is-open .summary-chevron{transform:rotate(90deg)}
+.game-summary-body{padding:0 18px 18px}
+.game-summary-note{margin:0 0 10px;padding:8px 10px;border-radius:10px;background:#f8fafc;border:1px solid var(--border);color:#64748b;font-size:10px;line-height:1.45}
+.summary-round-section{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;margin-top:9px}
+.summary-round-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 11px;border-bottom:1px solid var(--border);background:#fbfdff}
+.summary-round-head>div{display:flex;align-items:baseline;gap:8px}
+.summary-round-head strong{font-size:12px;color:var(--navy)}
+.summary-round-head>div span{font-size:9px;color:var(--muted);font-weight:800}
+.round-state-chip{display:inline-flex;border-radius:999px;padding:4px 7px;font-size:8px;font-weight:900;text-transform:uppercase}
+.round-state-chip.done{background:var(--success-bg);color:#166534}
+.round-state-chip.active{background:#dbeafe;color:#1d4ed8}
+.round-state-chip.upcoming{background:#f1f5f9;color:#64748b}
+.decision-summary-list{display:grid;gap:6px;padding:8px}
+.summary-empty{padding:9px 10px;border:1px dashed var(--border);border-radius:9px;color:var(--muted);font-size:10px;background:#fafbfd}
+
+.game-summary-body .ultimatum-offer-row,
+.game-summary-body .dictator-transfer-row{grid-template-columns:minmax(180px,1fr) minmax(90px,auto) minmax(100px,auto)}
+.game-summary-body .trust-transfer-row{grid-template-columns:1fr}
+.game-summary-body .ultimatum-offer-row .offer-route,
+.game-summary-body .dictator-transfer-row .offer-route{font-size:11px}
+.game-summary-body .offer-status,
+.game-summary-body .dictator-band,
+.game-summary-body .trust-value{font-size:9px!important}
+
+.public-goods-analysis{padding-top:0}
+.public-goods-analysis .public-goods-round-list{gap:9px}
+.public-goods-analysis .public-goods-round-card{background:#fff}
+.public-goods-analysis .public-goods-round-card.is-current{border-color:#93c5fd;box-shadow:0 0 0 2px #dbeafe}
+.public-goods-round-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;background:#fbfdff;padding:10px 12px;text-align:left}
+.public-goods-round-toggle>div{display:flex;align-items:center;gap:8px}
+.public-goods-round-toggle strong{font-size:12px;color:var(--navy)}
+.public-goods-round-toggle span{font-size:9px;color:var(--muted);font-weight:800}
+.pool-round-chevron{color:#64748b;transition:transform .18s ease}
+.pool-round-chevron.is-open{transform:rotate(90deg)}
+.public-goods-analysis .public-goods-group-grid{padding:9px;background:#f8fafc}
+.public-goods-analysis .public-goods-group-head{align-items:center}
+.public-goods-analysis .public-goods-group-head>div:first-child small{max-width:520px;line-height:1.35}
+.public-goods-group-summary.pool-summary-success{border-left:3px solid #86efac}
+.public-goods-group-summary.pool-summary-failed{border-left:3px solid #fca5a5}
+.public-goods-group-summary.pool-summary-live{border-left:3px solid #93c5fd}
+.public-goods-member-head{display:grid;grid-template-columns:minmax(120px,1fr) minmax(100px,.7fr) minmax(170px,1fr) minmax(210px,1.2fr);gap:10px;padding:6px 11px;background:#f8fafc;border-bottom:1px solid var(--border)}
+.public-goods-member-head span{font-size:8px!important;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.public-goods-analysis .public-goods-member-row{grid-template-columns:minmax(120px,1fr) minmax(100px,.7fr) minmax(170px,1fr) minmax(210px,1.2fr)}
+.member-ratios{font-weight:850;color:#334155;white-space:nowrap}
+.public-goods-analysis .member-contribution{font-size:10px}
+.public-goods-analysis .member-wealth-change{font-size:10px}
+
+.diagnostic-details{padding:0;overflow:hidden}
+.diagnostic-summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 18px;cursor:pointer;background:#fff}
+.diagnostic-summary::-webkit-details-marker{display:none}
+.diagnostic-summary>div strong{display:block;margin-top:3px;font-size:15px;color:var(--navy)}
+.diagnostic-summary>span{font-size:10px;font-weight:900;color:var(--muted);background:#f1f5f9;border-radius:999px;padding:5px 8px}
+.diagnostic-details[open] .diagnostic-summary{border-bottom:1px solid var(--border);background:#fbfdff}
+.diagnostic-body{padding:12px 0 0}
+.diagnostic-legend{padding:0 16px 10px}
+
+.correction-panel>summary strong{font-size:14px}
+
+/* Current round is operational: keep direction explicit. */
+.pair-names>span{color:#94a3b8;font-weight:900}
+
+@media(max-width:900px){
+  .game-summary-body .ultimatum-offer-row,
+  .game-summary-body .dictator-transfer-row{grid-template-columns:minmax(150px,1fr) auto}
+  .game-summary-body .offer-status,
+  .game-summary-body .dictator-band{grid-column:1/-1;justify-self:start}
+  .public-goods-analysis .public-goods-group-grid{grid-template-columns:1fr}
+  .public-goods-member-head{display:none}
+  .public-goods-analysis .public-goods-member-row{grid-template-columns:1fr 1fr;gap:5px 10px}
+  .public-goods-analysis .public-goods-member-row>b{grid-column:1/-1}
+  .member-ratios,.member-wealth-change{white-space:normal}
+}
+@media(max-width:600px){
+  .game-summary-title{align-items:flex-start;gap:10px}
+  .game-summary-title .secondary{min-height:38px;padding:8px 10px}
+  .game-summary-toggle{padding:13px 12px}
+  .game-summary-body{padding:0 12px 12px}
+  .game-summary-heading small{font-size:9px}
+  .summary-done-chip,.summary-current-chip{display:none}
+  .game-summary-body .ultimatum-offer-row,
+  .game-summary-body .dictator-transfer-row{grid-template-columns:1fr auto}
+  .game-summary-body .offer-status,
+  .game-summary-body .dictator-band{grid-column:1/-1}
+  .trust-move{grid-template-columns:1fr}
+  .trust-value{justify-self:start}
+  .public-goods-analysis .public-goods-member-row{grid-template-columns:1fr}
+  .public-goods-analysis .public-goods-member-row>b{grid-column:auto}
+  .public-goods-group-head{align-items:flex-start;flex-direction:column}
+  .pool-total{text-align:left}
+}
