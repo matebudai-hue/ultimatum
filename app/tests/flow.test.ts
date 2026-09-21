@@ -704,6 +704,26 @@ function testTenPlayerManualPoolSetup() {
   console.log('10-PLAYER MANUAL GROUP + MINIMUM SETUP OK');
 }
 
+function testDebriefPinPersistence() {
+  const game = localSessionStore.create(100_000, 2);
+  const eventId = 'debrief:ultimatum_rejection:test-pair';
+
+  localSessionStore.togglePinnedDebriefEvent(game.code, eventId);
+  let state = localSessionStore.get(game.code)!;
+  assert.deepEqual(state.pinnedDebriefEventIds, [eventId]);
+
+  localSessionStore.togglePinnedDebriefEvent(game.code, eventId);
+  state = localSessionStore.get(game.code)!;
+  assert.deepEqual(state.pinnedDebriefEventIds, []);
+
+  assert.throws(
+    () => localSessionStore.togglePinnedDebriefEvent(game.code, 'invalid-event'),
+    /Érvénytelen kivezetési esemény/,
+  );
+
+  console.log('DEBRIEF PIN PERSISTENCE OK');
+}
+
 function testMissingStakeBecomesZero() {
   const code = runStrategicStage(4);
   let state = localSessionStore.get(code)!;
@@ -734,6 +754,7 @@ for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
   testPublicGoodsControl(code, count);
 }
 testTenPlayerManualPoolSetup();
+testDebriefPinPersistence();
 testMissingStakeBecomesZero();
 testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
