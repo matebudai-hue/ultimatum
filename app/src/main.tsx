@@ -2666,8 +2666,8 @@ function DebriefWorkspace({ session }: { session: GameSession }) {
         aria-expanded={open}
       >
         <div>
-          <p className="eyebrow">Kivezetés</p>
-          <h2>Játékértelmezés</h2>
+          <p className="eyebrow">Tréneri nézet</p>
+          <h2>Kivezetés</h2>
           <p className="debrief-workspace-intro">Csoportkép, érdekes események és egyéni történetek.</p>
         </div>
         <span>{open ? 'Bezárás' : 'Megnyitás'}</span>
