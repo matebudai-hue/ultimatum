@@ -866,7 +866,15 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
   return <>–</>;
 }
 
-function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: string }) {
+function TrainerCockpit({
+  session,
+  joinUrl,
+  onOpenDebrief,
+}: {
+  session: GameSession;
+  joinUrl: string;
+  onOpenDebrief: () => void;
+}) {
   const [projectorOpen, setProjectorOpen] = useState(false);
 
   useEffect(() => {
@@ -960,6 +968,7 @@ function TrainerCockpit({ session, joinUrl }: { session: GameSession; joinUrl: s
             <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
               {primaryIcon}{primaryLabel}
             </button>
+            <button className="toolbar-button" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             {canFinishGame(session) && (
               <button
@@ -2905,29 +2914,30 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
   );
 }
 
-function DebriefWorkspace({ session }: { session: GameSession }) {
+function DebriefWorkspace({
+  session,
+  open,
+  onOpenChange,
+}: {
+  session: GameSession;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [tab, setTab] = useState<'group' | 'events' | 'participants'>('group');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && buildSelfReport(session, player.id).length > 0,
   ).length;
-  const [open, setOpen] = useState(session.roundKey === 'report');
   const hasData =
     session.closedRounds.length > 0 ||
     session.publicGoodsRounds.some((round) => round.status === 'settled');
 
-  useEffect(() => {
-    if (session.roundKey === 'report') setOpen(true);
-  }, [session.roundKey]);
-
-  if (!hasData) return null;
-
   return (
-    <section className="panel dashboard-section debrief-workspace">
+    <section className="panel dashboard-section debrief-workspace" id="debrief-workspace">
       <button
         type="button"
         className="debrief-workspace-toggle"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => onOpenChange(!open)}
         aria-expanded={open}
       >
         <div>
@@ -2942,17 +2952,24 @@ function DebriefWorkspace({ session }: { session: GameSession }) {
       </button>
 
       {open && (
-        <>
-          <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
-            <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
-            <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
-            <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
-          </div>
+        hasData ? (
+          <>
+            <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
+              <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
+              <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
+              <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+            </div>
 
-          {tab === 'group' && <DebriefGroupView session={session} />}
-          {tab === 'events' && <DebriefEventsView session={session} />}
-          {tab === 'participants' && <DebriefParticipantsView session={session} />}
-        </>
+            {tab === 'group' && <DebriefGroupView session={session} />}
+            {tab === 'events' && <DebriefEventsView session={session} />}
+            {tab === 'participants' && <DebriefParticipantsView session={session} />}
+          </>
+        ) : (
+          <div className="debrief-empty-state">
+            <strong>Még nincs kivezetési adat.</strong>
+            <span>Az első lezárt kör után itt jelenik meg a csoportkép, az érdekes események és a résztvevői történet.</span>
+          </div>
+        )
       )}
     </section>
   );
@@ -2960,6 +2977,7 @@ function DebriefWorkspace({ session }: { session: GameSession }) {
 
 function TrainerDashboard({ code, testMode = false }: { code: string; testMode?: boolean }) {
   const [session, setSession] = useState<GameSession | null>(() => gameStore.get(code));
+  const [debriefOpen, setDebriefOpen] = useState(false);
   const [, setClock] = useState(0);
   useEffect(() => gameStore.subscribe(code, setSession), [code]);
   useEffect(() => {
@@ -2972,6 +2990,19 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
     }, 500);
     return () => window.clearInterval(id);
   }, [code]);
+
+  useEffect(() => {
+    if (session?.roundKey === 'report') setDebriefOpen(true);
+  }, [session?.roundKey]);
+
+  const openDebrief = () => {
+    setDebriefOpen(true);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('debrief-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  };
 
   const joinUrl = useMemo(() => {
     const url = new URL(window.location.href);
@@ -2988,13 +3019,13 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
   return (
     <main className="shell trainer-shell">
       <FirebaseSyncBanner />
-      <TrainerCockpit session={session} joinUrl={joinUrl} />
+      <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} />
       {testMode && <TestHarness session={session} />}
 
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
       <LiveDebriefNotes session={session} />
-      <DebriefWorkspace session={session} />
+      <DebriefWorkspace session={session} open={debriefOpen} onOpenChange={setDebriefOpen} />
 
       <ReportPanel session={session} />
       <PlayerTable session={session} />
