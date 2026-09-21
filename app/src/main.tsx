@@ -1336,6 +1336,19 @@ function ReportPanel({ session }: { session: GameSession }) {
       }];
     });
 
+  const publicGoodsRounds = [...new Set(session.publicGoodsRounds.map((round) => round.roundNumber))]
+    .sort((a, b) => a - b)
+    .map((roundNumber) => ({
+      roundNumber,
+      groups: session.publicGoodsRounds
+        .filter((round) => round.roundNumber === roundNumber)
+        .sort((a, b) => {
+          const aName = session.groups.find((group) => group.id === a.groupId)?.name ?? a.groupId;
+          const bName = session.groups.find((group) => group.id === b.groupId)?.name ?? b.groupId;
+          return aName.localeCompare(bName, 'hu');
+        }),
+    }));
+
   return (
     <section className="panel report-panel dashboard-section">
       <div className="section-title">
@@ -1448,10 +1461,74 @@ function ReportPanel({ session }: { session: GameSession }) {
           </div>
           <small className="trust-scale-note">Szín: alacsony ≤30% · kiugróan magas ≥70%. Visszaadásnál a háromszorozott összeghez viszonyítva.</small>
         </div>
-        <div className="summary-stat">
+        <div className="summary-stat public-goods-summary">
           <span>Közös kassza</span>
-          <strong>{session.publicGoodsRoundNumber} kör</strong>
-          <small>{session.publicGoodsRounds.filter((r) => r.status === 'settled' && r.success).length} sikeres csoportkör</small>
+          <strong>{publicGoodsRounds.length} kör</strong>
+          <small>
+            Csapatonkénti kassza, egyéni befizetések és vagyonváltozás.
+            A százalék az adott játékos kör eleji vagyonához viszonyított befizetés.
+          </small>
+          <div className="public-goods-round-list">
+            {publicGoodsRounds.length === 0 ? (
+              <div className="ultimatum-empty">Még nincs kasszakör.</div>
+            ) : publicGoodsRounds.map(({ roundNumber, groups }) => (
+              <section className="public-goods-round-card" key={roundNumber}>
+                <header className="public-goods-round-head">
+                  <strong>{roundNumber}. kör</strong>
+                  <span>{groups.length} csapat</span>
+                </header>
+                <div className="public-goods-group-grid">
+                  {groups.map((round) => {
+                    const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? round.groupId;
+                    return (
+                      <div className="public-goods-group-summary" key={round.id}>
+                        <div className="public-goods-group-head">
+                          <div>
+                            <b>{groupName}</b>
+                            <small>{round.memberIds.length} fő</small>
+                          </div>
+                          <div className="pool-total">
+                            <span>Teljes kassza</span>
+                            <strong>{formatCredits(round.totalContribution)}</strong>
+                          </div>
+                        </div>
+                        <div className="public-goods-member-list">
+                          {round.memberIds.map((playerId) => {
+                            const contribution = round.contributions[playerId];
+                            const startWealth = round.startingPlayerWealth?.[playerId] ?? 0;
+                            const contributionPercent = contribution === undefined
+                              ? undefined
+                              : startWealth > 0
+                                ? Math.round((contribution / startWealth) * 100)
+                                : 0;
+                            const delta = contribution !== undefined && round.status === 'settled'
+                              ? (round.payoutPerPlayer ?? 0) - contribution
+                              : undefined;
+                            const endWealth = delta === undefined ? undefined : startWealth + delta;
+                            return (
+                              <div className="public-goods-member-row" key={playerId}>
+                                <b>{playerName(session, playerId)}</b>
+                                <span className="member-contribution">
+                                  {contribution === undefined
+                                    ? 'még nincs tét'
+                                    : `${formatCredits(contribution)} · ${contributionPercent}%`}
+                                </span>
+                                <span className={'member-wealth-change ' + (delta === undefined ? 'pending' : delta >= 0 ? 'positive' : 'negative')}>
+                                  {delta === undefined
+                                    ? 'vagyon: elszámolásra vár'
+                                    : `${formatCredits(startWealth)} → ${formatCredits(endWealth ?? startWealth)} · ${delta >= 0 ? '+' : ''}${formatCredits(delta)}`}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
         <div className="summary-stat">
           <span>Korrekció</span>
