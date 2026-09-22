@@ -3430,100 +3430,121 @@ const poolPlayerColor = (index: number) => 'hsl(' + ((index * 47 + 198) % 360) +
 
 function PublicGoodsPatterns({ session }: { session: GameSession }) {
   const settled = session.publicGoodsRounds.filter((round) => round.status === 'settled');
-  if (settled.length === 0) {
+  const groupsWithRounds = session.groups.filter((group) => settled.some((round) => round.groupId === group.id));
+  const [selectedGroupId, setSelectedGroupId] = useState(() => groupsWithRounds[0]?.id ?? '');
+
+  useEffect(() => {
+    if (groupsWithRounds.length === 0) return;
+    if (!groupsWithRounds.some((group) => group.id === selectedGroupId)) {
+      setSelectedGroupId(groupsWithRounds[0].id);
+    }
+  }, [selectedGroupId, groupsWithRounds.map((group) => group.id).join('|')]);
+
+  if (settled.length === 0 || groupsWithRounds.length === 0) {
     return <div className="pattern-empty">Még nincs lezárt Közös kassza kör.</div>;
   }
 
+  const group = groupsWithRounds.find((item) => item.id === selectedGroupId) ?? groupsWithRounds[0];
+  const rounds = settled.filter((round) => round.groupId === group.id).sort((a, b) => a.roundNumber - b.roundNumber);
+
+  const yMax = Math.max(
+    100,
+    ...rounds.map((round) => round.startingGroupWealth > 0 ? round.totalContribution / round.startingGroupWealth * 100 : 0),
+    ...rounds.map((round) => round.minimumAmount !== undefined && round.startingGroupWealth > 0 ? round.minimumAmount / round.startingGroupWealth * 100 : 0),
+  );
+  const normalizedMax = Math.ceil(yMax / 10) * 10;
+
   return (
     <div className="pool-pattern-groups">
-      {session.groups.map((group) => {
-        const rounds = settled.filter((round) => round.groupId === group.id).sort((a, b) => a.roundNumber - b.roundNumber);
-        if (rounds.length === 0) return null;
+      {groupsWithRounds.length > 1 && (
+        <div className="pool-pattern-group-tabs">
+          {groupsWithRounds.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={item.id === group.id ? 'active' : ''}
+              onClick={() => setSelectedGroupId(item.id)}
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+      )}
 
-        const yMax = Math.max(
-          100,
-          ...rounds.map((round) => round.startingGroupWealth > 0 ? round.totalContribution / round.startingGroupWealth * 100 : 0),
-          ...rounds.map((round) => round.minimumAmount !== undefined && round.startingGroupWealth > 0 ? round.minimumAmount / round.startingGroupWealth * 100 : 0),
-        );
-        const normalizedMax = Math.ceil(yMax / 10) * 10;
+      <section className="pool-pattern-group">
+        <header>
+          <div>
+            <span>Saját körökhöz viszonyítva</span>
+            <h4>{group.name}</h4>
+          </div>
+          <div className="pool-pattern-legend">
+            {group.memberIds.map((playerId, index) => (
+              <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{playerName(session, playerId)}</span>
+            ))}
+          </div>
+        </header>
 
-        return (
-          <section className="pool-pattern-group" key={group.id}>
-            <header>
-              <div>
-                <span>Külön csoportdiagram</span>
-                <h4>{group.name}</h4>
-              </div>
-              <div className="pool-pattern-legend">
-                {group.memberIds.map((playerId, index) => (
-                  <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{playerName(session, playerId)}</span>
-                ))}
-              </div>
-            </header>
+        <div className="pool-pattern-chart">
+          <div className="pool-pattern-y-axis">
+            <span>{normalizedMax}%</span>
+            <span>{Math.round(normalizedMax / 2)}%</span>
+            <span>0%</span>
+          </div>
+          <div className="pool-pattern-rounds" style={{ gridTemplateColumns: 'repeat(' + rounds.length + ', minmax(0, 1fr))' }}>
+            {rounds.map((round) => {
+              const groupWealth = Math.max(1, round.startingGroupWealth);
+              const totalPercent = round.totalContribution / groupWealth * 100;
+              const minimumPercent = round.minimumAmount === undefined ? undefined : round.minimumAmount / groupWealth * 100;
+              const gap = minimumPercent === undefined ? undefined : totalPercent - minimumPercent;
 
-            <div className="pool-pattern-chart">
-              <div className="pool-pattern-y-axis">
-                <span>{normalizedMax}%</span>
-                <span>{Math.round(normalizedMax / 2)}%</span>
-                <span>0%</span>
-              </div>
-              <div className="pool-pattern-rounds" style={{ gridTemplateColumns: 'repeat(' + rounds.length + ', minmax(0, 1fr))' }}>
-                {rounds.map((round) => {
-                  const groupWealth = Math.max(1, round.startingGroupWealth);
-                  const totalPercent = round.totalContribution / groupWealth * 100;
-                  const minimumPercent = round.minimumAmount === undefined ? undefined : round.minimumAmount / groupWealth * 100;
-                  const gap = minimumPercent === undefined ? undefined : totalPercent - minimumPercent;
-
-                  return (
-                    <div className="pool-pattern-round" key={round.id}>
-                      <div className="pool-pattern-total">{Math.round(totalPercent * 10) / 10}%</div>
-                      <div className="pool-pattern-track">
-                        {minimumPercent !== undefined && (
-                          <div
-                            className="pool-pattern-minimum"
-                            style={{ bottom: Math.min(100, minimumPercent / normalizedMax * 100) + '%' }}
-                            title={'Minimum: ' + (Math.round(minimumPercent * 10) / 10) + '%'}
-                          >
-                            <span>minimum {Math.round(minimumPercent * 10) / 10}%</span>
-                          </div>
-                        )}
-                        <div className="pool-pattern-stack" style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
-                          {round.memberIds.map((playerId) => {
-                            const memberIndex = group.memberIds.indexOf(playerId);
-                            const amount = round.contributions[playerId] ?? 0;
-                            const segmentOfGroupWealth = amount / groupWealth * 100;
-                            const ownWealth = round.startingPlayerWealth?.[playerId] ?? 0;
-                            const ownPercent = ownWealth > 0 ? amount / ownWealth * 100 : 0;
-                            const potPercent = round.totalContribution > 0 ? amount / round.totalContribution * 100 : 0;
-                            const segmentShareOfBar = totalPercent > 0 ? segmentOfGroupWealth / totalPercent * 100 : 0;
-                            return (
-                              <div
-                                className="pool-pattern-segment"
-                                key={playerId}
-                                style={{
-                                  height: segmentShareOfBar + '%',
-                                  background: poolPlayerColor(Math.max(0, memberIndex)),
-                                }}
-                                title={playerName(session, playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
-                              />
-                            );
-                          })}
-                        </div>
+              return (
+                <div className="pool-pattern-round" key={round.id}>
+                  <div className="pool-pattern-total">{Math.round(totalPercent * 10) / 10}%</div>
+                  <div className="pool-pattern-track">
+                    {minimumPercent !== undefined && (
+                      <div
+                        className="pool-pattern-minimum"
+                        style={{ bottom: Math.min(100, minimumPercent / normalizedMax * 100) + '%' }}
+                        title={'Minimum: ' + (Math.round(minimumPercent * 10) / 10) + '%'}
+                      >
+                        <span>minimum {Math.round(minimumPercent * 10) / 10}%</span>
                       </div>
-                      <strong>{round.roundNumber}. kör</strong>
-                      {gap !== undefined && (
-                        <small className={gap >= 0 ? 'is-over' : 'is-under'}>
-                          {gap >= 0 ? '+' : '−'}{Math.abs(Math.round(gap * 10) / 10)} százalékpont
-                        </small>
-                      )}
+                    )}
+                    <div className="pool-pattern-stack" style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
+                      {round.memberIds.map((playerId) => {
+                        const memberIndex = group.memberIds.indexOf(playerId);
+                        const amount = round.contributions[playerId] ?? 0;
+                        const segmentOfGroupWealth = amount / groupWealth * 100;
+                        const ownWealth = round.startingPlayerWealth?.[playerId] ?? 0;
+                        const ownPercent = ownWealth > 0 ? amount / ownWealth * 100 : 0;
+                        const potPercent = round.totalContribution > 0 ? amount / round.totalContribution * 100 : 0;
+                        const segmentShareOfBar = totalPercent > 0 ? segmentOfGroupWealth / totalPercent * 100 : 0;
+                        return (
+                          <div
+                            className="pool-pattern-segment"
+                            key={playerId}
+                            style={{
+                              height: segmentShareOfBar + '%',
+                              background: poolPlayerColor(Math.max(0, memberIndex)),
+                            }}
+                            title={playerName(session, playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
+                          />
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        );
-      })}
+                  </div>
+                  <strong>{round.roundNumber}. kör</strong>
+                  {gap !== undefined && (
+                    <small className={gap >= 0 ? 'is-over' : 'is-under'}>
+                      {gap >= 0 ? '+' : '−'}{Math.abs(Math.round(gap * 10) / 10)} százalékpont
+                    </small>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
