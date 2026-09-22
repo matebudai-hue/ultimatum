@@ -2685,25 +2685,27 @@ function renderProjectionWindow(
   const doc = target.document;
   doc.title = 'Kreditjáték – kivetítés';
 
-  if (!doc.getElementById('kreditjatek-projection-style')) {
-    const style = doc.createElement('style');
+  let style = doc.getElementById('kreditjatek-projection-style') as HTMLStyleElement | null;
+  if (!style) {
+    style = doc.createElement('style');
     style.id = 'kreditjatek-projection-style';
-    style.textContent = `
-      :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a;background:#f8fafc}
-      *{box-sizing:border-box}
-      body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#fff 0,#f8fafc 58%,#eef2f7 100%);display:grid;place-items:center;padding:5vw}
-      main{width:min(1180px,100%);min-height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
-      .round{font-size:clamp(18px,2vw,30px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4vh}
-      .steps{width:100%;display:flex;flex-direction:column;gap:clamp(20px,3vh,38px);align-items:center}
-      .step{font-size:clamp(34px,5vw,72px);line-height:1.08;font-weight:850;color:#0f172a;max-width:1050px}
-      .step:not(:last-child){font-size:clamp(25px,3.4vw,48px);color:#475569}
-      .reflection{margin-top:6vh;width:min(920px,100%);border-top:2px solid #cbd5e1;padding-top:3vh}
-      .reflection-label{font-size:clamp(14px,1.5vw,22px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:2vh}
-      blockquote{margin:1.2vh 0;font-size:clamp(24px,3.3vw,46px);line-height:1.25;font-weight:650;color:#1e293b}
-      .blank{font-size:clamp(24px,3vw,42px);color:#94a3b8;font-weight:750}
-    `;
     doc.head.appendChild(style);
   }
+  style.textContent = `
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0f172a;background:#f8fafc}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden}
+    body{margin:0;background:radial-gradient(circle at top,#fff 0,#f8fafc 58%,#eef2f7 100%);display:grid;place-items:center;padding:5vw}
+    main{width:min(1180px,100%);min-height:70vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+    .round{font-size:clamp(18px,2vw,30px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4vh}
+    .steps{width:100%;display:flex;flex-direction:column;gap:clamp(20px,3vh,38px);align-items:center}
+    .step{font-size:clamp(34px,5vw,72px);line-height:1.08;font-weight:850;color:#0f172a;max-width:1050px}
+    .step:not(:last-child){font-size:clamp(25px,3.4vw,48px);color:#475569}
+    .reflection{margin-top:6vh;width:min(920px,100%);border-top:2px solid #cbd5e1;padding-top:3vh}
+    .reflection-label{font-size:clamp(14px,1.5vw,22px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:2vh}
+    blockquote{margin:1.2vh 0;font-size:clamp(24px,3.3vw,46px);line-height:1.25;font-weight:650;color:#1e293b}
+    .blank{font-size:clamp(24px,3vw,42px);color:#94a3b8;font-weight:750}
+  `;
 
   const main = doc.createElement('main');
   const round = doc.createElement('div');
