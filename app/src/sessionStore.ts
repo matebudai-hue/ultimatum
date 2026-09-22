@@ -746,7 +746,7 @@ export const localSessionStore = {
     );
   },
 
-  ackStrategicTaskVisible(code: string, playerId: string): GameSession {
+  ackStrategicTaskVisible(code: string, playerId: string, seenAt?: string): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) return session;
@@ -757,7 +757,9 @@ export const localSessionStore = {
 
     const key = strategicWindowKey(pairing.id, playerId);
     if (!session.strategicTaskSeenAt[key]) {
-      session.strategicTaskSeenAt[key] = new Date().toISOString();
+      const seenMs = seenAt ? new Date(seenAt).getTime() : Date.now();
+      if (!Number.isFinite(seenMs)) throw new Error('Érvénytelen feladat-megjelenési időbélyeg.');
+      session.strategicTaskSeenAt[key] = new Date(seenMs).toISOString();
       write(session);
     }
     return session;
@@ -817,7 +819,7 @@ export const localSessionStore = {
     session.strategicTechnicalIssues[issueIndex].resolution = 'reopened';
     const key = strategicWindowKey(pairingId, playerId);
     delete session.strategicSubmitIntentAt[key];
-    session.strategicTaskSeenAt[key] = new Date().toISOString();
+    delete session.strategicTaskSeenAt[key];
     write(session);
     return session;
   },
