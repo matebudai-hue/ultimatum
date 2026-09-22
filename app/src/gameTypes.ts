@@ -56,6 +56,7 @@ export type Decision = {
   isBotDecision?: boolean;
   publicGoodsRound?: number;
   groupId?: string;
+  submissionSource?: 'participant' | 'bot' | 'missing_default' | 'manual_correction';
   submittedAt: string;
   submitIntentAt?: string;
   submissionHistory?: Array<{
