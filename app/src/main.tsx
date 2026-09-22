@@ -1704,7 +1704,7 @@ function PublicGoodsLiveBar({ session }: { session: GameSession }) {
           const group = session.groups.find((item) => item.id === round.groupId);
           const minimum = round.minimumAmount;
           const gap = minimum === undefined ? undefined : minimum - round.totalContribution;
-          const near = gap !== undefined && gap > 0 && minimum > 0 && gap / minimum <= 0.05;
+          const near = minimum !== undefined && minimum > 0 && gap !== undefined && gap > 0 && gap / minimum <= 0.05;
           const above = gap !== undefined && gap <= 0;
           const settledFailure = round.status === 'settled' && round.success === false;
           const chipClass =
