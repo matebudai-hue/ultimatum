@@ -3457,14 +3457,20 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
           bucketIndexes.set(bucketKey, bucketIndex + 1);
           const spreadRadius = bucketTotal > 1 ? Math.min(30, 10 + bucketTotal * 2) : 0;
           const angle = bucketTotal > 1 ? (Math.PI * 2 * bucketIndex) / bucketTotal : 0;
-          const px = x(row.sentPercent) + Math.cos(angle) * spreadRadius;
-          const py = y(row.returnPercent) + Math.sin(angle) * spreadRadius;
+          const px = Math.max(108, Math.min(872, x(row.sentPercent) + Math.cos(angle) * spreadRadius));
+          const py = Math.max(96, Math.min(526, y(row.returnPercent) + Math.sin(angle) * spreadRadius));
           const label = showNames ? row.giver + ' → ' + row.receiver : String(index + 1);
+          const labelOnLeft = showNames && px > 720;
           return (
             <g key={row.pairing.id} className="trust-point">
               <title>{row.giver + ' → ' + row.receiver + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
               <circle cx={px} cy={py} r={showNames ? 10 : 13} />
-              <text x={px + (showNames ? 14 : 0)} y={py + 5} textAnchor={showNames ? 'start' : 'middle'} className={showNames ? 'trust-point-name' : 'trust-point-index'}>
+              <text
+                x={showNames ? px + (labelOnLeft ? -14 : 14) : px}
+                y={py + 5}
+                textAnchor={showNames ? (labelOnLeft ? 'end' : 'start') : 'middle'}
+                className={showNames ? 'trust-point-name' : 'trust-point-index'}
+              >
                 {label}
               </text>
             </g>
