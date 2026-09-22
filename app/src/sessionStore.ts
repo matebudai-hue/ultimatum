@@ -1228,7 +1228,7 @@ export const localSessionStore = {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (session.publicGoodsPhase !== 'open') throw new Error('A tét most nem módosítható.');
-    if (publicGoodsDeadlinePassed(session)) throw new Error('Lejárt az egyperces döntési idő.');
+    if (publicGoodsDeadlinePassed(session)) throw new Error('Lejárt a 90 másodperces döntési idő.');
 
     const player = session.players.find((item) => item.id === playerId);
     if (!player) throw new Error('A résztvevő nem található.');
