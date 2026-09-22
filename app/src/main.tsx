@@ -888,6 +888,7 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
 ];
 
 let projectorWindow: Window | null = null;
+let projectorContentMode: ProjectionMode | 'debrief' | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -983,6 +984,7 @@ function ensureProjectorWindow() {
 function renderRulesProjectionWindow(session: GameSession, game: RulesProjectionGame) {
   const target = ensureProjectorWindow();
   if (!target) return false;
+  projectorContentMode = game;
 
   const copy = rulesProjectionCopy(session, game);
   const doc = target.document;
@@ -1082,6 +1084,7 @@ function renderRulesProjectionWindow(session: GameSession, game: RulesProjection
 function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
   const target = ensureProjectorWindow();
   if (!target) return false;
+  projectorContentMode = 'qr';
 
   const sourceSvg = document.querySelector('#projection-qr-source svg');
   if (!sourceSvg) return false;
@@ -1175,6 +1178,7 @@ function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
 function renderBlankProjectionWindow() {
   const target = ensureProjectorWindow();
   if (!target) return false;
+  projectorContentMode = 'blank';
   const doc = target.document;
   doc.title = 'Kreditjáték – kivetítés';
   doc.head.replaceChildren();
@@ -1190,6 +1194,7 @@ function renderBlankProjectionWindow() {
 function renderSummaryProjectionWindow(session: GameSession) {
   const target = ensureProjectorWindow();
   if (!target) return false;
+  projectorContentMode = 'summary';
 
   const picture = buildGroupPicture(session);
   const latestRoundNumber = session.publicGoodsRounds
@@ -1314,7 +1319,7 @@ function TrainerCockpit({
   };
 
   useEffect(() => {
-    if (!projectorWindow || projectorWindow.closed) return;
+    if (!projectorWindow || projectorWindow.closed || projectorContentMode !== selectedProjectionMode) return;
     if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
     else if (selectedProjectionMode === 'summary') renderSummaryProjectionWindow(session);
     else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
@@ -2681,6 +2686,7 @@ function renderProjectionWindow(
 ) {
   const target = ensureProjectionWindow();
   if (!target) return false;
+  projectorContentMode = 'debrief';
 
   const doc = target.document;
   doc.title = 'Kreditjáték – kivetítés';
@@ -2745,6 +2751,7 @@ function renderProjectionWindow(
 function closeProjectionWindow() {
   if (projectorWindow && !projectorWindow.closed) projectorWindow.close();
   projectorWindow = null;
+  projectorContentMode = null;
 }
 
 const eventRoundLabel = (event: InterestingEvent) =>
