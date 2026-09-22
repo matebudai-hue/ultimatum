@@ -14,10 +14,11 @@ const { createCsv } = await import('../src/report.ts');
 const { pairingRepeatStats } = await import('../src/pairingEngine.ts');
 const { settleUltimatum, settleOneWayGive, settleTrust, settlePublicGoods } = await import('../src/gameEngine.ts');
 const { buildSelfReport } = await import('../src/debriefEngine.ts');
+const { STRATEGIC_DECISION_SECONDS } = await import('../src/gameTypes.ts');
 
 const strategic = ['1a', '1b', '2a', '2b', '3a', '3b'] as const;
 
-function testUltimatumThirtySecondTimeouts() {
+function testUltimatumSixtySecondTimeouts() {
   const proposerGame = localSessionStore.create(100_000, 2);
   localSessionStore.join(proposerGame.code, 'u-proposer-a', 'A');
   localSessionStore.join(proposerGame.code, 'u-proposer-b', 'B');
@@ -32,8 +33,8 @@ function testUltimatumThirtySecondTimeouts() {
   const proposerDeadline = localSessionStore.ultimatumDeadlineAt(state, proposerPair.id, proposerPair.playerA)!;
   assert.equal(
     new Date(proposerDeadline).getTime() - new Date(proposerSeenAt).getTime(),
-    30_000,
-    'A felajánló ideje a kliens megjelenésétől pontosan 30 másodperc.',
+    STRATEGIC_DECISION_SECONDS * 1000,
+    'A felajánló ideje a kliens megjelenésétől pontosan 60 másodperc.',
   );
 
   localSessionStore.reconcileStrategicTimeouts(
@@ -69,8 +70,8 @@ function testUltimatumThirtySecondTimeouts() {
   const receiverDeadline = localSessionStore.ultimatumDeadlineAt(state, receiverPair.id, receiverPair.playerB)!;
   assert.equal(
     new Date(receiverDeadline).getTime() - new Date(receiverSeenAt).getTime(),
-    30_000,
-    'A fogadó ideje az ajánlat kliensen való megjelenésétől pontosan 30 másodperc.',
+    STRATEGIC_DECISION_SECONDS * 1000,
+    'A fogadó ideje az ajánlat kliensen való megjelenésétől pontosan 60 másodperc.',
   );
 
   localSessionStore.reconcileStrategicTimeouts(
@@ -86,7 +87,7 @@ function testUltimatumThirtySecondTimeouts() {
   state = localSessionStore.get(receiverGame.code)!;
   assert.deepEqual(state.players.map((player) => player.currentBalance), [0, 0]);
 
-  console.log('ULTIMATUM 30/30 CLIENT-VISIBLE TIMEOUTS OK');
+  console.log('ULTIMATUM 60/60 CLIENT-VISIBLE TIMEOUTS OK');
 }
 
 function testUltimatumTechnicalProtection() {
@@ -131,7 +132,7 @@ function advanceToRound(code: string, target: typeof strategic[number]) {
   }
 }
 
-function testDictatorAndTrustThirtySecondTimeouts() {
+function testDictatorAndTrustSixtySecondTimeouts() {
   const dictatorGame = localSessionStore.create(100_000, 2);
   localSessionStore.join(dictatorGame.code, 'dict-a', 'A');
   localSessionStore.join(dictatorGame.code, 'dict-b', 'B');
@@ -182,7 +183,7 @@ function testDictatorAndTrustThirtySecondTimeouts() {
   assert.equal(timedReturn?.timedOutRole, 'returner');
   assert.equal(localSessionStore.roundProgress(state).complete, true);
 
-  console.log('DICTATOR/TRUST 30 SECOND ZERO DEFAULTS OK');
+  console.log('DICTATOR/TRUST 60 SECOND ZERO DEFAULTS OK');
 }
 
 function testStrategicTechnicalProtectionBeyondUltimatum() {
@@ -275,7 +276,7 @@ function testSettlementRules() {
   assert.deepEqual(settleUltimatum(players, ultimatumPair, 40_000, true, 100_000).map((t) => t.amount), [60_000, 40_000]);
 
   const dictatorPair = { ...ultimatumPair, id: 'd', gameId: 'dictator' as const, roundKey: '2a' as const, roleA: 'dictator' as const };
-  assert.deepEqual(settleOneWayGive(players, dictatorPair, 30_000, 100_000).map((t) => t.amount), [70_000, 30_000]);
+  assert.deepEqual(settleOneWayGive(players, dictatorPair, STRATEGIC_DECISION_SECONDS * 1000, 100_000).map((t) => t.amount), [70_000, 30_000]);
 
   const trustPair = { ...ultimatumPair, id: 't', gameId: 'trust' as const, roundKey: '3a' as const, roleA: 'sender' as const, roleB: 'returner' as const };
   assert.deepEqual(settleTrust(players, trustPair, 50_000, 75_000, 100_000).map((t) => t.amount), [125_000, 75_000]);
@@ -807,9 +808,9 @@ function testMissingStakeBecomesZero() {
   console.log('MISSING STAKE -> 0 OK');
 }
 
-testUltimatumThirtySecondTimeouts();
+testUltimatumSixtySecondTimeouts();
 testUltimatumTechnicalProtection();
-testDictatorAndTrustThirtySecondTimeouts();
+testDictatorAndTrustSixtySecondTimeouts();
 testStrategicTechnicalProtectionBeyondUltimatum();
 testRecordedSubmitIntentSurvivesNetworkDelay();
 testSettlementRules();
