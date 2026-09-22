@@ -90,7 +90,10 @@ const humanPairings = (session: GameSession, gameId?: Pairing['gameId']) =>
     pairing.playerA !== 'BOT' &&
     pairing.playerB !== 'BOT' &&
     session.closedRounds.includes(pairing.roundKey) &&
-    !session.decisions.some((decision) => decision.pairingId === pairing.id && decision.isBotDecision),
+    !session.decisions.some((decision) =>
+      decision.pairingId === pairing.id &&
+      (decision.isBotDecision || decision.type === 'ultimatum_timeout' || decision.timedOutRole)
+    ),
   );
 
 const decisionsForPair = (session: GameSession, pairingId: string) =>
@@ -150,8 +153,8 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
       const offerDecision = decisions.find((item) => item.type === 'ultimatum_offer');
       const responseDecision = decisions.find((item) => item.type === 'ultimatum_response');
       const offer = offerDecision?.amount ?? 0;
-      const timedOut = decisions.some((item) => item.type === 'ultimatum_timeout');
-      const accepted = timedOut ? false : responseDecision?.accepted ?? false;
+      const timeoutDecision = decisions.find((item) => item.type === 'ultimatum_timeout');
+      const accepted = timeoutDecision ? false : responseDecision?.accepted ?? false;
       items.push({
         id: selfDecisionId('ultimatum', isA ? 'proposer' : 'receiver', pairing.id),
         game: 'ultimatum',
@@ -163,6 +166,7 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
         amount: offer,
         accepted,
         isBotDecision: isA ? Boolean(offerDecision?.isBotDecision) : Boolean(responseDecision?.isBotDecision),
+        timedOutRole: timeoutDecision?.timedOutRole,
       });
       continue;
     }
@@ -182,6 +186,7 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
         amount,
         keptAmount: Math.max(0, session.startingCredit - amount),
         isBotDecision: Boolean(dictatorDecision?.isBotDecision),
+        timedOutRole: dictatorDecision?.timedOutRole,
       });
       continue;
     }
@@ -204,6 +209,7 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
       returnedAmount,
       keptAmount: isA ? undefined : Math.max(0, multipliedAmount - returnedAmount),
       isBotDecision: isA ? Boolean(sendDecision?.isBotDecision) : Boolean(returnDecision?.isBotDecision),
+      timedOutRole: isA ? sendDecision?.timedOutRole : returnDecision?.timedOutRole,
     });
   }
 
