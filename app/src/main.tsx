@@ -889,7 +889,8 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
 ];
 
 let projectorWindow: Window | null = null;
-let projectorContentMode: ProjectionMode | 'debrief' | null = null;
+let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | null = null;
+let projectedPatternGame: PatternGame | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -1305,9 +1306,20 @@ function TrainerCockpit({
 }) {
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
+  const [externalProjectionLabel, setExternalProjectionLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ label?: string }>).detail;
+      setExternalProjectionLabel(detail?.label ?? null);
+    };
+    window.addEventListener('kreditjatek-projector-label', handler);
+    return () => window.removeEventListener('kreditjatek-projector-label', handler);
+  }, []);
 
   const projectMode = (mode: ProjectionMode) => {
     setSelectedProjectionMode(mode);
+    setExternalProjectionLabel(null);
     let opened = false;
     if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
     else if (mode === 'summary') opened = renderSummaryProjectionWindow(session);
@@ -1453,12 +1465,12 @@ function TrainerCockpit({
               <div>
                 <span>Kivetítés vezérlése</span>
                 <strong>
-                  Aktuális: {
+                  Aktuális: {externalProjectionLabel ?? (
                     selectedProjectionMode === 'qr' ? 'QR-kód' :
                     selectedProjectionMode === 'summary' ? 'Kivezetés · csoportkép' :
                     selectedProjectionMode === 'blank' ? 'Üres képernyő' :
                     RULES_PROJECTION_OPTIONS.find((option) => option.id === selectedProjectionMode)?.label ?? 'Játékszabály'
-                  }
+                  )}
                 </strong>
               </div>
               <button type="button" className="secondary projection-focus-button" onClick={() => projectorWindow?.focus()}>
@@ -3397,6 +3409,12 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
 
   const x = (percent: number) => 92 + percent * 7.96;
   const y = (percent: number) => 542 - percent * 4.62;
+  const bucketTotals = new Map<string, number>();
+  rows.forEach((row) => {
+    const key = Math.round(row.sentPercent * 10) + ':' + Math.round(row.returnPercent * 10);
+    bucketTotals.set(key, (bucketTotals.get(key) ?? 0) + 1);
+  });
+  const bucketIndexes = new Map<string, number>();
 
   return (
     <div className="trust-matrix-wrap">
@@ -3426,8 +3444,14 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
         <text x="24" y="311" textAnchor="middle" transform="rotate(-90 24 311)" className="trust-axis-title">Visszaadott rész a háromszorozott összeg %-ában</text>
 
         {rows.map((row, index) => {
-          const px = x(row.sentPercent) + ((index % 3) - 1) * 5;
-          const py = y(row.returnPercent) + ((index % 2) ? 4 : -4);
+          const bucketKey = Math.round(row.sentPercent * 10) + ':' + Math.round(row.returnPercent * 10);
+          const bucketTotal = bucketTotals.get(bucketKey) ?? 1;
+          const bucketIndex = bucketIndexes.get(bucketKey) ?? 0;
+          bucketIndexes.set(bucketKey, bucketIndex + 1);
+          const spreadRadius = bucketTotal > 1 ? Math.min(30, 10 + bucketTotal * 2) : 0;
+          const angle = bucketTotal > 1 ? (Math.PI * 2 * bucketIndex) / bucketTotal : 0;
+          const px = x(row.sentPercent) + Math.cos(angle) * spreadRadius;
+          const py = y(row.returnPercent) + Math.sin(angle) * spreadRadius;
           const label = showNames ? row.giver + ' → ' + row.receiver : String(index + 1);
           return (
             <g key={row.pairing.id} className="trust-point">
@@ -3446,17 +3470,17 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
 
 const poolPlayerColor = (index: number) => 'hsl(' + ((index * 47 + 198) % 360) + ' 58% ' + (46 + (index % 3) * 7) + '%)';
 
-function PublicGoodsPatterns({ session }: { session: GameSession }) {
+function PublicGoodsPatterns({
+  session,
+  selectedGroupId,
+  onSelectGroup,
+}: {
+  session: GameSession;
+  selectedGroupId: string;
+  onSelectGroup: (groupId: string) => void;
+}) {
   const settled = session.publicGoodsRounds.filter((round) => round.status === 'settled');
   const groupsWithRounds = session.groups.filter((group) => settled.some((round) => round.groupId === group.id));
-  const [selectedGroupId, setSelectedGroupId] = useState(() => groupsWithRounds[0]?.id ?? '');
-
-  useEffect(() => {
-    if (groupsWithRounds.length === 0) return;
-    if (!groupsWithRounds.some((group) => group.id === selectedGroupId)) {
-      setSelectedGroupId(groupsWithRounds[0].id);
-    }
-  }, [selectedGroupId, groupsWithRounds.map((group) => group.id).join('|')]);
 
   if (settled.length === 0 || groupsWithRounds.length === 0) {
     return <div className="pattern-empty">Még nincs lezárt Közös kassza kör.</div>;
@@ -3481,7 +3505,7 @@ function PublicGoodsPatterns({ session }: { session: GameSession }) {
               type="button"
               key={item.id}
               className={item.id === group.id ? 'active' : ''}
-              onClick={() => setSelectedGroupId(item.id)}
+              onClick={() => onSelectGroup(item.id)}
             >
               {item.name}
             </button>
@@ -3510,13 +3534,21 @@ function PublicGoodsPatterns({ session }: { session: GameSession }) {
           </div>
           <div className="pool-pattern-rounds" style={{ gridTemplateColumns: 'repeat(' + rounds.length + ', minmax(0, 1fr))' }}>
             {rounds.map((round) => {
+              const learningStart = session.publicGoodsContinuation?.firstContinuationRoundNumber;
+              const learningRound = learningStart !== undefined && round.roundNumber >= learningStart;
+              const learningIndex = learningRound && learningStart !== undefined
+                ? round.roundNumber - learningStart + 1
+                : undefined;
               const groupWealth = Math.max(1, round.startingGroupWealth);
               const totalPercent = round.totalContribution / groupWealth * 100;
               const minimumPercent = round.minimumAmount === undefined ? undefined : round.minimumAmount / groupWealth * 100;
               const gap = minimumPercent === undefined ? undefined : totalPercent - minimumPercent;
 
               return (
-                <div className="pool-pattern-round" key={round.id}>
+                <div
+                  className={'pool-pattern-round ' + (learningRound ? 'is-learning' : '') + (learningIndex === 1 ? ' is-learning-start' : '')}
+                  key={round.id}
+                >
                   <div className="pool-pattern-total">{Math.round(totalPercent * 10) / 10}%</div>
                   <div className="pool-pattern-track">
                     {minimumPercent !== undefined && (
@@ -3551,7 +3583,7 @@ function PublicGoodsPatterns({ session }: { session: GameSession }) {
                       })}
                     </div>
                   </div>
-                  <strong>{round.roundNumber}. kör</strong>
+                  <strong>{learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör'}</strong>
                   {gap !== undefined && (
                     <small className={gap >= 0 ? 'is-over' : 'is-under'}>
                       {gap >= 0 ? '+' : '−'}{Math.abs(Math.round(gap * 10) / 10)} százalékpont
@@ -3572,7 +3604,11 @@ function renderPatternProjectionFromElement(game: PatternGame) {
   const target = ensureProjectorWindow();
   if (!source || !target) return false;
 
-  projectorContentMode = 'debrief';
+  projectorContentMode = 'patterns';
+  projectedPatternGame = game;
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label', {
+    detail: { label: 'Mintázatok · ' + (PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '') },
+  }));
   const doc = target.document;
   const gameLabel = PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '';
   doc.title = 'Kreditjáték – Mintázatok – ' + gameLabel;
@@ -3594,7 +3630,11 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pattern-chart-area{min-height:0;flex:1}',
     '.pattern-question{font-size:clamp(20px,2vw,30px)!important}',
     '.patterns-stage .pattern-toolbar{display:none!important}',
-    '.pool-pattern-groups{max-height:68vh;overflow:auto}'
+    '.pool-pattern-group-tabs{display:none!important}',
+    '.pool-pattern-groups{max-height:none!important;overflow:hidden!important}',
+    '.split-pattern-value,.split-pattern-label{font-size:12px!important}',
+    '.split-pattern-status,.pattern-legend,.pool-pattern-y-axis,.pool-pattern-round>strong,.pool-pattern-round>small{font-size:11px!important}',
+    '.pool-pattern-legend span,.pool-pattern-minimum span{font-size:10px!important}'
   ].join('');
   doc.head.appendChild(projectionStyle);
   doc.body.replaceChildren(doc.importNode(source, true));
@@ -3609,7 +3649,27 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
     return 'ultimatum';
   });
   const [showNames, setShowNames] = useState(false);
+  const settledPoolGroups = session.groups.filter((group) =>
+    session.publicGoodsRounds.some((round) => round.status === 'settled' && round.groupId === group.id)
+  );
+  const [selectedPoolGroupId, setSelectedPoolGroupId] = useState(() => settledPoolGroups[0]?.id ?? '');
   const [projectionError, setProjectionError] = useState('');
+
+  useEffect(() => {
+    if (settledPoolGroups.length === 0) return;
+    if (!settledPoolGroups.some((group) => group.id === selectedPoolGroupId)) {
+      setSelectedPoolGroupId(settledPoolGroups[0].id);
+    }
+  }, [selectedPoolGroupId, settledPoolGroups.map((group) => group.id).join('|')]);
+
+  useEffect(() => {
+    if (!projectorWindow || projectorWindow.closed || projectorContentMode !== 'patterns') return;
+    projectedPatternGame = game;
+    const id = window.requestAnimationFrame(() => {
+      renderPatternProjectionFromElement(game);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [game, showNames, selectedPoolGroupId, session]);
 
   const project = () => {
     setProjectionError('');
@@ -3660,7 +3720,13 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
             {game === 'ultimatum' && <SplitDecisionPattern session={session} game="ultimatum" showNames={showNames} />}
             {game === 'dictator' && <SplitDecisionPattern session={session} game="dictator" showNames={showNames} />}
             {game === 'trust' && <TrustMatrixPattern session={session} showNames={showNames} />}
-            {game === 'publicGoods' && <PublicGoodsPatterns session={session} />}
+            {game === 'publicGoods' && (
+              <PublicGoodsPatterns
+                session={session}
+                selectedGroupId={selectedPoolGroupId}
+                onSelectGroup={setSelectedPoolGroupId}
+              />
+            )}
           </div>
 
           <div className="pattern-question">
