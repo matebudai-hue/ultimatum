@@ -154,8 +154,11 @@ const upsertPublicGoodsDecision = (
   amount: number,
   isBotDecision = false,
   submittedAt?: string,
+  explicitSource?: Decision['submissionSource'],
 ) => {
   const eventAt = submittedAt ?? new Date().toISOString();
+  const source: Decision['submissionSource'] =
+    explicitSource ?? (isBotDecision ? 'bot' : submittedAt ? 'participant' : 'missing_default');
   const existing = session.decisions.find((item) =>
     item.type === 'public_goods_contribution' &&
     item.playerId === playerId &&
@@ -166,11 +169,16 @@ const upsertPublicGoodsDecision = (
   if (existing) {
     existing.amount = amount;
     existing.isBotDecision = isBotDecision;
-    existing.submittedAt = eventAt;
-    existing.submissionHistory = [
-      ...(existing.submissionHistory ?? []),
-      { amount, submittedAt: eventAt },
-    ].slice(-10);
+    if (source !== 'manual_correction') {
+      existing.submittedAt = eventAt;
+      existing.submissionSource = source;
+    }
+    if (source === 'participant') {
+      existing.submissionHistory = [
+        ...(existing.submissionHistory ?? []),
+        { amount, submittedAt: eventAt },
+      ].slice(-10);
+    }
   } else {
     session.decisions.push({
       id: crypto.randomUUID(),
@@ -181,8 +189,9 @@ const upsertPublicGoodsDecision = (
       publicGoodsRound: roundNumber,
       groupId,
       isBotDecision,
+      submissionSource: source,
       submittedAt: eventAt,
-      submissionHistory: [{ amount, submittedAt: eventAt }],
+      submissionHistory: source === 'participant' ? [{ amount, submittedAt: eventAt }] : undefined,
     });
   }
 };
@@ -1111,7 +1120,16 @@ export const localSessionStore = {
 
     round.contributions[playerId] = Math.round(newAmount);
     round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
-    upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, Math.round(newAmount));
+    upsertPublicGoodsDecision(
+      session,
+      playerId,
+      round.groupId,
+      round.roundNumber,
+      Math.round(newAmount),
+      false,
+      undefined,
+      'manual_correction',
+    );
 
     if (round.status === 'settled') {
       const newSuccess = round.minimumAmount === undefined || round.totalContribution >= round.minimumAmount;
