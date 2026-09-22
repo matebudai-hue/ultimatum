@@ -152,7 +152,7 @@ function tinyCase(count: 2 | 3) {
 
   const final = localSessionStore.get(code)!;
   for (const player of final.players) {
-    assert.equal(buildSelfReport(final, player.id).length, 7, `${count} főnél 5 stratégiai + 2 kasszadöntés legyen.`);
+    assert.equal(buildSelfReport(final, player.id).length, 8, `${count} főnél 6 stratégiai kör + 2 kasszadöntés legyen.`);
   }
   assert.ok(buildInterestingEvents(final).length >= 0);
   console.log(`TINY CASE ${count} PLAYERS OK`);
@@ -325,7 +325,7 @@ function ninetyNineStressCase() {
 
   for (const player of state.players) {
     const report = buildSelfReport(state, player.id);
-    assert.equal(report.length, 17, '99 főnél minden résztvevőnek 5 stratégiai + 12 kasszadöntése legyen.');
+    assert.equal(report.length, 18, '99 főnél minden résztvevőnek 6 stratégiai kör + 12 kasszadöntése legyen.');
   }
 
   completeReflectionsForHumanControlledPlayers(code);
