@@ -767,7 +767,7 @@ export const localSessionStore = {
     const now = Date.now();
     if (now > new Date(deadline).getTime()) {
       if (reconcileStrategicTimeouts(session, now)) write(session);
-      throw new Error('Lejárt a 30 másodperces döntési idő.');
+      throw new Error('Lejárt a 60 másodperces döntési idő.');
     }
 
     session.strategicSubmitIntentAt[strategicWindowKey(pairing.id, playerId)] = new Date(now).toISOString();
@@ -790,7 +790,7 @@ export const localSessionStore = {
 
     if (submittedMs > deadlineMs) {
       if (reconcileStrategicTimeouts(session, submittedMs)) write(session);
-      throw new Error('Lejárt a 30 másodperces döntési idő.');
+      throw new Error('Lejárt a 60 másodperces döntési idő.');
     }
 
     session.strategicSubmitIntentAt[strategicWindowKey(pairing.id, playerId)] = new Date(submittedMs).toISOString();
@@ -1318,6 +1318,64 @@ export const localSessionStore = {
     session.publicGoodsPhase = 'setup';
     session.roundStartedAt = undefined;
     session.publicGoodsDeadlineAt = undefined;
+    write(session);
+    return session;
+  },
+
+  resumePublicGoodsAfterReport(code: string): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    if (session.roundKey !== 'report' || session.status !== 'finished') {
+      throw new Error('Tanulókört csak a lezárt riport után lehet indítani.');
+    }
+    if (session.publicGoodsContinuation) {
+      throw new Error('Ehhez a játékhoz már indult riport utáni tanulókör.');
+    }
+    if (!session.publicGoodsRounds.some((round) => round.status === 'settled')) {
+      throw new Error('Tanulókörhöz legalább egy lezárt Közös kassza kör szükséges.');
+    }
+
+    const baselineFinalBalance: Record<string, number> = {};
+    const restartBalance: Record<string, number> = {};
+    const startedAt = new Date().toISOString();
+
+    for (const player of session.players) {
+      baselineFinalBalance[player.id] = player.currentBalance;
+      const before = player.currentBalance;
+      const after = Math.max(before, session.startingCredit);
+      restartBalance[player.id] = after;
+      player.currentBalance = after;
+
+      if (after > before) {
+        session.transactions.push({
+          id: crypto.randomUUID(),
+          playerId: player.id,
+          roundKey: '4',
+          amount: after - before,
+          reason: 'post_report_restart_floor',
+          balanceBefore: before,
+          balanceAfter: after,
+          createdAt: startedAt,
+        });
+      }
+    }
+
+    session.publicGoodsContinuation = {
+      startedAt,
+      firstContinuationRoundNumber: session.publicGoodsRoundNumber + 1,
+      baselineFinalBalance,
+      restartBalance,
+    };
+    session.status = 'active';
+    session.roundKey = '4';
+    session.publicGoodsPhase = 'setup';
+    session.roundStartedAt = undefined;
+    session.publicGoodsDeadlineAt = undefined;
+    for (const group of session.groups) {
+      group.nextMinimumMode = 'none';
+      group.nextCustomMinimum = undefined;
+    }
+
     write(session);
     return session;
   },
