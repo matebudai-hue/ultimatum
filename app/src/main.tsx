@@ -1183,6 +1183,16 @@ function TrainerCockpit({
 }) {
   const [rulesPickerOpen, setRulesPickerOpen] = useState(false);
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
+
+  useEffect(() => {
+    if (!projectionWindow || projectionWindow.closed) return;
+    if (selectedProjectionMode === 'qr') {
+      renderQrProjectionWindow(session, joinUrl);
+    } else {
+      renderRulesProjectionWindow(session, selectedProjectionMode);
+    }
+  }, [joinUrl, selectedProjectionMode, session]);
+
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
   const strategicClosed = strategic && session.closedRounds.includes(session.roundKey as StrategicRound);
   const strategicProgress = strategic ? gameStore.roundProgress(session) : null;
