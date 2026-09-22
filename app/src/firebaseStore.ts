@@ -313,7 +313,7 @@ const applyCommand = (
       type: payload.type as GameSession['decisions'][number]['type'],
       amount: typeof payload.amount === 'number' ? payload.amount : undefined,
       accepted: typeof payload.accepted === 'boolean' ? payload.accepted : undefined,
-    });
+    }, commandEventAt(command));
     return { session, affected };
   }
 
