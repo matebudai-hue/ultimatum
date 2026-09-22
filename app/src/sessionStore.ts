@@ -6,6 +6,7 @@ import {
   PUBLIC_GOODS_SECONDS,
   STRATEGIC_DECISION_SECONDS,
   STRATEGIC_TECHNICAL_GRACE_SECONDS,
+  SUBMISSION_TRANSPORT_GRACE_SECONDS,
   PublicGoodsGroup,
   Pairing,
   RoundKey,
@@ -226,7 +227,7 @@ const reconcileStrategicTimeouts = (session: GameSession, nowMs = Date.now()) =>
       continue;
     }
 
-    if (nowMs < deadlineMs) continue;
+    if (nowMs < deadlineMs + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000) continue;
 
     if (pending.type === 'ultimatum_offer' || pending.type === 'ultimatum_response') {
       addDecision(session, {
@@ -1224,11 +1225,16 @@ export const localSessionStore = {
     return session;
   },
 
-  submitPublicGoods(code: string, playerId: string, amount: number): GameSession {
+  submitPublicGoods(code: string, playerId: string, amount: number, submittedAt?: string): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (session.publicGoodsPhase !== 'open') throw new Error('A tét most nem módosítható.');
-    if (publicGoodsDeadlinePassed(session)) throw new Error('Lejárt a 90 másodperces döntési idő.');
+
+    const submittedMs = submittedAt ? new Date(submittedAt).getTime() : Date.now();
+    if (!Number.isFinite(submittedMs)) throw new Error('Érvénytelen beküldési időbélyeg.');
+    if (session.publicGoodsDeadlineAt && submittedMs > new Date(session.publicGoodsDeadlineAt).getTime()) {
+      throw new Error('Lejárt a 90 másodperces döntési idő.');
+    }
 
     const player = session.players.find((item) => item.id === playerId);
     if (!player) throw new Error('A résztvevő nem található.');
@@ -1268,6 +1274,19 @@ export const localSessionStore = {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (session.publicGoodsPhase !== 'open') throw new Error('Nincs lezárható aktív kasszakör.');
+
+    if (session.publicGoodsDeadlineAt) {
+      const deadlineMs = new Date(session.publicGoodsDeadlineAt).getTime();
+      const nowMs = Date.now();
+      const progress = this.publicGoodsProgress(session);
+      if (
+        !progress.complete &&
+        nowMs >= deadlineMs &&
+        nowMs < deadlineMs + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000
+      ) {
+        throw new Error('A lejárt idő után még rövid technikai szinkronizálás folyik. Várj néhány másodpercet.');
+      }
+    }
 
     const rounds = currentPublicGoodsRounds(session);
     for (const round of rounds) {
