@@ -785,6 +785,11 @@ export const firebaseSessionStore = {
     return trainerMutation(code, () => session, allPlayers(session));
   },
 
+  resumePublicGoodsAfterReport(code: string) {
+    const session = localSessionStore.resumePublicGoodsAfterReport(code);
+    return trainerMutation(code, () => session, allPlayers(session));
+  },
+
   finish(code: string) {
     const session = localSessionStore.finish(code);
     return trainerMutation(code, () => session, allPlayers(session));
