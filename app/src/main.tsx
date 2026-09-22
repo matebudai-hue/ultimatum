@@ -890,7 +890,6 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
 
 let projectorWindow: Window | null = null;
 let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | null = null;
-let projectedPatternGame: PatternGame | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -2776,7 +2775,6 @@ function closeProjectionWindow() {
   if (projectorWindow && !projectorWindow.closed) projectorWindow.close();
   projectorWindow = null;
   projectorContentMode = null;
-  projectedPatternGame = null;
   window.dispatchEvent(new CustomEvent('kreditjatek-projector-label', {
     detail: { label: undefined },
   }));
@@ -3618,7 +3616,6 @@ function renderPatternProjectionFromElement(game: PatternGame) {
   if (!source || !target) return false;
 
   projectorContentMode = 'patterns';
-  projectedPatternGame = game;
   window.dispatchEvent(new CustomEvent('kreditjatek-projector-label', {
     detail: { label: 'Mintázatok · ' + (PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '') },
   }));
@@ -3677,8 +3674,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
 
   useEffect(() => {
     if (!projectorWindow || projectorWindow.closed || projectorContentMode !== 'patterns') return;
-    projectedPatternGame = game;
-    const id = window.requestAnimationFrame(() => {
+      const id = window.requestAnimationFrame(() => {
       renderPatternProjectionFromElement(game);
     });
     return () => window.cancelAnimationFrame(id);
