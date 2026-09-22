@@ -170,7 +170,7 @@ const upsertPublicGoodsDecision = (
     existing.submissionHistory = [
       ...(existing.submissionHistory ?? []),
       { amount, submittedAt: eventAt },
-    ].slice(-50);
+    ].slice(-10);
   } else {
     session.decisions.push({
       id: crypto.randomUUID(),
