@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   BarChart3,
-  BookOpen,
   Check,
   ChevronRight,
   Download,
@@ -1298,16 +1297,28 @@ function TrainerCockpit({
   joinUrl: string;
   onOpenDebrief: () => void;
 }) {
-  const [rulesPickerOpen, setRulesPickerOpen] = useState(false);
+  const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
 
-  useEffect(() => {
-    if (!projectionWindow || projectionWindow.closed) return;
-    if (selectedProjectionMode === 'qr') {
-      renderQrProjectionWindow(session, joinUrl);
-    } else {
-      renderRulesProjectionWindow(session, selectedProjectionMode);
+  const projectMode = (mode: ProjectionMode) => {
+    setSelectedProjectionMode(mode);
+    let opened = false;
+    if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
+    else if (mode === 'summary') opened = renderSummaryProjectionWindow(session);
+    else if (mode === 'blank') opened = renderBlankProjectionWindow();
+    else opened = renderRulesProjectionWindow(session, mode);
+
+    if (!opened) {
+      window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
     }
+  };
+
+  useEffect(() => {
+    if (!projectorWindow || projectorWindow.closed) return;
+    if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
+    else if (selectedProjectionMode === 'summary') renderSummaryProjectionWindow(session);
+    else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
+    else renderRulesProjectionWindow(session, selectedProjectionMode);
   }, [joinUrl, selectedProjectionMode, session]);
 
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
