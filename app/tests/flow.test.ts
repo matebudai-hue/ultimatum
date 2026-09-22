@@ -945,9 +945,6 @@ function testPublicGoodsTransportDelayProtection() {
 
   let state = localSessionStore.get(code)!;
   const player = state.players[0];
-  const deadlineMs = new Date(state.publicGoodsDeadlineAt!).getTime();
-  const onTimeSubmit = new Date(deadlineMs - 500).toISOString();
-
   state.publicGoodsDeadlineAt = new Date(Date.now() - 1_000).toISOString();
   const simulatedDeadlineMs = new Date(state.publicGoodsDeadlineAt).getTime();
   const simulatedOnTime = new Date(simulatedDeadlineMs - 500).toISOString();
@@ -963,6 +960,13 @@ function testPublicGoodsTransportDelayProtection() {
     12_300,
     'Az időben elküldött tétet akkor is fogadjuk el, ha a feldolgozás a deadline után történik.',
   );
+  const participantDecision = state.decisions.find((decision) =>
+    decision.type === 'public_goods_contribution' &&
+    decision.playerId === player.id &&
+    decision.publicGoodsRound === state.publicGoodsRoundNumber
+  );
+  assert.equal(participantDecision?.submissionSource, 'participant');
+  assert.equal(participantDecision?.submissionHistory?.length, 1);
 
   assert.throws(
     () => localSessionStore.submitPublicGoods(
@@ -975,7 +979,6 @@ function testPublicGoodsTransportDelayProtection() {
     'A ténylegesen későn elküldött tétet továbbra is el kell utasítani.',
   );
 
-  void onTimeSubmit;
   console.log('PUBLIC GOODS TRANSPORT DELAY PROTECTION OK');
 }
 
@@ -993,6 +996,13 @@ function testMissingStakeBecomesZero() {
   const round = state.publicGoodsRounds.find((r) => r.roundNumber === 1)!;
   assert.equal(Object.keys(round.contributions).length, 4);
   assert.equal(round.contributions[state.players[1].id], 0);
+  const missingDecision = state.decisions.find((decision) =>
+    decision.type === 'public_goods_contribution' &&
+    decision.playerId === state.players[1].id &&
+    decision.publicGoodsRound === 1
+  );
+  assert.equal(missingDecision?.submissionSource, 'missing_default');
+  assert.equal(missingDecision?.submissionHistory, undefined);
   console.log('MISSING STAKE -> 0 OK');
 }
 
