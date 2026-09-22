@@ -30,6 +30,7 @@ type PlayerCommand = {
   type: CommandType;
   payload?: Record<string, unknown>;
   createdAt: string;
+  serverCreatedAt?: unknown;
 };
 
 type RemotePlayer = {
@@ -99,6 +100,23 @@ const timestampToIso = (value: unknown): string | undefined => {
 };
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+const commandServerAt = (command: PlayerCommand) => timestampToIso(command.serverCreatedAt);
+
+const commandOrderingAt = (command: PlayerCommand) =>
+  commandServerAt(command) ?? command.createdAt;
+
+const commandEventAt = (command: PlayerCommand) => {
+  const serverAt = commandServerAt(command);
+  if (!serverAt) return command.createdAt;
+
+  const clientMs = new Date(command.createdAt).getTime();
+  const serverMs = new Date(serverAt).getTime();
+  if (!Number.isFinite(clientMs) || !Number.isFinite(serverMs)) return serverAt;
+
+  const transportMs = serverMs - clientMs;
+  return transportMs >= 0 && transportMs <= 5_000 ? command.createdAt : serverAt;
+};
 
 const encodeSession = async (session: GameSession): Promise<Bytes> => {
   if (typeof CompressionStream === 'undefined') {
@@ -279,13 +297,13 @@ const applyCommand = (
   }
 
   if (command.type === 'markStrategicSubmitIntent') {
-    const session = localSessionStore.markStrategicSubmitIntentAt(code, playerId, command.createdAt);
+    const session = localSessionStore.markStrategicSubmitIntentAt(code, playerId, commandEventAt(command));
     return { session, affected: [playerId] };
   }
 
   if (command.type === 'submitStrategicDecision') {
     try {
-      localSessionStore.markStrategicSubmitIntentAt(code, playerId, command.createdAt);
+      localSessionStore.markStrategicSubmitIntentAt(code, playerId, commandEventAt(command));
     } catch {
       // A tényleges submit hívás alább a timeout-állapot alapján elutasítja a késői döntést.
     }
@@ -301,7 +319,7 @@ const applyCommand = (
 
   if (command.type === 'submitPublicGoods') {
     const amount = Number(command.payload?.amount ?? 0);
-    const session = localSessionStore.submitPublicGoods(code, playerId, amount);
+    const session = localSessionStore.submitPublicGoods(code, playerId, amount, commandEventAt(command));
     return { session, affected: [playerId] };
   }
 
@@ -352,7 +370,7 @@ const processRemotePlayers = async (code: string) => {
     }
 
     const commands = Object.entries(remote.commands ?? {})
-      .sort(([, a], [, b]) => a.createdAt.localeCompare(b.createdAt));
+      .sort(([, a], [, b]) => commandOrderingAt(a).localeCompare(commandOrderingAt(b)));
 
     for (const [commandKey, command] of commands) {
       try {
@@ -393,6 +411,7 @@ const appendCommand = async (
     type,
     payload,
     createdAt: new Date().toISOString(),
+    serverCreatedAt: serverTimestamp(),
   };
 
   try {
