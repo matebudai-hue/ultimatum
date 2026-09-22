@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   BarChart3,
+  BookOpen,
   Check,
   ChevronRight,
   Download,
@@ -875,6 +876,196 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
   return <>–</>;
 }
 
+type RulesProjectionGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
+
+const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short: string }[] = [
+  { id: 'ultimatum', label: 'Ultimátumjáték', short: '1. játék' },
+  { id: 'dictator', label: 'Diktátorjáték', short: '2. játék' },
+  { id: 'trust', label: 'Bizalomjáték', short: '3. játék' },
+  { id: 'publicGoods', label: 'Közös kassza', short: '4. játék' },
+];
+
+let rulesProjectionWindow: Window | null = null;
+
+function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
+  if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
+  if (session.roundKey === '2a' || session.roundKey === '2b') return 'dictator';
+  if (session.roundKey === '3a' || session.roundKey === '3b') return 'trust';
+  return 'publicGoods';
+}
+
+function rulesProjectionCopy(session: GameSession, game: RulesProjectionGame) {
+  const credit = formatCredits(session.startingCredit);
+
+  if (game === 'ultimatum') {
+    return {
+      stage: '1. játék · két kör',
+      title: 'Ultimátumjáték',
+      lead: `Az egyik játékos ${credit} kreditet kap. Ebből ajánl fel valamennyit a párjának.`,
+      rules: [
+        ['Ajánlat', `Az ajánlattevő 0 és ${credit} között dönt: mennyit ajánl fel a másik játékosnak?`],
+        ['Elfogadás vagy elutasítás', 'A fogadó látja az ajánlatot, majd eldönti, elfogadja-e. Alku és ellenajánlat nincs.'],
+        ['Elszámolás', 'Elfogadáskor a fogadó megkapja a felajánlott összeget, az ajánlattevőnél marad a többi. Elutasításkor ebből a körből mindketten 0 kreditet kapnak.'],
+        ['Második kör', 'Mindenki a másik szerepbe kerül, és a rendszer új párosítást készít.'],
+      ],
+      decision: 'Ajánlattevő: mennyit ajánlasz? · Fogadó: elfogadod vagy elutasítod?',
+      footer: 'Döntési idő: 30 másodperc / döntés. A kör eredménye hozzáadódik a vagyonodhoz.',
+    };
+  }
+
+  if (game === 'dictator') {
+    return {
+      stage: '2. játék · két kör',
+      title: 'Diktátorjáték',
+      lead: `Az egyik játékos ${credit} kreditet kap, és egyedül dönti el, mennyit ad belőle a párjának.`,
+      rules: [
+        ['Egyetlen döntés', `A döntő játékos 0 és ${credit} között választ: mennyit ad a másiknak?`],
+        ['A fogadó nem dönt', 'A másik játékos nem fogad el és nem utasít el semmit. Azt az összeget kapja, amit neki adnak.'],
+        ['Elszámolás', 'A döntő játékosnál marad, amit nem adott oda. A fogadó vagyonához az átadott összeg kerül.'],
+        ['Második kör', 'Mindenki a másik szerepbe kerül, és a rendszer új párosítást készít.'],
+      ],
+      decision: 'Döntő játékos: mennyit adsz? · Fogadó játékos: ebben a körben nincs döntésed.',
+      footer: 'A döntő játékosnak 30 másodperce van. Ha nem dönt, 0 kreditet ad.',
+    };
+  }
+
+  if (game === 'trust') {
+    return {
+      stage: '3. játék · két kör',
+      title: 'Bizalomjáték',
+      lead: `Az egyik játékos ${credit} kreditet kap. Eldönti, mennyit küld belőle a párjának – a bank az elküldött összeget megháromszorozza.`,
+      rules: [
+        ['Küldés', `A küldő 0 és ${credit} között dönt. Amit nem küld el, nála marad.`],
+        ['A bank háromszoroz', 'A bank az elküldött összeget megszorozza hárommal, és ezt az összeget kapja meg a másik játékos.'],
+        ['Visszaadás', 'A fogadó ezután szabadon eldönti, mennyit ad vissza a hozzá került összegből. Akár 0 kreditet is visszaadhat.'],
+        ['Elszámolás', 'A küldőnél a meg nem küldött összeg + a visszakapott kredit marad. A fogadónál a háromszorozott összeg vissza nem adott része marad.'],
+      ],
+      decision: 'Küldő: mennyit küldesz? · Fogadó: mennyit adsz vissza a háromszorozott összegből?',
+      footer: 'Mindkét döntésre 30 másodperc van. A következő körben szerepcsere és új párosítás következik.',
+    };
+  }
+
+  return {
+    stage: '4. játék · több kör',
+    title: 'Közös kassza',
+    lead: 'Az első három játékban megszerzett vagyonoddal érkezel ide. Csoportban játszotok, és minden körben a saját vagyonodból döntesz.',
+    rules: [
+      ['Befizetés', 'Eldöntöd, mennyit teszel a saját vagyonodból a közös kasszába. 0 kredit is lehet.'],
+      ['A bank dupláz', 'A csoport összes befizetését a bank megduplázza.'],
+      ['Egyenlő visszaosztás', 'A megduplázott kasszát a bank egyenlő részben osztja szét a csoport tagjai között – függetlenül attól, ki mennyit fizetett be.'],
+      ['Minimum lehet', 'Ha a körben van minimum és a csoport nem éri el, a bank nem fizet vissza, a befizetések pedig elvesznek. Ha nincs minimum, nincs ilyen feltétel. A saját csoportodra érvényes minimumot a telefonodon látod.'],
+    ],
+    decision: 'Mennyit teszel a saját vagyonodból a közös kasszába?',
+    footer: '1 perc / kör. A tétedet az idő lejártáig módosíthatod; az utolsó mentett összeg számít. Ha nincs tét, 0 kredit számít. Az elszámolt vagyonoddal mész tovább.',
+  };
+}
+
+function ensureRulesProjectionWindow() {
+  if (rulesProjectionWindow && !rulesProjectionWindow.closed) return rulesProjectionWindow;
+  rulesProjectionWindow = window.open(
+    '',
+    'kreditjatek-rules-projection',
+    'popup=yes,width=1320,height=860,resizable=yes,scrollbars=yes',
+  );
+  return rulesProjectionWindow;
+}
+
+function renderRulesProjectionWindow(session: GameSession, game: RulesProjectionGame) {
+  const target = ensureRulesProjectionWindow();
+  if (!target) return false;
+
+  const copy = rulesProjectionCopy(session, game);
+  const doc = target.document;
+  doc.title = `Kreditjáték – ${copy.title}`;
+
+  if (!doc.getElementById('kreditjatek-rules-projection-style')) {
+    const style = doc.createElement('style');
+    style.id = 'kreditjatek-rules-projection-style';
+    style.textContent = `
+      :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213a;background:#f6f8fb}
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100vh;background:linear-gradient(145deg,#ffffff 0%,#f5f7fb 58%,#edf2f7 100%);padding:clamp(28px,4vw,64px)}
+      main{width:min(1220px,100%);margin:0 auto;min-height:calc(100vh - clamp(56px,8vw,128px));display:flex;flex-direction:column;justify-content:center}
+      .stage{font-size:clamp(16px,1.6vw,23px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+      h1{font-size:clamp(48px,6vw,86px);line-height:.98;margin:0;color:#10213a;letter-spacing:-.045em}
+      .lead{font-size:clamp(24px,2.7vw,38px);line-height:1.25;font-weight:650;max-width:1120px;margin:24px 0 30px;color:#334155}
+      .rules{display:grid;gap:13px}
+      .rule{display:grid;grid-template-columns:56px 1fr;gap:18px;align-items:start;padding:15px 18px;background:#fff;border:1px solid #dbe3ed;border-radius:14px;box-shadow:0 8px 28px rgba(15,23,42,.04)}
+      .number{width:48px;height:48px;border-radius:12px;background:#10213a;color:#fff;display:grid;place-items:center;font-size:22px;font-weight:950}
+      .rule strong{display:block;font-size:clamp(20px,2vw,28px);margin:0 0 3px;color:#10213a}
+      .rule p{margin:0;font-size:clamp(18px,1.75vw,25px);line-height:1.32;color:#475569}
+      .decision{margin-top:22px;padding:20px 24px;border-radius:16px;background:#10213a;color:#fff}
+      .decision span{display:block;font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#a8dfe0;margin-bottom:6px}
+      .decision strong{font-size:clamp(24px,2.8vw,38px);line-height:1.2}
+      .footer{margin:16px 2px 0;font-size:clamp(16px,1.45vw,21px);line-height:1.35;font-weight:700;color:#64748b}
+      @media(max-width:760px){
+        body{padding:20px}
+        h1{font-size:44px}
+        .lead{font-size:22px}
+        .rule{grid-template-columns:44px 1fr;padding:13px}
+        .number{width:40px;height:40px}
+      }
+    `;
+    doc.head.appendChild(style);
+  }
+
+  const main = doc.createElement('main');
+
+  const stage = doc.createElement('div');
+  stage.className = 'stage';
+  stage.textContent = copy.stage;
+  main.appendChild(stage);
+
+  const title = doc.createElement('h1');
+  title.textContent = copy.title;
+  main.appendChild(title);
+
+  const lead = doc.createElement('p');
+  lead.className = 'lead';
+  lead.textContent = copy.lead;
+  main.appendChild(lead);
+
+  const rules = doc.createElement('section');
+  rules.className = 'rules';
+  copy.rules.forEach(([heading, text], index) => {
+    const item = doc.createElement('div');
+    item.className = 'rule';
+
+    const number = doc.createElement('div');
+    number.className = 'number';
+    number.textContent = String(index + 1);
+    item.appendChild(number);
+
+    const body = doc.createElement('div');
+    const strong = doc.createElement('strong');
+    strong.textContent = heading;
+    const paragraph = doc.createElement('p');
+    paragraph.textContent = text;
+    body.append(strong, paragraph);
+    item.appendChild(body);
+    rules.appendChild(item);
+  });
+  main.appendChild(rules);
+
+  const decision = doc.createElement('div');
+  decision.className = 'decision';
+  const decisionLabel = doc.createElement('span');
+  decisionLabel.textContent = 'Miről kell döntened?';
+  const decisionText = doc.createElement('strong');
+  decisionText.textContent = copy.decision;
+  decision.append(decisionLabel, decisionText);
+  main.appendChild(decision);
+
+  const footer = doc.createElement('p');
+  footer.className = 'footer';
+  footer.textContent = copy.footer;
+  main.appendChild(footer);
+
+  doc.body.replaceChildren(main);
+  target.focus();
+  return true;
+}
+
 function TrainerCockpit({
   session,
   joinUrl,
@@ -885,6 +1076,7 @@ function TrainerCockpit({
   onOpenDebrief: () => void;
 }) {
   const [projectorOpen, setProjectorOpen] = useState(false);
+  const [rulesPickerOpen, setRulesPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!projectorOpen) return;
@@ -978,6 +1170,20 @@ function TrainerCockpit({
               {primaryIcon}{primaryLabel}
             </button>
             <button className="toolbar-button debrief-toolbar-trigger" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
+            <button
+              className="toolbar-button"
+              onClick={() => {
+                const opened = renderRulesProjectionWindow(session, rulesProjectionGameForSession(session));
+                if (!opened) {
+                  window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
+                  return;
+                }
+                setRulesPickerOpen(true);
+              }}
+              title="Játékszabály kivetítése"
+            >
+              <BookOpen size={16} />Szabályok
+            </button>
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
             {canFinishGame(session) && (
               <button
@@ -1049,6 +1255,87 @@ function TrainerCockpit({
               {session.roundKey === 'lobby'
                 ? <><strong>{session.players.length} / {session.expectedPlayerCount}</strong><span>résztvevő belépett</span></>
                 : <><strong>{session.players.filter((player) => gameStore.isPlayerOnline(player)).length} / {session.players.length}</strong><span>résztvevő online</span></>}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {rulesPickerOpen && createPortal(
+        <div
+          className="projector-qr-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Játékszabály kivetítés vezérlése"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setRulesPickerOpen(false);
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: 'min(760px, 96vw)',
+              maxHeight: '92vh',
+              overflow: 'auto',
+              borderRadius: 14,
+              padding: '32px',
+              background: '#fff',
+              boxShadow: '0 28px 80px rgba(0,0,0,.35)',
+            }}
+          >
+            <button
+              className="projector-close"
+              type="button"
+              aria-label="Szabályválasztó bezárása"
+              onClick={() => setRulesPickerOpen(false)}
+            >
+              ×
+            </button>
+            <p className="projector-eyebrow">Kivetítő vezérlése</p>
+            <h2 style={{ margin: '4px 0 8px', fontSize: 30, color: '#10213a' }}>Melyik játék szabálya látszódjon?</h2>
+            <p style={{ margin: '0 0 24px', color: '#64748b', lineHeight: 1.5 }}>
+              A külön kivetítőablakban csak a kiválasztott játék leírása jelenik meg. Húzd át azt az ablakot a projektorra; itt tudod váltani a tartalmát.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+              {RULES_PROJECTION_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    const opened = renderRulesProjectionWindow(session, option.id);
+                    if (!opened) window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
+                  }}
+                  style={{
+                    minHeight: 92,
+                    padding: '16px 18px',
+                    border: '1px solid #d8e0ea',
+                    borderRadius: 12,
+                    background: option.id === rulesProjectionGameForSession(session) ? '#eef6f6' : '#fff',
+                    color: '#10213a',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ display: 'block', fontSize: 12, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: '#64748b' }}>{option.short}</span>
+                  <strong style={{ display: 'block', marginTop: 5, fontSize: 20 }}>{option.label}</strong>
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
+              <button
+                type="button"
+                onClick={() => rulesProjectionWindow?.focus()}
+                style={{ border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 14px', background: '#fff', color: '#10213a', fontWeight: 800, cursor: 'pointer' }}
+              >
+                Kivetítőablak előre
+              </button>
+              <button
+                type="button"
+                onClick={() => setRulesPickerOpen(false)}
+                style={{ border: 0, borderRadius: 8, padding: '10px 14px', background: '#10213a', color: '#fff', fontWeight: 850, cursor: 'pointer' }}
+              >
+                Kész
+              </button>
             </div>
           </div>
         </div>,
