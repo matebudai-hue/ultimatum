@@ -5,8 +5,8 @@ export type MinimumMode = 'none' | '80' | '90' | '95' | 'custom';
 export type PublicGoodsPhase = 'setup' | 'open' | 'locked';
 
 export const MAX_PLAYERS = 100;
-export const PUBLIC_GOODS_SECONDS = 60;
-export const STRATEGIC_DECISION_SECONDS = 30;
+export const PUBLIC_GOODS_SECONDS = 90;
+export const STRATEGIC_DECISION_SECONDS = 60;
 export const ULTIMATUM_PROPOSER_SECONDS = STRATEGIC_DECISION_SECONDS;
 export const ULTIMATUM_RECEIVER_SECONDS = STRATEGIC_DECISION_SECONDS;
 export const STRATEGIC_TECHNICAL_GRACE_SECONDS = 5;
