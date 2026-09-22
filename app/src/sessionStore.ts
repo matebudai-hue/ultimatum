@@ -826,10 +826,27 @@ export const localSessionStore = {
     code: string,
     playerId: string,
     payload: { type: Decision['type']; amount?: number; accepted?: boolean },
+    submittedAt?: string,
   ): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) throw new Error('Most nincs egyéni döntési kör.');
+
+    const pairingBeforeTimeout = this.getPairingForPlayer(session, playerId);
+    if (pairingBeforeTimeout) {
+      const deadline = strategicDeadlineAt(session, pairingBeforeTimeout.id, playerId);
+      const submittedMs = submittedAt ? new Date(submittedAt).getTime() : Date.now();
+      if (!Number.isFinite(submittedMs)) throw new Error('Érvénytelen beküldési időbélyeg.');
+      if (deadline && submittedMs > new Date(deadline).getTime()) {
+        if (reconcileStrategicTimeouts(
+          session,
+          Math.max(Date.now(), new Date(deadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1),
+        )) {
+          write(session);
+        }
+        throw new Error('Lejárt a 60 másodperces döntési idő.');
+      }
+    }
 
     if (reconcileStrategicTimeouts(session)) {
       write(session);
