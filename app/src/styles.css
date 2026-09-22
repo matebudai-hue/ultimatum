@@ -1528,3 +1528,117 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .post-report-learning-panel{align-items:stretch;flex-direction:column}
   .post-report-learning-panel .primary{width:100%}
 }
+
+
+/* ===== Dashboardról vezérelt közös projektor ===== */
+.projection-dashboard-controller{
+  margin:8px 0 10px;
+  padding:10px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:12px;
+  background:#f8fafc;
+  box-shadow:0 6px 18px rgba(15,23,42,.06);
+}
+.projection-dashboard-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.projection-dashboard-head>div{display:grid;gap:1px}
+.projection-dashboard-head span{
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#64748b;
+}
+.projection-dashboard-head strong{font-size:13px;color:var(--navy)}
+.projection-dashboard-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.projection-dashboard-buttons button{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  padding:6px 10px;
+  background:#fff;
+  color:#334155;
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+}
+.projection-dashboard-buttons button:hover{border-color:#94a3b8;background:#f1f5f9}
+.projection-dashboard-buttons button.active{
+  border-color:var(--navy);
+  background:var(--navy);
+  color:#fff;
+}
+.projection-dashboard-controller>small{
+  display:block;
+  margin-top:7px;
+  color:#64748b;
+  font-size:9px;
+  line-height:1.35;
+  font-weight:700;
+}
+.projection-focus-button{min-height:32px;padding:5px 9px;font-size:9px}
+.toolbar-button.is-active{background:#e8eef6;color:var(--navy);border-color:#b7c7d9}
+
+/* ===== Adminisztráció / technikai audit ===== */
+.technical-audit-details{
+  margin:0 0 14px;
+  border:1px solid #dbe3ed;
+  border-radius:12px;
+  background:#f8fafc;
+  overflow:hidden;
+}
+.technical-audit-details>summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:11px 13px;
+  cursor:pointer;
+}
+.technical-audit-details>summary::-webkit-details-marker{display:none}
+.technical-audit-details>summary strong{font-size:12px;color:var(--navy)}
+.technical-audit-details>summary span{font-size:9px;color:#64748b;font-weight:750}
+.technical-audit-details[open]>summary{border-bottom:1px solid #dbe3ed;background:#fff}
+.technical-audit-export{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:13px;
+}
+.technical-audit-export>div{display:grid;gap:3px}
+.technical-audit-export>div strong{font-size:11px;color:var(--navy)}
+.technical-audit-export>div span{font-size:9px;line-height:1.45;color:#64748b}
+.technical-audit-export .secondary{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.correction-subhead{
+  display:grid;
+  gap:2px;
+  padding:0 0 10px;
+  margin-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.correction-subhead strong{font-size:12px;color:var(--navy)}
+.correction-subhead span{font-size:9px;color:#64748b}
+
+@media(max-width:760px){
+  .projection-dashboard-head,.technical-audit-export{align-items:stretch;flex-direction:column}
+  .projection-focus-button,.technical-audit-export .secondary{width:100%;justify-content:center}
+}
