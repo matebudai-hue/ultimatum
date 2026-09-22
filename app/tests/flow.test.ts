@@ -791,6 +791,71 @@ function testParticipantReflections() {
   console.log('PARTICIPANT REFLECTIONS OK');
 }
 
+function testPostReportPublicGoodsLearningRound() {
+  const code = runStrategicStage(4);
+  let state = localSessionStore.get(code)!;
+  localSessionStore.randomizeGroups(code, 1);
+  state = localSessionStore.get(code)!;
+
+  const group = state.groups[0];
+  localSessionStore.setGroupMinimum(
+    code,
+    group.id,
+    'custom',
+    localSessionStore.groupWealth(state, group) + 1,
+  );
+  localSessionStore.startPublicGoodsRound(code);
+  state = localSessionStore.get(code)!;
+
+  const firstPoolDeadline = new Date(state.publicGoodsDeadlineAt!).getTime();
+  const firstPoolStarted = new Date(state.roundStartedAt!).getTime();
+  assert.equal(firstPoolDeadline - firstPoolStarted, 90_000, 'A Közös kassza döntési ideje pontosan 90 másodperc.');
+
+  for (const player of state.players) {
+    localSessionStore.submitPublicGoods(code, player.id, player.currentBalance);
+  }
+  localSessionStore.lockPublicGoodsRound(code);
+  localSessionStore.settlePublicGoodsRound(code);
+  state = localSessionStore.get(code)!;
+  assert.ok(state.players.every((player) => player.currentBalance === 0), 'A sikertelen teljes befizetés után mindenki lenullázódik a tesztben.');
+
+  localSessionStore.finish(code);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.roundKey, 'report');
+  const groupIdsBefore = state.groups.map((item) => item.id);
+
+  localSessionStore.resumePublicGoodsAfterReport(code);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.roundKey, '4');
+  assert.equal(state.status, 'active');
+  assert.deepEqual(state.groups.map((item) => item.id), groupIdsBefore, 'A tanulókörben ugyanazok a csoportok maradnak.');
+  assert.ok(state.publicGoodsContinuation);
+  assert.ok(state.players.every((player) => player.currentBalance === 100_000), 'Az induló kredit alatti vagyon 100 000-re egészül ki.');
+  assert.ok(
+    state.transactions.filter((item) => item.reason === 'post_report_restart_floor').length === state.players.length,
+    'A tanulókör feltöltése külön audit-tranzakcióként jelenjen meg.',
+  );
+
+  localSessionStore.startPublicGoodsRound(code);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.publicGoodsRoundNumber, 2);
+  for (const player of state.players) localSessionStore.submitPublicGoods(code, player.id, 0);
+  localSessionStore.lockPublicGoodsRound(code);
+  localSessionStore.settlePublicGoodsRound(code);
+  state = localSessionStore.get(code)!;
+
+  const report = buildSelfReport(state, state.players[0].id);
+  assert.ok(report.some((item) => item.roundLabel === 'Tanulókör 1. kör'));
+
+  localSessionStore.finish(code);
+  state = localSessionStore.get(code)!;
+  assert.equal(state.roundKey, 'report');
+  assert.equal(state.publicGoodsContinuation?.baselineFinalBalance[state.players[0].id], 0);
+  assert.equal(state.publicGoodsContinuation?.restartBalance[state.players[0].id], 100_000);
+
+  console.log('POST-REPORT PUBLIC GOODS LEARNING ROUND OK');
+}
+
 function testMissingStakeBecomesZero() {
   const code = runStrategicStage(4);
   let state = localSessionStore.get(code)!;
@@ -829,6 +894,7 @@ testTenPlayerManualPoolSetup();
 testDebriefPinPersistence();
 testParticipantReflections();
 testMissingStakeBecomesZero();
+testPostReportPublicGoodsLearningRound();
 testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
 console.log('ALL FLOW TESTS PASSED');
