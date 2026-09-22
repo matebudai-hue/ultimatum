@@ -263,10 +263,11 @@ function testSelfReportAndAnonymousGroupPicture() {
   const report = buildSelfReport(session, 'p1');
   const strategic = report.filter((item) => item.game !== 'publicGoods');
 
-  assert.equal(strategic.length, 5, 'A p1 saját riportjában pontosan öt stratégiai döntés legyen.');
+  assert.equal(strategic.length, 6, 'A p1 saját riportjában mind a hat stratégiai kör szerepeljen.');
   assert.ok(strategic.some((item) => item.game === 'ultimatum' && item.role === 'proposer' && item.amount === 10_000 && item.accepted === false));
   assert.ok(strategic.some((item) => item.game === 'ultimatum' && item.role === 'receiver' && item.amount === 30_000 && item.accepted === true));
   assert.ok(strategic.some((item) => item.game === 'dictator' && item.role === 'dictator' && item.amount === 40_000));
+  assert.ok(strategic.some((item) => item.game === 'dictator' && item.role === 'receiver' && item.amount === 60_000));
   assert.ok(strategic.some((item) => item.game === 'trust' && item.role === 'sender' && item.returnedAmount === 150_000));
   assert.ok(strategic.some((item) => item.game === 'trust' && item.role === 'returner' && item.returnedAmount === 30_000));
 
