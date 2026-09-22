@@ -172,19 +172,18 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
     }
 
     if (pairing.gameId === 'dictator') {
-      if (!isA) continue;
       const dictatorDecision = decisions.find((item) => item.type === 'dictator_give');
       const amount = dictatorDecision?.amount ?? 0;
       items.push({
-        id: selfDecisionId('dictator', 'dictator', pairing.id),
+        id: selfDecisionId('dictator', isA ? 'dictator' : 'receiver', pairing.id),
         game: 'dictator',
         roundKey: pairing.roundKey,
         roundLabel: pairing.roundKey,
-        role: 'dictator',
+        role: isA ? 'dictator' : 'receiver',
         playerId,
         pairingId: pairing.id,
         amount,
-        keptAmount: Math.max(0, session.startingCredit - amount),
+        keptAmount: isA ? Math.max(0, session.startingCredit - amount) : undefined,
         isBotDecision: Boolean(dictatorDecision?.isBotDecision),
         timedOutRole: dictatorDecision?.timedOutRole,
       });
