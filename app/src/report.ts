@@ -235,6 +235,32 @@ export function createTechnicalAudit(session: GameSession) {
   }
 
   for (const decision of session.decisions) {
+    if (decision.submitIntentAt) {
+      timeline.push({
+        at: decision.submitIntentAt,
+        event: 'strategic_submit_intent',
+        roundKey: decision.roundKey,
+        pairingId: decision.pairingId,
+        playerId: decision.playerId,
+        playerName: playerNameFor(decision.playerId),
+        source: 'preserved_on_decision',
+      });
+    }
+
+    for (const submission of decision.submissionHistory ?? []) {
+      timeline.push({
+        at: submission.submittedAt,
+        event: 'public_goods_submission',
+        roundKey: decision.roundKey,
+        playerId: decision.playerId,
+        playerName: playerNameFor(decision.playerId),
+        publicGoodsRound: decision.publicGoodsRound,
+        groupId: decision.groupId,
+        amount: submission.amount,
+        isBotDecision: decision.isBotDecision ?? false,
+      });
+    }
+
     timeline.push({
       at: decision.submittedAt,
       event: 'decision_submitted',
@@ -249,6 +275,7 @@ export function createTechnicalAudit(session: GameSession) {
       isBotDecision: decision.isBotDecision ?? false,
       publicGoodsRound: decision.publicGoodsRound,
       groupId: decision.groupId,
+      submitIntentAt: decision.submitIntentAt,
     });
   }
 
@@ -261,7 +288,21 @@ export function createTechnicalAudit(session: GameSession) {
       playerId: issue.playerId,
       playerName: playerNameFor(issue.playerId),
       role: issue.role,
+      resolvedAt: issue.resolvedAt,
+      resolution: issue.resolution,
     });
+    if (issue.resolvedAt) {
+      timeline.push({
+        at: issue.resolvedAt,
+        event: 'strategic_technical_issue_resolved',
+        roundKey: issue.roundKey,
+        pairingId: issue.pairingId,
+        playerId: issue.playerId,
+        playerName: playerNameFor(issue.playerId),
+        role: issue.role,
+        resolution: issue.resolution,
+      });
+    }
   }
 
   for (const transaction of session.transactions) {
@@ -324,7 +365,7 @@ export function createTechnicalAudit(session: GameSession) {
   return {
     auditVersion: 2,
     exportedAt: new Date().toISOString(),
-    purpose: 'Kreditjáték technikai audit – teljes tréneri session állapot és időrendi eseménynapló',
+    purpose: 'Kreditjáték technikai audit – tréneri session állapot és megőrzött időrendi eseménynapló',
     summary: {
       code: session.code,
       status: session.status,
@@ -332,7 +373,9 @@ export function createTechnicalAudit(session: GameSession) {
       startingCredit: session.startingCredit,
       players: session.players.filter((player) => !player.isBot).length,
       decisions: session.decisions.length,
-      strategicTechnicalIssues: session.strategicTechnicalIssues.length,
+      strategicTechnicalIssues: session.strategicTechnicalIssues.filter((issue) => !issue.resolvedAt).length,
+      resolvedStrategicTechnicalIssues: session.strategicTechnicalIssues.filter((issue) => Boolean(issue.resolvedAt)).length,
+      publicGoodsSubmissionEvents: session.decisions.reduce((sum, decision) => sum + (decision.submissionHistory?.length ?? 0), 0),
       manualCorrections: session.manualCorrections.length,
       transactions: session.transactions.length,
       publicGoodsRounds: session.publicGoodsRounds.length,
