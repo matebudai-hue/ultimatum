@@ -14,7 +14,7 @@ const { createCsv } = await import('../src/report.ts');
 const { pairingRepeatStats } = await import('../src/pairingEngine.ts');
 const { settleUltimatum, settleOneWayGive, settleTrust, settlePublicGoods } = await import('../src/gameEngine.ts');
 const { buildSelfReport } = await import('../src/debriefEngine.ts');
-const { STRATEGIC_DECISION_SECONDS } = await import('../src/gameTypes.ts');
+const { STRATEGIC_DECISION_SECONDS, SUBMISSION_TRANSPORT_GRACE_SECONDS } = await import('../src/gameTypes.ts');
 
 const strategic = ['1a', '1b', '2a', '2b', '3a', '3b'] as const;
 
@@ -40,6 +40,17 @@ function testUltimatumSixtySecondTimeouts() {
   localSessionStore.reconcileStrategicTimeouts(
     proposerGame.code,
     new Date(proposerDeadline).getTime() + 1,
+  );
+  state = localSessionStore.get(proposerGame.code)!;
+  assert.equal(
+    state.decisions.some((decision) => decision.pairingId === proposerPair.id && decision.type === 'ultimatum_timeout'),
+    false,
+    'A deadline utáni technikai védősávban még ne keletkezzen timeout.',
+  );
+
+  localSessionStore.reconcileStrategicTimeouts(
+    proposerGame.code,
+    new Date(proposerDeadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1,
   );
   state = localSessionStore.get(proposerGame.code)!;
   const proposerTimeout = state.decisions.find(
@@ -76,7 +87,7 @@ function testUltimatumSixtySecondTimeouts() {
 
   localSessionStore.reconcileStrategicTimeouts(
     receiverGame.code,
-    new Date(receiverDeadline).getTime() + 1,
+    new Date(receiverDeadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1,
   );
   state = localSessionStore.get(receiverGame.code)!;
   const receiverTimeout = state.decisions.find(
@@ -143,7 +154,7 @@ function testDictatorAndTrustSixtySecondTimeouts() {
   localSessionStore.ackStrategicTaskVisible(dictatorGame.code, dictatorPair.playerA);
   state = localSessionStore.get(dictatorGame.code)!;
   const dictatorDeadline = localSessionStore.strategicDeadlineAt(state, dictatorPair.id, dictatorPair.playerA)!;
-  localSessionStore.reconcileStrategicTimeouts(dictatorGame.code, new Date(dictatorDeadline).getTime() + 1);
+  localSessionStore.reconcileStrategicTimeouts(dictatorGame.code, new Date(dictatorDeadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1);
   state = localSessionStore.get(dictatorGame.code)!;
   const dictatorTimeout = state.decisions.find(
     (decision) => decision.pairingId === dictatorPair.id && decision.type === 'dictator_give',
@@ -163,7 +174,7 @@ function testDictatorAndTrustSixtySecondTimeouts() {
   localSessionStore.ackStrategicTaskVisible(trustGame.code, trustPair.playerA);
   state = localSessionStore.get(trustGame.code)!;
   const sendDeadline = localSessionStore.strategicDeadlineAt(state, trustPair.id, trustPair.playerA)!;
-  localSessionStore.reconcileStrategicTimeouts(trustGame.code, new Date(sendDeadline).getTime() + 1);
+  localSessionStore.reconcileStrategicTimeouts(trustGame.code, new Date(sendDeadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1);
   state = localSessionStore.get(trustGame.code)!;
   const timedSend = state.decisions.find(
     (decision) => decision.pairingId === trustPair.id && decision.type === 'trust_send',
@@ -174,7 +185,7 @@ function testDictatorAndTrustSixtySecondTimeouts() {
   localSessionStore.ackStrategicTaskVisible(trustGame.code, trustPair.playerB);
   state = localSessionStore.get(trustGame.code)!;
   const returnDeadline = localSessionStore.strategicDeadlineAt(state, trustPair.id, trustPair.playerB)!;
-  localSessionStore.reconcileStrategicTimeouts(trustGame.code, new Date(returnDeadline).getTime() + 1);
+  localSessionStore.reconcileStrategicTimeouts(trustGame.code, new Date(returnDeadline).getTime() + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 + 1);
   state = localSessionStore.get(trustGame.code)!;
   const timedReturn = state.decisions.find(
     (decision) => decision.pairingId === trustPair.id && decision.type === 'trust_return',
@@ -856,6 +867,47 @@ function testPostReportPublicGoodsLearningRound() {
   console.log('POST-REPORT PUBLIC GOODS LEARNING ROUND OK');
 }
 
+function testPublicGoodsTransportDelayProtection() {
+  const code = runStrategicStage(4);
+  localSessionStore.randomizeGroups(code, 1);
+  localSessionStore.startPublicGoodsRound(code);
+
+  let state = localSessionStore.get(code)!;
+  const player = state.players[0];
+  const deadlineMs = new Date(state.publicGoodsDeadlineAt!).getTime();
+  const onTimeSubmit = new Date(deadlineMs - 500).toISOString();
+
+  state.publicGoodsDeadlineAt = new Date(Date.now() - 1_000).toISOString();
+  const simulatedDeadlineMs = new Date(state.publicGoodsDeadlineAt).getTime();
+  const simulatedOnTime = new Date(simulatedDeadlineMs - 500).toISOString();
+  localSessionStore.replaceFromRemote(state);
+
+  localSessionStore.submitPublicGoods(code, player.id, 12_300, simulatedOnTime);
+  state = localSessionStore.get(code)!;
+  const round = state.publicGoodsRounds.find((item) =>
+    item.roundNumber === state.publicGoodsRoundNumber && item.memberIds.includes(player.id)
+  )!;
+  assert.equal(
+    round.contributions[player.id],
+    12_300,
+    'Az időben elküldött tétet akkor is fogadjuk el, ha a feldolgozás a deadline után történik.',
+  );
+
+  assert.throws(
+    () => localSessionStore.submitPublicGoods(
+      code,
+      state.players[1].id,
+      10_000,
+      new Date(simulatedDeadlineMs + 1).toISOString(),
+    ),
+    /Lejárt a 90 másodperces döntési idő/,
+    'A ténylegesen későn elküldött tétet továbbra is el kell utasítani.',
+  );
+
+  void onTimeSubmit;
+  console.log('PUBLIC GOODS TRANSPORT DELAY PROTECTION OK');
+}
+
 function testMissingStakeBecomesZero() {
   const code = runStrategicStage(4);
   let state = localSessionStore.get(code)!;
@@ -894,6 +946,7 @@ testTenPlayerManualPoolSetup();
 testDebriefPinPersistence();
 testParticipantReflections();
 testMissingStakeBecomesZero();
+testPublicGoodsTransportDelayProtection();
 testPostReportPublicGoodsLearningRound();
 testPublicGoodsCanFinishImmediatelyOrMidRound();
 testManualCorrections();
