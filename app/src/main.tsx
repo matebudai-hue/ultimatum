@@ -3085,6 +3085,10 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <ReportPanel session={session} />
       <PlayerTable session={session} />
       <TrainerCorrectionPanel session={session} />
+
+      <footer className="trainer-legal-footer">
+        Készítette Budai Máté 2026-ban. Minden jog fenntartva. Hajrá, Fradi!
+      </footer>
     </main>
   );
 }
