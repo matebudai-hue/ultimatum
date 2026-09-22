@@ -2094,6 +2094,35 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 .pool-pattern-round>small.is-over{color:#166534}
 .pool-pattern-round>small.is-under{color:#b91c1c}
+.pool-pattern-round.is-learning{
+  background:linear-gradient(180deg,rgba(14,116,144,.035),rgba(14,116,144,0));
+}
+.pool-pattern-round.is-learning>strong{
+  color:#0f766e;
+  font-weight:950;
+}
+.pool-pattern-round.is-learning-start{
+  position:relative;
+}
+.pool-pattern-round.is-learning-start::before{
+  content:'TANULÓKÖR';
+  position:absolute;
+  left:-10px;
+  top:22px;
+  transform:translateX(-100%);
+  writing-mode:vertical-rl;
+  rotate:180deg;
+  padding:6px 4px;
+  border-radius:6px;
+  background:#0f766e;
+  color:#fff;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+.pool-pattern-round.is-learning-start .pool-pattern-track{
+  box-shadow:-8px 0 0 -6px #0f766e;
+}
 
 @media(max-width:900px){
   .patterns-game-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
