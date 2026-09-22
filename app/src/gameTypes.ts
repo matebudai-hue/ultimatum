@@ -139,6 +139,7 @@ export type ParticipantSelfReportItem = {
   payout?: number;
   netAmount?: number;
   isBotDecision?: boolean;
+  timedOutRole?: 'proposer' | 'receiver' | 'dictator' | 'sender' | 'returner';
 };
 
 export type ParticipantReflection = {
