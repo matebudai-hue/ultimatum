@@ -137,6 +137,13 @@ function testUltimatumTechnicalProtection() {
     1,
     'Az auditban maradjon meg, hogy a technikai hibát újranyitással oldottuk meg.',
   );
+  assert.equal(
+    localSessionStore.ultimatumDeadlineAt(state, pair.id, pair.playerA),
+    undefined,
+    'Újranyitáskor az új óra csak a feladat tényleges újbóli megjelenésekor induljon.',
+  );
+  localSessionStore.ackStrategicTaskVisible(game.code, pair.playerA);
+  state = localSessionStore.get(game.code)!;
   assert.ok(localSessionStore.ultimatumDeadlineAt(state, pair.id, pair.playerA));
 
   console.log('ULTIMATUM TECHNICAL PROTECTION OK');
@@ -228,6 +235,9 @@ function testStrategicTechnicalProtectionBeyondUltimatum() {
   );
   assert.ok(state.strategicTechnicalIssues.some((issue) => issue.pairingId === pair.id));
   localSessionStore.reopenTechnicalDecision(game.code, pair.id, pair.playerA);
+  state = localSessionStore.get(game.code)!;
+  assert.equal(localSessionStore.strategicDeadlineAt(state, pair.id, pair.playerA), undefined);
+  localSessionStore.ackStrategicTaskVisible(game.code, pair.playerA);
   state = localSessionStore.get(game.code)!;
   assert.ok(localSessionStore.strategicDeadlineAt(state, pair.id, pair.playerA));
 
