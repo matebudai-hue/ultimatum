@@ -472,7 +472,7 @@ function PlayerRoundState({ session, playerId }: { session: GameSession; playerI
     if (!pairing) return <span className="state wait">nincs pár</span>;
 
     const technicalIssue = session.strategicTechnicalIssues.find(
-      (issue) => issue.pairingId === pairing.id && issue.playerId === playerId,
+      (issue) => issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt,
     );
     if (technicalIssue) {
       return (
@@ -572,7 +572,7 @@ function GameTimeline({ session }: { session: GameSession }) {
 function TrainerPulse({ session }: { session: GameSession }) {
   const online = session.players.filter((player) => gameStore.isPlayerOnline(player)).length;
   const offline = session.players.length - online;
-  const technical = session.strategicTechnicalIssues.filter((issue) => issue.roundKey === session.roundKey).length;
+  const technical = session.strategicTechnicalIssues.filter((issue) => issue.roundKey === session.roundKey && !issue.resolvedAt).length;
   const currentTimeouts = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)
     ? session.decisions.filter((decision) => decision.roundKey === session.roundKey && decision.timedOutRole !== undefined).length
     : 0;
@@ -709,7 +709,7 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
       <div className="pair-board-grid">
         {pairings.map((pairing, index) => {
           const decisions = decisionsFor(session, pairing);
-          const tech = session.strategicTechnicalIssues.some((issue) => issue.pairingId === pairing.id);
+          const tech = session.strategicTechnicalIssues.some((issue) => issue.pairingId === pairing.id && !issue.resolvedAt);
           const timed = decisions.some((decision) => decision.timedOutRole !== undefined || decision.type === 'ultimatum_timeout');
           let state: 'success' | 'failed' | 'waiting' | 'technical' = 'waiting';
           let detail = 'Döntés folyamatban';
@@ -812,7 +812,7 @@ function PlayerTable({ session }: { session: GameSession }) {
                   ? gameStore.getPairingForPlayer(session, player.id)
                   : undefined;
                 const tech = currentPairing && session.strategicTechnicalIssues.some(
-                  (issue) => issue.pairingId === currentPairing.id && issue.playerId === player.id,
+                  (issue) => issue.pairingId === currentPairing.id && issue.playerId === player.id && !issue.resolvedAt,
                 );
                 const timeout = currentPairing && session.decisions.some(
                   (decision) => decision.pairingId === currentPairing.id && decision.playerId === player.id && decision.timedOutRole !== undefined,
@@ -4334,10 +4334,10 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   const closed = session.closedRounds.includes(session.roundKey as StrategicRound);
   const timeout = decisions.find((decision) => decision.type === 'ultimatum_timeout');
   const technicalIssue = session.strategicTechnicalIssues.find(
-    (issue) => issue.pairingId === pairing.id && issue.playerId === playerId,
+    (issue) => issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt,
   );
   const partnerTechnicalIssue = session.strategicTechnicalIssues.find(
-    (issue) => issue.pairingId === pairing.id && issue.playerId !== playerId,
+    (issue) => issue.pairingId === pairing.id && issue.playerId !== playerId && !issue.resolvedAt,
   );
 
   const submit = (payload: { type: Decision['type']; amount?: number; accepted?: boolean }) => {
