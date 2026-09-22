@@ -32,7 +32,7 @@ import {
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
-import { downloadCsv, reportSummary } from './report';
+import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
@@ -878,6 +878,7 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
 }
 
 type RulesProjectionGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
+type ProjectionMode = 'qr' | RulesProjectionGame;
 
 const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short: string }[] = [
   { id: 'ultimatum', label: 'Ultimátumjáték', short: '1. játék' },
@@ -886,7 +887,7 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
   { id: 'publicGoods', label: 'Közös kassza', short: '4. játék' },
 ];
 
-let rulesProjectionWindow: Window | null = null;
+let projectionWindow: Window | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -961,8 +962,8 @@ function rulesProjectionCopy(session: GameSession, game: RulesProjectionGame) {
   };
 }
 
-function ensureRulesProjectionWindow() {
-  if (rulesProjectionWindow && !rulesProjectionWindow.closed) return rulesProjectionWindow;
+function ensureProjectionWindow() {
+  if (projectionWindow && !projectionWindow.closed) return projectionWindow;
 
   const availableWidth = window.screen.availWidth || 1920;
   const availableHeight = window.screen.availHeight || 1080;
@@ -971,26 +972,29 @@ function ensureRulesProjectionWindow() {
   const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
   const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
 
-  rulesProjectionWindow = window.open(
+  projectionWindow = window.open(
     '',
-    'kreditjatek-rules-projection',
+    'kreditjatek-projection',
     `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`,
   );
-  return rulesProjectionWindow;
+  return projectionWindow;
 }
 
 function renderRulesProjectionWindow(session: GameSession, game: RulesProjectionGame) {
-  const target = ensureRulesProjectionWindow();
+  const target = ensureProjectionWindow();
   if (!target) return false;
 
   const copy = rulesProjectionCopy(session, game);
   const doc = target.document;
   doc.title = `Kreditjáték – ${copy.title}`;
 
-  if (!doc.getElementById('kreditjatek-rules-projection-style')) {
-    const style = doc.createElement('style');
-    style.id = 'kreditjatek-rules-projection-style';
-    style.textContent = `
+  let style = doc.getElementById('kreditjatek-projection-style') as HTMLStyleElement | null;
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'kreditjatek-projection-style';
+    doc.head.appendChild(style);
+  }
+  style.textContent = `
       :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213a;background:#f6f8fb}
       *{box-sizing:border-box}
       html,body{width:100%;height:100%;overflow:hidden}
@@ -1018,8 +1022,6 @@ function renderRulesProjectionWindow(session: GameSession, game: RulesProjection
         .footer{margin-top:7px;font-size:12px}
       }
     `;
-    doc.head.appendChild(style);
-  }
 
   const main = doc.createElement('main');
 
@@ -1074,7 +1076,99 @@ function renderRulesProjectionWindow(session: GameSession, game: RulesProjection
   main.appendChild(footer);
 
   doc.body.replaceChildren(main);
-  target.focus();
+  return true;
+}
+
+function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
+  const target = ensureProjectionWindow();
+  if (!target) return false;
+
+  const sourceSvg = document.querySelector('#projection-qr-source svg');
+  if (!sourceSvg) return false;
+
+  const doc = target.document;
+  doc.title = 'Kreditjáték – QR-kód';
+
+  let style = doc.getElementById('kreditjatek-projection-style') as HTMLStyleElement | null;
+  if (!style) {
+    style = doc.createElement('style');
+    style.id = 'kreditjatek-projection-style';
+    doc.head.appendChild(style);
+  }
+  style.textContent = `
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213a;background:#f6f8fb}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden}
+    body{margin:0;background:linear-gradient(145deg,#ffffff 0%,#f5f7fb 58%,#edf2f7 100%);padding:28px 40px}
+    main{width:min(1380px,100%);height:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(420px,620px);gap:48px;align-items:center}
+    .copy{display:flex;flex-direction:column;justify-content:center;min-width:0}
+    .eyebrow{font-size:16px;font-weight:950;letter-spacing:.11em;text-transform:uppercase;color:#64748b}
+    h1{font-size:clamp(48px,5.4vw,78px);line-height:.98;letter-spacing:-.045em;margin:10px 0 18px;color:#10213a}
+    .lead{font-size:clamp(21px,2vw,30px);line-height:1.35;color:#475569;margin:0 0 30px;max-width:680px}
+    .code{display:inline-flex;flex-direction:column;align-self:flex-start;padding:18px 24px;border-radius:16px;background:#10213a;color:#fff}
+    .code span{font-size:13px;text-transform:uppercase;font-weight:900;letter-spacing:.08em;color:#cbd5e1}
+    .code strong{font-size:48px;letter-spacing:.12em;margin-top:2px}
+    .status{margin-top:20px;display:flex;align-items:baseline;gap:10px;color:#475569}
+    .status strong{font-size:32px;color:#10213a}
+    .status span{font-size:18px;font-weight:800}
+    .qr{display:grid;place-items:center;width:min(100%,620px);aspect-ratio:1;border-radius:24px;background:#fff;padding:18px;box-shadow:0 18px 60px rgba(15,23,42,.12);border:1px solid #dbe3ed}
+    .qr svg{width:100%;height:100%;display:block}
+    @media(max-width:1050px){
+      body{padding:20px 26px}
+      main{grid-template-columns:minmax(0,1fr) minmax(360px,500px);gap:28px}
+      h1{font-size:48px}.lead{font-size:20px}.code strong{font-size:38px}
+    }
+  `;
+
+  const main = doc.createElement('main');
+  const copy = doc.createElement('section');
+  copy.className = 'copy';
+
+  const eyebrow = doc.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'Kreditjáték';
+
+  const title = doc.createElement('h1');
+  title.textContent = session.roundKey === 'lobby' ? 'Csatlakozz a játékhoz' : 'Visszacsatlakozás';
+
+  const lead = doc.createElement('p');
+  lead.className = 'lead';
+  lead.textContent = session.roundKey === 'lobby'
+    ? 'Olvasd be a QR-kódot a telefonoddal, majd add meg a neved.'
+    : 'Ha kiestél a játékból, ugyanazzal a telefonnal olvasd be újra a QR-kódot.';
+
+  const code = doc.createElement('div');
+  code.className = 'code';
+  const codeLabel = doc.createElement('span');
+  codeLabel.textContent = 'Játékkód';
+  const codeValue = doc.createElement('strong');
+  codeValue.textContent = session.code;
+  code.append(codeLabel, codeValue);
+
+  const status = doc.createElement('div');
+  status.className = 'status';
+  const statusValue = doc.createElement('strong');
+  const statusLabel = doc.createElement('span');
+  if (session.roundKey === 'lobby') {
+    statusValue.textContent = `${session.players.length} / ${session.expectedPlayerCount}`;
+    statusLabel.textContent = 'résztvevő belépett';
+  } else {
+    statusValue.textContent = `${session.players.filter((player) => gameStore.isPlayerOnline(player)).length} / ${session.players.length}`;
+    statusLabel.textContent = 'résztvevő online';
+  }
+  status.append(statusValue, statusLabel);
+  copy.append(eyebrow, title, lead, code, status);
+
+  const qr = doc.createElement('section');
+  qr.className = 'qr';
+  qr.appendChild(doc.importNode(sourceSvg, true));
+
+  main.append(copy, qr);
+  doc.body.replaceChildren(main);
+
+  // A joinUrl a QR forrás SVG-jében van; itt csak azért tartjuk paraméterként,
+  // hogy a hívás egyértelműen az aktuális belépési linkhez kötődjön.
+  void joinUrl;
   return true;
 }
 
@@ -1087,23 +1181,8 @@ function TrainerCockpit({
   joinUrl: string;
   onOpenDebrief: () => void;
 }) {
-  const [projectorOpen, setProjectorOpen] = useState(false);
   const [rulesPickerOpen, setRulesPickerOpen] = useState(false);
-  const [selectedRulesGame, setSelectedRulesGame] = useState<RulesProjectionGame>(() => rulesProjectionGameForSession(session));
-
-  useEffect(() => {
-    if (!projectorOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setProjectorOpen(false);
-    };
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [projectorOpen]);
+  const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
   const strategicClosed = strategic && session.closedRounds.includes(session.roundKey as StrategicRound);
   const strategicProgress = strategic ? gameStore.roundProgress(session) : null;
@@ -1178,7 +1257,15 @@ function TrainerCockpit({
           </div>
 
           <div className="compact-controls">
-            <button className="toolbar-button projector-trigger" onClick={() => setProjectorOpen(true)} title="QR-kód kivetítése"><QrCode size={16} />QR</button>
+            <button
+              className="toolbar-button projector-trigger"
+              onClick={() => {
+                setSelectedProjectionMode('qr');
+                const opened = renderQrProjectionWindow(session, joinUrl);
+                if (!opened) window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
+              }}
+              title="QR-kód kivetítése külön ablakban"
+            ><QrCode size={16} />QR</button>
             <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
               {primaryIcon}{primaryLabel}
             </button>
@@ -1187,7 +1274,7 @@ function TrainerCockpit({
               className="toolbar-button"
               onClick={() => {
                 const defaultGame = rulesProjectionGameForSession(session);
-                setSelectedRulesGame(defaultGame);
+                setSelectedProjectionMode(defaultGame);
                 const opened = renderRulesProjectionWindow(session, defaultGame);
                 if (!opened) {
                   window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
@@ -1223,58 +1310,9 @@ function TrainerCockpit({
 
       </div>
 
-      {projectorOpen && createPortal(
-        <div
-          className="projector-qr-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Kivetítő QR-kód"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setProjectorOpen(false);
-          }}
-        >
-          <div className="projector-qr-card">
-            <button
-              className="projector-close"
-              type="button"
-              aria-label="Kivetítő nézet bezárása"
-              onClick={() => setProjectorOpen(false)}
-            >
-              ×
-            </button>
-
-            <div className="projector-copy">
-              <p className="projector-eyebrow">Kreditjáték</p>
-              <h1>
-                {session.roundKey === 'lobby'
-                  ? 'Csatlakozz a játékhoz'
-                  : 'Visszacsatlakozás a játékhoz'}
-              </h1>
-              <p>
-                {session.roundKey === 'lobby'
-                  ? 'Olvasd be a QR-kódot a telefonoddal.'
-                  : 'Ha kiestél a játékból, olvasd be újra ugyanazzal a telefonnal.'}
-              </p>
-            </div>
-
-            <div className="projector-qr">
-              <QRCodeSVG value={joinUrl} size={620} level="M" includeMargin />
-            </div>
-
-            <div className="projector-code">
-              <span>Játékkód</span>
-              <strong>{session.code}</strong>
-            </div>
-
-            <div className="projector-status">
-              {session.roundKey === 'lobby'
-                ? <><strong>{session.players.length} / {session.expectedPlayerCount}</strong><span>résztvevő belépett</span></>
-                : <><strong>{session.players.filter((player) => gameStore.isPlayerOnline(player)).length} / {session.players.length}</strong><span>résztvevő online</span></>}
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <div id="projection-qr-source" style={{ display: 'none' }} aria-hidden="true">
+        <QRCodeSVG value={joinUrl} size={620} level="M" includeMargin />
+      </div>
 
       {rulesPickerOpen && createPortal(
         <div
@@ -1309,15 +1347,38 @@ function TrainerCockpit({
             <p className="projector-eyebrow">Kivetítő vezérlése</p>
             <h2 style={{ margin: '4px 0 8px', fontSize: 30, color: '#10213a' }}>Melyik játék szabálya látszódjon?</h2>
             <p style={{ margin: '0 0 24px', color: '#64748b', lineHeight: 1.5 }}>
-              A külön kivetítőablakban csak a kiválasztott játék leírása jelenik meg. Húzd át azt az ablakot a projektorra; itt tudod váltani a tartalmát.
+              A kivetítőablakot egyszer húzd át a projektorra. Ezután innen válthatsz QR-kód és a négy játékszabály között; a kivetítőablak a helyén marad.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProjectionMode('qr');
+                const opened = renderQrProjectionWindow(session, joinUrl);
+                if (!opened) window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
+              }}
+              style={{
+                width: '100%',
+                minHeight: 66,
+                marginBottom: 12,
+                padding: '12px 16px',
+                border: '1px solid #d8e0ea',
+                borderRadius: 12,
+                background: selectedProjectionMode === 'qr' ? '#eef6f6' : '#fff',
+                color: '#10213a',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontWeight: 900,
+              }}
+            >
+              QR-kód / belépés
+            </button>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
               {RULES_PROJECTION_OPTIONS.map((option) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => {
-                    setSelectedRulesGame(option.id);
+                    setSelectedProjectionMode(option.id);
                     const opened = renderRulesProjectionWindow(session, option.id);
                     if (!opened) window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
                   }}
@@ -1326,7 +1387,7 @@ function TrainerCockpit({
                     padding: '16px 18px',
                     border: '1px solid #d8e0ea',
                     borderRadius: 12,
-                    background: option.id === selectedRulesGame ? '#eef6f6' : '#fff',
+                    background: option.id === selectedProjectionMode ? '#eef6f6' : '#fff',
                     color: '#10213a',
                     textAlign: 'left',
                     cursor: 'pointer',
@@ -1340,7 +1401,7 @@ function TrainerCockpit({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
               <button
                 type="button"
-                onClick={() => rulesProjectionWindow?.focus()}
+                onClick={() => projectionWindow?.focus()}
                 style={{ border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 14px', background: '#fff', color: '#10213a', fontWeight: 800, cursor: 'pointer' }}
               >
                 Kivetítőablak előre
@@ -2323,6 +2384,16 @@ function TrainerCorrectionPanel({ session }: { session: GameSession }) {
       </summary>
 
       <div className="correction-body">
+        <div className="technical-audit-export">
+          <div>
+            <strong>Technikai audit</strong>
+            <span>Teljes nyers diagnosztikai állapot: időbélyegek, döntési ablakok, beküldési szándékok, technikai hibák, BOT-jelölések, tranzakciók és kasszakörök.</span>
+          </div>
+          <button className="secondary" type="button" onClick={() => downloadTechnicalAudit(session)}>
+            <Download size={16} />Technikai audit letöltése
+          </button>
+        </div>
+
         <label className="field">
           <span>Résztvevő</span>
           <select value={playerId} onChange={(event) => setPlayerId(event.target.value)}>
