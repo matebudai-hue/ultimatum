@@ -57,6 +57,11 @@ export type Decision = {
   publicGoodsRound?: number;
   groupId?: string;
   submittedAt: string;
+  submitIntentAt?: string;
+  submissionHistory?: Array<{
+    amount: number;
+    submittedAt: string;
+  }>;
 };
 
 export type StrategicTechnicalIssue = {
@@ -65,6 +70,8 @@ export type StrategicTechnicalIssue = {
   roundKey: StrategicRound;
   role: 'proposer' | 'receiver' | 'dictator' | 'sender' | 'returner';
   detectedAt: string;
+  resolvedAt?: string;
+  resolution?: 'decision_received' | 'reopened';
 };
 
 export type ManualCorrection = {
