@@ -26,6 +26,7 @@ import {
   ROUND_LABELS,
   StrategicRound,
   STRATEGIC_DECISION_SECONDS,
+  SUBMISSION_TRANSPORT_GRACE_SECONDS,
   ULTIMATUM_PROPOSER_SECONDS,
   ULTIMATUM_RECEIVER_SECONDS,
 } from './gameTypes';
@@ -481,7 +482,7 @@ function PlayerRoundState({ session, playerId }: { session: GameSession; playerI
             className="state-action"
             onClick={() => gameStore.reopenTechnicalDecision(session.code, pairing.id, playerId)}
           >
-            30 mp újra
+            ${STRATEGIC_DECISION_SECONDS} mp újra
           </button>
         </span>
       );
@@ -1361,10 +1362,18 @@ function TrainerCockpit({
       : 'A kör könyvelve. A következő kör új párokkal indul.';
   } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open') {
     const progress = gameStore.publicGoodsProgress(session);
-    primaryLabel = 'Tétek lezárása';
+    const deadlineMs = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
+    const graceLeft = deadlineMs && !progress.complete
+      ? Math.max(0, Math.ceil((deadlineMs + SUBMISSION_TRANSPORT_GRACE_SECONDS * 1000 - Date.now()) / 1000))
+      : 0;
+    const deadlinePassed = deadlineMs > 0 && Date.now() >= deadlineMs;
+    primaryLabel = deadlinePassed && graceLeft > 0 ? `Szinkronizálás · ${graceLeft} mp` : 'Tétek lezárása';
+    primaryDisabled = deadlinePassed && graceLeft > 0;
     primaryAction = () => gameStore.lockPublicGoodsRound(session.code);
     primaryIcon = <Check size={20} />;
-    actionHint = `${progress.ready}/${progress.total} tét érkezett. A hiányzó tétek lezáráskor 0-nak számítanak.`;
+    actionHint = deadlinePassed && graceLeft > 0
+      ? `${progress.ready}/${progress.total} tét érkezett. Az idő lejárt; a rendszer még az időben elküldött utolsó téteket fogadja be.`
+      : `${progress.ready}/${progress.total} tét érkezett. A hiányzó tétek lezáráskor 0-nak számítanak.`;
   } else if (session.roundKey === '4' && session.publicGoodsPhase === 'locked') {
     primaryLabel = 'Bank elszámol';
     primaryAction = () => gameStore.settlePublicGoodsRound(session.code);
@@ -3100,12 +3109,21 @@ function SelfReportMiniCard({
         : (item.role === 'proposer' ? 'Elutasították' : 'Elutasítottad');
     }
   } else if (item.game === 'dictator') {
-    main = item.timedOutRole === 'dictator'
-      ? 'Nem döntöttél időben'
-      : `${formatCredits(item.amount ?? 0)} kreditet adtál`;
-    secondary = item.timedOutRole === 'dictator'
-      ? 'Időtúllépés · 0 kredit került átadásra'
-      : `${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+    if (item.role === 'receiver') {
+      main = item.timedOutRole === 'dictator'
+        ? 'A másik játékos nem döntött időben'
+        : `${formatCredits(item.amount ?? 0)} kreditet kaptál`;
+      secondary = item.timedOutRole === 'dictator'
+        ? 'Időtúllépés · 0 kredit érkezett'
+        : 'Ebben a körben nem volt döntési lehetőséged';
+    } else {
+      main = item.timedOutRole === 'dictator'
+        ? 'Nem döntöttél időben'
+        : `${formatCredits(item.amount ?? 0)} kreditet adtál`;
+      secondary = item.timedOutRole === 'dictator'
+        ? 'Időtúllépés · 0 kredit került átadásra'
+        : `${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+    }
   } else if (item.game === 'trust') {
     if (item.role === 'sender') {
       main = item.timedOutRole === 'sender'
