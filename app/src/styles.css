@@ -1390,3 +1390,114 @@ button:disabled{opacity:.45;cursor:not-allowed}
   color:#94a3b8;
   letter-spacing:.01em;
 }
+
+
+/* ===== Közös kassza: mindig látható tréneri live sáv ===== */
+.pool-sticky-live{
+  position:sticky;
+  top:8px;
+  z-index:80;
+  display:grid;
+  grid-template-columns:minmax(150px,220px) 1fr;
+  gap:10px;
+  align-items:stretch;
+  margin:0 0 12px;
+  padding:8px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 10px 28px rgba(15,23,42,.14);
+  backdrop-filter:blur(8px);
+}
+.pool-sticky-clock{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+  padding:7px 10px;
+  border-radius:7px;
+  background:var(--navy);
+  color:#fff;
+}
+.pool-sticky-clock span{
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#b8c7d9;
+}
+.pool-sticky-clock strong{
+  margin-top:1px;
+  font-size:clamp(24px,2.1vw,34px);
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.pool-sticky-clock small{
+  margin-top:4px;
+  font-size:10px;
+  font-weight:800;
+  color:#d6e0eb;
+}
+.pool-sticky-groups{
+  display:flex;
+  align-items:stretch;
+  gap:7px;
+  min-width:0;
+  overflow-x:auto;
+}
+.pool-sticky-group{
+  min-width:170px;
+  flex:1 0 170px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:7px 10px;
+  border:1px solid #d8e0e9;
+  border-radius:7px;
+  background:#fff;
+}
+.pool-sticky-group b{
+  font-size:11px;
+  color:var(--navy);
+}
+.pool-sticky-group strong{
+  margin-top:2px;
+  font-size:18px;
+  line-height:1.05;
+  color:#b42318;
+  font-variant-numeric:tabular-nums;
+}
+.pool-sticky-group span{
+  margin-top:3px;
+  font-size:9px;
+  line-height:1.25;
+  font-weight:800;
+  color:#64748b;
+}
+.pool-sticky-group.is-above{
+  background:#f0fdf4;
+  border-color:#86efac;
+}
+.pool-sticky-group.is-above strong{color:#166534}
+.pool-sticky-group.is-near{
+  background:#fff7ed;
+  border:2px solid #f59e0b;
+  box-shadow:inset 0 0 0 1px rgba(245,158,11,.14);
+}
+.pool-sticky-group.is-near strong{
+  color:#9a3412;
+  font-size:20px;
+}
+.pool-sticky-group.is-failed{
+  background:#fff1f2;
+  border-color:#fb7185;
+}
+.pool-sticky-live.is-settled .pool-sticky-clock{
+  background:#334155;
+}
+@media(max-width:900px){
+  .pool-sticky-live{grid-template-columns:1fr;top:4px}
+  .pool-sticky-clock{flex-direction:row;align-items:center;gap:10px;justify-content:flex-start}
+  .pool-sticky-clock strong{font-size:22px;margin:0 0 0 auto}
+  .pool-sticky-clock small{margin:0}
+}
