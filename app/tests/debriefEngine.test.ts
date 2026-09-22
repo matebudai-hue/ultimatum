@@ -69,7 +69,7 @@ function makeSession(base: number): GameSession {
     pair('u1', 'ultimatum', '1a', 'p1', 'p2'),
     pair('u2', 'ultimatum', '1b', 'p3', 'p1'),
     pair('d1', 'dictator', '2a', 'p1', 'p2'),
-    pair('d2', 'dictator', '2b', 'p3', 'p4'),
+    pair('d2', 'dictator', '2b', 'p3', 'p1'),
     pair('t1', 'trust', '3a', 'p1', 'p2'),
     pair('t2', 'trust', '3b', 'p3', 'p1'),
   ];
