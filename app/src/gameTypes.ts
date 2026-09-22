@@ -148,6 +148,13 @@ export type ParticipantReflection = {
   submittedAt: string;
 };
 
+export type PublicGoodsContinuation = {
+  startedAt: string;
+  firstContinuationRoundNumber: number;
+  baselineFinalBalance: Record<string, number>;
+  restartBalance: Record<string, number>;
+};
+
 export type GameSession = {
   code: string;
   status: 'lobby' | 'active' | 'finished';
@@ -171,6 +178,7 @@ export type GameSession = {
   publicGoodsRoundNumber: number;
   publicGoodsPhase: PublicGoodsPhase;
   publicGoodsRounds: PublicGoodsRound[];
+  publicGoodsContinuation?: PublicGoodsContinuation;
   pinnedDebriefEventIds?: string[];
   debriefPhase?: 'reflection' | 'complete';
   reflections?: ParticipantReflection[];
