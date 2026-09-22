@@ -1478,19 +1478,19 @@ function TrainerCockpit({
               </button>
             </div>
             <div className="projection-dashboard-buttons">
-              <button type="button" className={selectedProjectionMode === 'qr' ? 'active' : ''} onClick={() => projectMode('qr')}><QrCode size={15} />QR</button>
+              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'qr' ? 'active' : ''} onClick={() => projectMode('qr')}><QrCode size={15} />QR</button>
               {RULES_PROJECTION_OPTIONS.map((option) => (
                 <button
                   type="button"
                   key={option.id}
-                  className={selectedProjectionMode === option.id ? 'active' : ''}
+                  className={!externalProjectionLabel && selectedProjectionMode === option.id ? 'active' : ''}
                   onClick={() => projectMode(option.id)}
                 >
                   {option.label}
                 </button>
               ))}
-              <button type="button" className={selectedProjectionMode === 'summary' ? 'active' : ''} onClick={() => projectMode('summary')}><BarChart3 size={15} />Kivezetés · csoportkép</button>
-              <button type="button" className={selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
+              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'summary' ? 'active' : ''} onClick={() => projectMode('summary')}><BarChart3 size={15} />Kivezetés · csoportkép</button>
+              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
             </div>
             <small>
               A projektorablakot egyszer húzd át a kivetítőre. Ezután minden váltást innen végzel; az ablak a helyén marad.
@@ -2708,6 +2708,9 @@ function renderProjectionWindow(
   const target = ensureProjectionWindow();
   if (!target) return false;
   projectorContentMode = 'debrief';
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label', {
+    detail: { label: 'Kivezetés · esemény' },
+  }));
 
   const doc = target.document;
   doc.title = 'Kreditjáték – kivetítés';
@@ -2773,6 +2776,10 @@ function closeProjectionWindow() {
   if (projectorWindow && !projectorWindow.closed) projectorWindow.close();
   projectorWindow = null;
   projectorContentMode = null;
+  projectedPatternGame = null;
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label', {
+    detail: { label: undefined },
+  }));
 }
 
 const eventRoundLabel = (event: InterestingEvent) =>
