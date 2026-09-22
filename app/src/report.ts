@@ -172,3 +172,32 @@ export function downloadCsv(session: GameSession) {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+
+export function createTechnicalAudit(session: GameSession) {
+  return {
+    auditVersion: 1,
+    exportedAt: new Date().toISOString(),
+    purpose: 'Kreditjáték technikai audit – teljes tréneri session állapot',
+    session: {
+      ...session,
+      players: session.players.map((player) => ({
+        ...player,
+        onlineComputedAtExport: player.lastSeenAt
+          ? Date.now() - new Date(player.lastSeenAt).getTime() < 45_000
+          : false,
+      })),
+    },
+  };
+}
+
+export function downloadTechnicalAudit(session: GameSession) {
+  const json = JSON.stringify(createTechnicalAudit(session), null, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `kreditjatek-${session.code}-technikai-audit.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
