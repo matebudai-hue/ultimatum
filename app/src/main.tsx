@@ -887,7 +887,7 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
   { id: 'publicGoods', label: 'Közös kassza', short: '4. játék' },
 ];
 
-let projectionWindow: Window | null = null;
+let rulesQrProjectionWindow: Window | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -962,8 +962,8 @@ function rulesProjectionCopy(session: GameSession, game: RulesProjectionGame) {
   };
 }
 
-function ensureProjectionWindow() {
-  if (projectionWindow && !projectionWindow.closed) return projectionWindow;
+function ensureRulesQrProjectionWindow() {
+  if (rulesQrProjectionWindow && !rulesQrProjectionWindow.closed) return rulesQrProjectionWindow;
 
   const availableWidth = window.screen.availWidth || 1920;
   const availableHeight = window.screen.availHeight || 1080;
@@ -972,16 +972,16 @@ function ensureProjectionWindow() {
   const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
   const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
 
-  projectionWindow = window.open(
+  rulesQrProjectionWindow = window.open(
     '',
     'kreditjatek-projection',
     `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`,
   );
-  return projectionWindow;
+  return rulesQrProjectionWindow;
 }
 
 function renderRulesProjectionWindow(session: GameSession, game: RulesProjectionGame) {
-  const target = ensureProjectionWindow();
+  const target = ensureRulesQrProjectionWindow();
   if (!target) return false;
 
   const copy = rulesProjectionCopy(session, game);
@@ -1080,7 +1080,7 @@ function renderRulesProjectionWindow(session: GameSession, game: RulesProjection
 }
 
 function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
-  const target = ensureProjectionWindow();
+  const target = ensureRulesQrProjectionWindow();
   if (!target) return false;
 
   const sourceSvg = document.querySelector('#projection-qr-source svg');
@@ -1411,7 +1411,7 @@ function TrainerCockpit({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
               <button
                 type="button"
-                onClick={() => projectionWindow?.focus()}
+                onClick={() => rulesQrProjectionWindow?.focus()}
                 style={{ border: '1px solid #cbd5e1', borderRadius: 8, padding: '10px 14px', background: '#fff', color: '#10213a', fontWeight: 800, cursor: 'pointer' }}
               >
                 Kivetítőablak előre
