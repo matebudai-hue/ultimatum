@@ -78,6 +78,19 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
         ? {}
         : { [playerId]: session.firstStageFinalBalance[playerId] },
     publicGoodsRounds,
+    publicGoodsContinuation: session.publicGoodsContinuation
+      ? {
+          ...clone(session.publicGoodsContinuation),
+          baselineFinalBalance:
+            session.publicGoodsContinuation.baselineFinalBalance[playerId] === undefined
+              ? {}
+              : { [playerId]: session.publicGoodsContinuation.baselineFinalBalance[playerId] },
+          restartBalance:
+            session.publicGoodsContinuation.restartBalance[playerId] === undefined
+              ? {}
+              : { [playerId]: session.publicGoodsContinuation.restartBalance[playerId] },
+        }
+      : undefined,
     pinnedDebriefEventIds: [],
     reflections: clone((session.reflections ?? []).filter((item) => item.playerId === playerId)),
     selfReport: session.roundKey === 'report' ? clone(buildSelfReport(session, playerId)) : [],
