@@ -200,9 +200,9 @@ assert.equal(state.debriefPhase, 'reflection');
 
 for (const player of state.players) {
   const report = buildSelfReport(state, player.id);
-  assert.equal(report.filter((item) => item.game !== 'publicGoods').length, 5, `${player.name}: öt stratégiai saját döntés legyen.`);
+  assert.equal(report.filter((item) => item.game !== 'publicGoods').length, 6, `${player.name}: mind a hat stratégiai kör szerepeljen.`);
   assert.equal(report.filter((item) => item.game === 'publicGoods').length, 4, `${player.name}: négy kasszaköri saját döntés legyen.`);
-  assert.equal(report.length, 9, `${player.name}: összesen kilenc saját döntési csempe legyen.`);
+  assert.equal(report.length, 10, `${player.name}: összesen tíz saját döntési csempe legyen.`);
 
   const selected = report.slice(0, player.id.endsWith('1') ? 3 : 1);
   localSessionStore.submitReflection(
@@ -240,7 +240,7 @@ assert.ok(shareText.includes('Mi célból döntöttél így?'));
 assert.equal(shareText.includes(firstPlayer.id), false, 'A hazavihető riport ne tartalmazzon belső játékosazonosítót.');
 
 const participantView = buildParticipantProjection(state, firstPlayer.id);
-assert.equal(participantView.selfReport?.length, 9);
+assert.equal(participantView.selfReport?.length, 10);
 assert.equal(
   participantView.reflections?.every((reflection) => reflection.playerId === firstPlayer.id),
   true,
