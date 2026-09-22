@@ -55,7 +55,14 @@ export const buildSelfReportShareText = (
   playerName: string,
   report: ParticipantSelfReportItem[],
   reflections: ParticipantReflection[],
-  summary?: { firstStage: number; publicGoodsResult: number; finalWealth: number },
+  summary?: {
+    firstStage: number;
+    publicGoodsResult: number;
+    finalWealth: number;
+    firstPoolFinalWealth?: number;
+    learningStartWealth?: number;
+    learningResult?: number;
+  },
 ): string => {
   const reflectionByDecision = new Map(reflections.map((item) => [item.decisionId, item]));
   const lines = [
@@ -65,13 +72,28 @@ export const buildSelfReportShareText = (
   ].filter((line, index) => line || index !== 1);
 
   if (summary) {
-    lines.push(
-      'ÖSSZESÍTÉS',
-      `Az első három játék után: ${credits(summary.firstStage)}`,
-      `Közös kassza eredménye: ${signedCredits(summary.publicGoodsResult)}`,
-      `Végső vagyon: ${credits(summary.finalWealth)}`,
-      '',
-    );
+    lines.push('ÖSSZESÍTÉS', `Az első három játék után: ${credits(summary.firstStage)}`);
+
+    if (
+      summary.firstPoolFinalWealth !== undefined &&
+      summary.learningStartWealth !== undefined &&
+      summary.learningResult !== undefined
+    ) {
+      lines.push(
+        `Első Közös kassza eredménye: ${signedCredits(summary.publicGoodsResult)}`,
+        `Első lezárás végső vagyona: ${credits(summary.firstPoolFinalWealth)}`,
+        `Tanulókör induló vagyona: ${credits(summary.learningStartWealth)}`,
+        `Tanulókör eredménye: ${signedCredits(summary.learningResult)}`,
+        `Új végső vagyon: ${credits(summary.finalWealth)}`,
+        '',
+      );
+    } else {
+      lines.push(
+        `Közös kassza eredménye: ${signedCredits(summary.publicGoodsResult)}`,
+        `Végső vagyon: ${credits(summary.finalWealth)}`,
+        '',
+      );
+    }
   }
 
   for (const item of report) {
