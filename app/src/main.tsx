@@ -1077,6 +1077,7 @@ function TrainerCockpit({
 }) {
   const [projectorOpen, setProjectorOpen] = useState(false);
   const [rulesPickerOpen, setRulesPickerOpen] = useState(false);
+  const [selectedRulesGame, setSelectedRulesGame] = useState<RulesProjectionGame>(() => rulesProjectionGameForSession(session));
 
   useEffect(() => {
     if (!projectorOpen) return;
@@ -1173,7 +1174,9 @@ function TrainerCockpit({
             <button
               className="toolbar-button"
               onClick={() => {
-                const opened = renderRulesProjectionWindow(session, rulesProjectionGameForSession(session));
+                const defaultGame = rulesProjectionGameForSession(session);
+                setSelectedRulesGame(defaultGame);
+                const opened = renderRulesProjectionWindow(session, defaultGame);
                 if (!opened) {
                   window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
                   return;
@@ -1302,6 +1305,7 @@ function TrainerCockpit({
                   key={option.id}
                   type="button"
                   onClick={() => {
+                    setSelectedRulesGame(option.id);
                     const opened = renderRulesProjectionWindow(session, option.id);
                     if (!opened) window.alert('A böngésző blokkolta a kivetítőablakot. Engedélyezd a felugró ablakokat ennél az oldalnál.');
                   }}
@@ -1310,7 +1314,7 @@ function TrainerCockpit({
                     padding: '16px 18px',
                     border: '1px solid #d8e0ea',
                     borderRadius: 12,
-                    background: option.id === rulesProjectionGameForSession(session) ? '#eef6f6' : '#fff',
+                    background: option.id === selectedRulesGame ? '#eef6f6' : '#fff',
                     color: '#10213a',
                     textAlign: 'left',
                     cursor: 'pointer',
