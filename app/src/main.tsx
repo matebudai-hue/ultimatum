@@ -1691,7 +1691,11 @@ function PublicGoodsLiveBar({ session }: { session: GameSession }) {
   return (
     <div className={'pool-sticky-live ' + (open ? 'is-open' : locked ? 'is-locked' : 'is-settled')}>
       <div className="pool-sticky-clock">
-        <span>Kassza {session.publicGoodsRoundNumber}. kör</span>
+        <span>
+          {session.publicGoodsContinuation && session.publicGoodsRoundNumber >= session.publicGoodsContinuation.firstContinuationRoundNumber
+            ? 'Tanulókör ' + (session.publicGoodsRoundNumber - session.publicGoodsContinuation.firstContinuationRoundNumber + 1) + '. kör'
+            : 'Kassza ' + session.publicGoodsRoundNumber + '. kör'}
+        </span>
         <strong>{open ? secondsLeft + ' mp' : locked ? 'TÉTEK LEZÁRVA' : 'KÖR EREDMÉNYE'}</strong>
         {progress && <small>{progress.ready}/{progress.total} tét beérkezett</small>}
       </div>
@@ -3391,6 +3395,66 @@ function DebriefWorkspace({
   );
 }
 
+function PostReportLearningRoundPanel({ session }: { session: GameSession }) {
+  if (session.roundKey !== 'report') return null;
+
+  const continuation = session.publicGoodsContinuation;
+  if (continuation) {
+    const topUpCount = Object.keys(continuation.restartBalance).filter(
+      (playerId) => (continuation.baselineFinalBalance[playerId] ?? 0) < (continuation.restartBalance[playerId] ?? 0),
+    ).length;
+    return (
+      <section className="panel post-report-learning-panel dashboard-section">
+        <div>
+          <p className="eyebrow">Közös kassza · tanulókör</p>
+          <h2>Az utójáték lezárult</h2>
+          <p>
+            Az első lezárás eredménye megmaradt összehasonlítási alapnak.
+            {topUpCount > 0 ? ` ${topUpCount} résztvevő kapott induló-kredit minimumot a tanulókör elején.` : ''}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!session.publicGoodsRounds.some((round) => round.status === 'settled')) return null;
+
+  const belowFloor = session.players.filter(
+    (player) => !player.isBot && player.currentBalance < session.startingCredit,
+  );
+
+  return (
+    <section className="panel post-report-learning-panel dashboard-section">
+      <div>
+        <p className="eyebrow">Közös kassza · tanulókör</p>
+        <h2>Tanultak belőle?</h2>
+        <p>
+          Ugyanazok a csoportok újabb kasszaköröket játszhatnak. Mindenki az első lezáráskor meglévő vagyonával indul tovább;
+          aki {formatCredits(session.startingCredit)} alatt maradt, {formatCredits(session.startingCredit)} kreditre egészül ki.
+        </p>
+        <small>
+          {belowFloor.length > 0
+            ? `${belowFloor.length} résztvevő kap induló-kredit minimumot.`
+            : 'Minden résztvevő legalább az induló kredit összegével rendelkezik.'}
+          {' '}Az első szakasz eredménye megmarad a későbbi összehasonlításhoz.
+        </small>
+      </div>
+      <button
+        type="button"
+        className="primary"
+        onClick={() => {
+          const confirmed = window.confirm(
+            'Elindítod a Közös kassza tanulókört? Az első lezárás eredménye megmarad, a csoportok változatlanok maradnak, és az induló kredit alatti vagyonokat a rendszer feltölti az induló kreditre.',
+          );
+          if (confirmed) gameStore.resumePublicGoodsAfterReport(session.code);
+        }}
+      >
+        Közös kassza folytatása
+      </button>
+    </section>
+  );
+}
+
 function TrainerDashboard({ code, testMode = false }: { code: string; testMode?: boolean }) {
   const [session, setSession] = useState<GameSession | null>(() => gameStore.get(code));
   const [debriefOpen, setDebriefOpen] = useState(false);
@@ -3437,6 +3501,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
     <main className="shell trainer-shell">
       <FirebaseSyncBanner />
       <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} />
+      <PostReportLearningRoundPanel session={session} />
       {testMode && <TestHarness session={session} />}
 
       <CurrentPairsBoard session={session} />
@@ -4042,7 +4107,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           )}
           <div className="game-rules-card">
             <p>
-              <strong>Az első három játék véget ért.</strong> Az eddig megszerzett vagyonod: {formatCredits(player.currentBalance)}.
+              <strong>{session.publicGoodsContinuation ? 'A tanulókör következik.' : 'Az első három játék véget ért.'}</strong> Jelenlegi vagyonod: {formatCredits(player.currentBalance)}.
             </p>
             <p>
               Mostantól ebben a csoportban játszol. A saját vagyonodból döntheted el, mennyit teszel a közös kasszába.
