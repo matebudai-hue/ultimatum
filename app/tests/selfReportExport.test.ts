@@ -76,4 +76,35 @@ const dictator = selfReportItemText({
 });
 assert.deepEqual(dictator, ['2a', '30 000 kredit átadva', '70 000 kredit maradt nálad']);
 
+const dictatorReceiver = selfReportItemText({
+  id: 'd2',
+  game: 'dictator',
+  roundKey: '2b',
+  roundLabel: '2b',
+  role: 'receiver',
+  playerId: 'p1',
+  amount: 35_000,
+});
+assert.deepEqual(dictatorReceiver, [
+  '2b',
+  '35 000 kredit érkezett',
+  'Ebben a körben nem volt döntési lehetőséged',
+]);
+
+const dictatorReceiverTimeout = selfReportItemText({
+  id: 'd3',
+  game: 'dictator',
+  roundKey: '2b',
+  roundLabel: '2b',
+  role: 'receiver',
+  playerId: 'p1',
+  amount: 0,
+  timedOutRole: 'dictator',
+});
+assert.deepEqual(dictatorReceiverTimeout, [
+  '2b',
+  'A másik játékos nem döntött időben',
+  'Időtúllépés · 0 kredit érkezett',
+]);
+
 console.log('SELF REPORT EXPORT TESTS OK');
