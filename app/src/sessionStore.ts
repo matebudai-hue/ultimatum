@@ -153,7 +153,9 @@ const upsertPublicGoodsDecision = (
   roundNumber: number,
   amount: number,
   isBotDecision = false,
+  submittedAt?: string,
 ) => {
+  const eventAt = submittedAt ?? new Date().toISOString();
   const existing = session.decisions.find((item) =>
     item.type === 'public_goods_contribution' &&
     item.playerId === playerId &&
@@ -164,7 +166,11 @@ const upsertPublicGoodsDecision = (
   if (existing) {
     existing.amount = amount;
     existing.isBotDecision = isBotDecision;
-    existing.submittedAt = new Date().toISOString();
+    existing.submittedAt = eventAt;
+    existing.submissionHistory = [
+      ...(existing.submissionHistory ?? []),
+      { amount, submittedAt: eventAt },
+    ].slice(-50);
   } else {
     session.decisions.push({
       id: crypto.randomUUID(),
@@ -175,7 +181,8 @@ const upsertPublicGoodsDecision = (
       publicGoodsRound: roundNumber,
       groupId,
       isBotDecision,
-      submittedAt: new Date().toISOString(),
+      submittedAt: eventAt,
+      submissionHistory: [{ amount, submittedAt: eventAt }],
     });
   }
 };
@@ -211,7 +218,7 @@ const reconcileStrategicTimeouts = (session: GameSession, nowMs = Date.now()) =>
 
     if (submitIntentAt && new Date(submitIntentAt).getTime() <= deadlineMs) {
       const alreadyIssue = session.strategicTechnicalIssues.some(
-        (issue) => issue.pairingId === pairing.id && issue.playerId === pending.playerId,
+        (issue) => issue.pairingId === pairing.id && issue.playerId === pending.playerId && !issue.resolvedAt,
       );
       const technicalDeadline = new Date(submitIntentAt).getTime() + STRATEGIC_TECHNICAL_GRACE_SECONDS * 1000;
       if (!alreadyIssue && nowMs > technicalDeadline) {
@@ -803,10 +810,11 @@ export const localSessionStore = {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     const issueIndex = session.strategicTechnicalIssues.findIndex(
-      (issue) => issue.pairingId === pairingId && issue.playerId === playerId,
+      (issue) => issue.pairingId === pairingId && issue.playerId === playerId && !issue.resolvedAt,
     );
     if (issueIndex < 0) throw new Error('Nincs újranyitható technikai hiba.');
-    session.strategicTechnicalIssues.splice(issueIndex, 1);
+    session.strategicTechnicalIssues[issueIndex].resolvedAt = new Date().toISOString();
+    session.strategicTechnicalIssues[issueIndex].resolution = 'reopened';
     const key = strategicWindowKey(pairingId, playerId);
     delete session.strategicSubmitIntentAt[key];
     session.strategicTaskSeenAt[key] = new Date().toISOString();
@@ -862,6 +870,8 @@ export const localSessionStore = {
       }
     }
 
+    const decisionKey = strategicWindowKey(pairing.id, playerId);
+    const submitIntentAt = session.strategicSubmitIntentAt[decisionKey];
     addDecision(session, {
       pairingId: pairing.id,
       playerId,
@@ -869,11 +879,16 @@ export const localSessionStore = {
       type: payload.type,
       amount: payload.amount,
       accepted: payload.accepted,
+      submitIntentAt,
     });
-    session.strategicTechnicalIssues = session.strategicTechnicalIssues.filter(
-      (issue) => !(issue.pairingId === pairing.id && issue.playerId === playerId),
-    );
-    delete session.strategicSubmitIntentAt[strategicWindowKey(pairing.id, playerId)];
+    const resolvedAt = new Date().toISOString();
+    for (const issue of session.strategicTechnicalIssues) {
+      if (issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt) {
+        issue.resolvedAt = resolvedAt;
+        issue.resolution = 'decision_received';
+      }
+    }
+    delete session.strategicSubmitIntentAt[decisionKey];
     autoBotDecisions(session, pairing.id);
     write(session);
     return session;
@@ -1248,7 +1263,15 @@ export const localSessionStore = {
 
     round.contributions[playerId] = Math.round(amount);
     round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
-    upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, Math.round(amount));
+    upsertPublicGoodsDecision(
+      session,
+      playerId,
+      round.groupId,
+      round.roundNumber,
+      Math.round(amount),
+      false,
+      new Date(submittedMs).toISOString(),
+    );
     write(session);
     return session;
   },
@@ -1411,9 +1434,7 @@ export const localSessionStore = {
         completedRounds.has(decision.roundKey as StrategicRound)
       );
       session.pairings = session.pairings.filter((pairing) => completedRounds.has(pairing.roundKey));
-      session.strategicTaskSeenAt = {};
-      session.strategicSubmitIntentAt = {};
-      session.strategicTechnicalIssues = [];
+      // A technikai audit miatt a feladat-megjelenési, beküldési és hibatörténetet megőrizzük.
     }
 
     if (session.roundKey === '4' && session.publicGoodsPhase !== 'setup') {
