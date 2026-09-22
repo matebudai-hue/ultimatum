@@ -962,10 +962,18 @@ function rulesProjectionCopy(session: GameSession, game: RulesProjectionGame) {
 
 function ensureRulesProjectionWindow() {
   if (rulesProjectionWindow && !rulesProjectionWindow.closed) return rulesProjectionWindow;
+
+  const availableWidth = window.screen.availWidth || 1920;
+  const availableHeight = window.screen.availHeight || 1080;
+  const width = Math.min(1480, Math.max(1180, availableWidth - 360));
+  const height = Math.min(860, Math.max(720, availableHeight - 180));
+  const left = Math.max(0, Math.round((availableWidth - width) / 2 + (window.screen.availLeft || 0)));
+  const top = Math.max(0, Math.round((availableHeight - height) / 2 + (window.screen.availTop || 0)));
+
   rulesProjectionWindow = window.open(
     '',
     'kreditjatek-rules-projection',
-    'popup=yes,width=1320,height=860,resizable=yes,scrollbars=yes',
+    `popup=yes,width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no`,
   );
   return rulesProjectionWindow;
 }
@@ -984,26 +992,29 @@ function renderRulesProjectionWindow(session: GameSession, game: RulesProjection
     style.textContent = `
       :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213a;background:#f6f8fb}
       *{box-sizing:border-box}
-      body{margin:0;min-height:100vh;background:linear-gradient(145deg,#ffffff 0%,#f5f7fb 58%,#edf2f7 100%);padding:clamp(28px,4vw,64px)}
-      main{width:min(1220px,100%);margin:0 auto;min-height:calc(100vh - clamp(56px,8vw,128px));display:flex;flex-direction:column;justify-content:center}
-      .stage{font-size:clamp(16px,1.6vw,23px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
-      h1{font-size:clamp(48px,6vw,86px);line-height:.98;margin:0;color:#10213a;letter-spacing:-.045em}
-      .lead{font-size:clamp(24px,2.7vw,38px);line-height:1.25;font-weight:650;max-width:1120px;margin:24px 0 30px;color:#334155}
-      .rules{display:grid;gap:13px}
-      .rule{display:grid;grid-template-columns:56px 1fr;gap:18px;align-items:start;padding:15px 18px;background:#fff;border:1px solid #dbe3ed;border-radius:14px;box-shadow:0 8px 28px rgba(15,23,42,.04)}
-      .number{width:48px;height:48px;border-radius:12px;background:#10213a;color:#fff;display:grid;place-items:center;font-size:22px;font-weight:950}
-      .rule strong{display:block;font-size:clamp(20px,2vw,28px);margin:0 0 3px;color:#10213a}
-      .rule p{margin:0;font-size:clamp(18px,1.75vw,25px);line-height:1.32;color:#475569}
-      .decision{margin-top:22px;padding:20px 24px;border-radius:16px;background:#10213a;color:#fff}
-      .decision span{display:block;font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#a8dfe0;margin-bottom:6px}
-      .decision strong{font-size:clamp(24px,2.8vw,38px);line-height:1.2}
-      .footer{margin:16px 2px 0;font-size:clamp(16px,1.45vw,21px);line-height:1.35;font-weight:700;color:#64748b}
-      @media(max-width:760px){
-        body{padding:20px}
-        h1{font-size:44px}
-        .lead{font-size:22px}
-        .rule{grid-template-columns:44px 1fr;padding:13px}
-        .number{width:40px;height:40px}
+      html,body{width:100%;height:100%;overflow:hidden}
+      body{margin:0;background:linear-gradient(145deg,#ffffff 0%,#f5f7fb 58%,#edf2f7 100%);padding:24px 36px}
+      main{width:min(1380px,100%);height:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:center}
+      .stage{font-size:clamp(14px,1.15vw,18px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:5px}
+      h1{font-size:clamp(42px,4.5vw,68px);line-height:.98;margin:0;color:#10213a;letter-spacing:-.04em}
+      .lead{font-size:clamp(19px,1.8vw,27px);line-height:1.24;font-weight:650;max-width:1280px;margin:13px 0 17px;color:#334155}
+      .rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+      .rule{display:grid;grid-template-columns:46px 1fr;gap:13px;align-items:start;min-height:112px;padding:13px 15px;background:#fff;border:1px solid #dbe3ed;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,.04)}
+      .number{width:40px;height:40px;border-radius:10px;background:#10213a;color:#fff;display:grid;place-items:center;font-size:19px;font-weight:950}
+      .rule strong{display:block;font-size:clamp(18px,1.45vw,23px);margin:0 0 3px;color:#10213a}
+      .rule p{margin:0;font-size:clamp(15px,1.25vw,19px);line-height:1.3;color:#475569}
+      .decision{margin-top:15px;padding:14px 18px;border-radius:13px;background:#10213a;color:#fff}
+      .decision span{display:block;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#a8dfe0;margin-bottom:4px}
+      .decision strong{font-size:clamp(20px,1.9vw,29px);line-height:1.18}
+      .footer{margin:10px 2px 0;font-size:clamp(13px,1.1vw,17px);line-height:1.28;font-weight:700;color:#64748b}
+      @media(max-width:1050px){
+        body{padding:18px 24px}
+        .lead{font-size:18px;margin:10px 0 13px}
+        .rules{gap:8px}
+        .rule{min-height:100px;padding:10px 12px}
+        .rule p{font-size:14px}
+        .decision{margin-top:10px;padding:11px 14px}
+        .footer{margin-top:7px;font-size:12px}
       }
     `;
     doc.head.appendChild(style);
