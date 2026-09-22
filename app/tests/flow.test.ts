@@ -276,7 +276,7 @@ function testSettlementRules() {
   assert.deepEqual(settleUltimatum(players, ultimatumPair, 40_000, true, 100_000).map((t) => t.amount), [60_000, 40_000]);
 
   const dictatorPair = { ...ultimatumPair, id: 'd', gameId: 'dictator' as const, roundKey: '2a' as const, roleA: 'dictator' as const };
-  assert.deepEqual(settleOneWayGive(players, dictatorPair, STRATEGIC_DECISION_SECONDS * 1000, 100_000).map((t) => t.amount), [70_000, 30_000]);
+  assert.deepEqual(settleOneWayGive(players, dictatorPair, 30_000, 100_000).map((t) => t.amount), [70_000, 30_000]);
 
   const trustPair = { ...ultimatumPair, id: 't', gameId: 'trust' as const, roundKey: '3a' as const, roleA: 'sender' as const, roleB: 'returner' as const };
   assert.deepEqual(settleTrust(players, trustPair, 50_000, 75_000, 100_000).map((t) => t.amount), [125_000, 75_000]);
