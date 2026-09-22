@@ -2933,22 +2933,47 @@ function SelfReportMiniCard({
   let secondary = '';
 
   if (item.game === 'ultimatum') {
-    main = item.role === 'proposer'
-      ? `${formatCredits(item.amount ?? 0)} kreditet ajánlottál`
-      : `${formatCredits(item.amount ?? 0)} kreditet ajánlottak neked`;
-    secondary = item.accepted
-      ? (item.role === 'proposer' ? 'Elfogadták' : 'Elfogadtad')
-      : (item.role === 'proposer' ? 'Elutasították' : 'Elutasítottad');
+    if (item.timedOutRole) {
+      if (item.timedOutRole === 'proposer') {
+        main = item.role === 'proposer'
+          ? 'Nem küldtél ajánlatot időben'
+          : 'A másik játékos nem küldött ajánlatot időben';
+      } else {
+        main = item.role === 'receiver'
+          ? `${formatCredits(item.amount ?? 0)} kredites ajánlatra nem döntöttél időben`
+          : `Ajánlatod: ${formatCredits(item.amount ?? 0)} · a másik játékos ideje lejárt`;
+      }
+      secondary = 'Időtúllépés · ebből a párosításból 0 kredit';
+    } else {
+      main = item.role === 'proposer'
+        ? `${formatCredits(item.amount ?? 0)} kreditet ajánlottál`
+        : `${formatCredits(item.amount ?? 0)} kreditet ajánlottak neked`;
+      secondary = item.accepted
+        ? (item.role === 'proposer' ? 'Elfogadták' : 'Elfogadtad')
+        : (item.role === 'proposer' ? 'Elutasították' : 'Elutasítottad');
+    }
   } else if (item.game === 'dictator') {
-    main = `${formatCredits(item.amount ?? 0)} kreditet adtál`;
-    secondary = `${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+    main = item.timedOutRole === 'dictator'
+      ? 'Nem döntöttél időben'
+      : `${formatCredits(item.amount ?? 0)} kreditet adtál`;
+    secondary = item.timedOutRole === 'dictator'
+      ? 'Időtúllépés · 0 kredit került átadásra'
+      : `${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
   } else if (item.game === 'trust') {
     if (item.role === 'sender') {
-      main = `${formatCredits(item.sentAmount ?? 0)}-et küldtél → ${formatCredits(item.multipliedAmount ?? 0)} lett belőle`;
-      secondary = `${formatCredits(item.returnedAmount ?? 0)}-et kaptál vissza`;
+      main = item.timedOutRole === 'sender'
+        ? 'Nem döntöttél időben a küldésről'
+        : `${formatCredits(item.sentAmount ?? 0)}-et küldtél → ${formatCredits(item.multipliedAmount ?? 0)} lett belőle`;
+      secondary = item.timedOutRole === 'sender'
+        ? 'Időtúllépés · 0 kredit küldés'
+        : `${formatCredits(item.returnedAmount ?? 0)}-et kaptál vissza`;
     } else {
-      main = `${formatCredits(item.multipliedAmount ?? 0)} került hozzád`;
-      secondary = `${formatCredits(item.returnedAmount ?? 0)}-et adtál vissza · ${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
+      main = item.timedOutRole === 'returner'
+        ? `${formatCredits(item.multipliedAmount ?? 0)} került hozzád · nem döntöttél időben a visszaadásról`
+        : `${formatCredits(item.multipliedAmount ?? 0)} került hozzád`;
+      secondary = item.timedOutRole === 'returner'
+        ? `Időtúllépés · ${formatCredits(item.keptAmount ?? 0)} maradt nálad`
+        : `${formatCredits(item.returnedAmount ?? 0)}-et adtál vissza · ${formatCredits(item.keptAmount ?? 0)} maradt nálad`;
     }
   } else {
     main = `${formatCredits(item.contributionAmount ?? 0)} befizetés`;
