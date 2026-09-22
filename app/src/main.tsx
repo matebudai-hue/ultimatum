@@ -3237,6 +3237,405 @@ function DebriefGroupView({ session }: { session: GameSession }) {
   );
 }
 
+
+type PatternGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
+
+const PATTERN_GAME_OPTIONS: Array<{ id: PatternGame; label: string }> = [
+  { id: 'ultimatum', label: 'Ultimátum' },
+  { id: 'dictator', label: 'Diktátor' },
+  { id: 'trust', label: 'Bizalom' },
+  { id: 'publicGoods', label: 'Közös kassza' },
+];
+
+const PATTERN_QUESTIONS: Record<PatternGame, string> = {
+  ultimatum: 'Hol volt nálunk az a pont, amit még el lehetett fogadni?',
+  dictator: 'Mi változott, amikor a másik fél már nem dönthetett?',
+  trust: 'Mi történt, amikor valaki megelőlegezte a bizalmat?',
+  publicGoods: 'Körről körre hogyan változott, hogy mennyit vállalt a csoport a saját vagyonából?',
+};
+
+const PATTERN_TITLES: Record<PatternGame, string> = {
+  ultimatum: 'Ki mennyit ajánlott – és mi lett belőle?',
+  dictator: 'Ki mennyit adott, amikor egyedül dönthetett?',
+  trust: 'A megelőlegezett bizalom mennyire tért vissza?',
+  publicGoods: 'A csoport a saját vagyonából mennyit tett közössé?',
+};
+
+function patternPairings(session: GameSession, gameId: 'ultimatum' | 'dictator' | 'trust') {
+  return session.pairings.filter((pairing) =>
+    pairing.gameId === gameId &&
+    pairing.playerA !== 'BOT' &&
+    pairing.playerB !== 'BOT' &&
+    session.closedRounds.includes(pairing.roundKey) &&
+    !session.decisions.some((decision) =>
+      decision.pairingId === pairing.id &&
+      (decision.isBotDecision || decision.type === 'ultimatum_timeout' || decision.timedOutRole)
+    )
+  );
+}
+
+function SplitDecisionPattern({
+  session,
+  game,
+  showNames,
+}: {
+  session: GameSession;
+  game: 'ultimatum' | 'dictator';
+  showNames: boolean;
+}) {
+  const rows = patternPairings(session, game)
+    .map((pairing) => {
+      const pairDecisions = decisionsFor(session, pairing);
+      const amount = pairDecisions.find((decision) =>
+        decision.type === (game === 'ultimatum' ? 'ultimatum_offer' : 'dictator_give')
+      )?.amount ?? 0;
+      const accepted = game === 'ultimatum'
+        ? pairDecisions.find((decision) => decision.type === 'ultimatum_response')?.accepted ?? false
+        : true;
+      return {
+        pairing,
+        amount,
+        accepted,
+        giver: playerName(session, pairing.playerA),
+        receiver: playerName(session, pairing.playerB),
+      };
+    })
+    .sort((a, b) => a.amount - b.amount);
+
+  if (rows.length === 0) {
+    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+  }
+
+  const total = Math.max(1, session.startingCredit);
+
+  return (
+    <div className="split-pattern-chart">
+      <div className="split-pattern-y-axis">
+        <span>{formatCredits(total)}</span>
+        <span>{formatCredits(total / 2)}</span>
+        <span>0</span>
+      </div>
+      <div className="split-pattern-grid" style={{ gridTemplateColumns: 'repeat(' + rows.length + ', minmax(0, 1fr))' }}>
+        {rows.map((row, index) => {
+          const givePercent = Math.max(0, Math.min(100, row.amount / total * 100));
+          const keepPercent = 100 - givePercent;
+          const pairLabel = row.giver + ' → ' + row.receiver;
+          const status = game === 'ultimatum' ? (row.accepted ? 'Elfogadva' : 'Elutasítva') : 'Átadva';
+          return (
+            <div className="split-pattern-item" key={row.pairing.id}>
+              <div className="split-pattern-value">{formatCredits(row.amount)}</div>
+              <div
+                className={'split-pattern-bar ' + (game === 'ultimatum' ? (row.accepted ? 'is-accepted' : 'is-rejected') : 'is-dictator')}
+                title={pairLabel + ' · ' + formatCredits(row.amount) + ' · ' + status}
+              >
+                <div className="split-pattern-kept" style={{ height: keepPercent + '%' }}>
+                  {keepPercent >= 18 && <span>{Math.round(keepPercent)}%</span>}
+                </div>
+                <div className="split-pattern-given" style={{ height: givePercent + '%' }}>
+                  {givePercent >= 13 && <span>{Math.round(givePercent)}%</span>}
+                </div>
+              </div>
+              <div className="split-pattern-label" title={pairLabel}>
+                {showNames ? pairLabel : String(index + 1)}
+              </div>
+              {game === 'ultimatum' && (
+                <div className={'split-pattern-status ' + (row.accepted ? 'accepted' : 'rejected')}>
+                  {row.accepted ? 'elfogadva' : 'elutasítva'}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="pattern-legend">
+        <span><i className="legend-given" />{game === 'ultimatum' ? 'Felajánlott' : 'Átadott'}</span>
+        <span><i className="legend-kept" />Megtartott</span>
+        {game === 'ultimatum' && <span><i className="legend-rejected" />Elutasított ajánlat</span>}
+      </div>
+    </div>
+  );
+}
+
+function TrustMatrixPattern({ session, showNames }: { session: GameSession; showNames: boolean }) {
+  const rows = patternPairings(session, 'trust').map((pairing) => {
+    const pairDecisions = decisionsFor(session, pairing);
+    const sent = pairDecisions.find((decision) => decision.type === 'trust_send')?.amount ?? 0;
+    const returned = pairDecisions.find((decision) => decision.type === 'trust_return')?.amount ?? 0;
+    const sentPercent = session.startingCredit > 0 ? sent / session.startingCredit * 100 : 0;
+    const multiplied = sent * 3;
+    const returnPercent = multiplied > 0 ? returned / multiplied * 100 : 0;
+    return {
+      pairing,
+      sentPercent: Math.max(0, Math.min(100, sentPercent)),
+      returnPercent: Math.max(0, Math.min(100, returnPercent)),
+      giver: playerName(session, pairing.playerA),
+      receiver: playerName(session, pairing.playerB),
+    };
+  });
+
+  if (rows.length === 0) {
+    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+  }
+
+  const x = (percent: number) => 92 + percent * 7.96;
+  const y = (percent: number) => 542 - percent * 4.62;
+
+  return (
+    <div className="trust-matrix-wrap">
+      <svg className="trust-matrix" viewBox="0 0 1000 650" role="img" aria-label="Bizalomjáték mátrix">
+        <rect x="92" y="80" width="398" height="231" className="trust-quadrant q-tl" />
+        <rect x="490" y="80" width="398" height="231" className="trust-quadrant q-tr" />
+        <rect x="92" y="311" width="398" height="231" className="trust-quadrant q-bl" />
+        <rect x="490" y="311" width="398" height="231" className="trust-quadrant q-br" />
+        <line x1="490" x2="490" y1="80" y2="542" className="trust-midline" />
+        <line x1="92" x2="888" y1="311" y2="311" className="trust-midline" />
+        <line x1="92" x2="888" y1="542" y2="542" className="trust-axis" />
+        <line x1="92" x2="92" y1="80" y2="542" className="trust-axis" />
+
+        <text x="112" y="108" className="trust-quadrant-label">kevés küldés · sok vissza</text>
+        <text x="690" y="108" className="trust-quadrant-label">kölcsönösség</text>
+        <text x="112" y="520" className="trust-quadrant-label">alacsony bizalom</text>
+        <text x="690" y="520" className="trust-quadrant-label">kihasználás?</text>
+
+        {[0, 50, 100].map((tick) => (
+          <text key={'x-' + tick} x={x(tick)} y="572" textAnchor="middle" className="trust-tick">{tick}%</text>
+        ))}
+        {[0, 50, 100].map((tick) => (
+          <text key={'y-' + tick} x="72" y={y(tick) + 5} textAnchor="end" className="trust-tick">{tick}%</text>
+        ))}
+
+        <text x="490" y="625" textAnchor="middle" className="trust-axis-title">Elküldött kredit a kezdőkredit %-ában</text>
+        <text x="24" y="311" textAnchor="middle" transform="rotate(-90 24 311)" className="trust-axis-title">Visszaadott rész a háromszorozott összeg %-ában</text>
+
+        {rows.map((row, index) => {
+          const px = x(row.sentPercent) + ((index % 3) - 1) * 5;
+          const py = y(row.returnPercent) + ((index % 2) ? 4 : -4);
+          const label = showNames ? row.giver + ' → ' + row.receiver : String(index + 1);
+          return (
+            <g key={row.pairing.id} className="trust-point">
+              <title>{row.giver + ' → ' + row.receiver + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
+              <circle cx={px} cy={py} r={showNames ? 10 : 13} />
+              <text x={px + (showNames ? 14 : 0)} y={py + 5} textAnchor={showNames ? 'start' : 'middle'} className={showNames ? 'trust-point-name' : 'trust-point-index'}>
+                {label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+const poolPlayerColor = (index: number) => 'hsl(' + ((index * 47 + 198) % 360) + ' 58% ' + (46 + (index % 3) * 7) + '%)';
+
+function PublicGoodsPatterns({ session }: { session: GameSession }) {
+  const settled = session.publicGoodsRounds.filter((round) => round.status === 'settled');
+  if (settled.length === 0) {
+    return <div className="pattern-empty">Még nincs lezárt Közös kassza kör.</div>;
+  }
+
+  return (
+    <div className="pool-pattern-groups">
+      {session.groups.map((group) => {
+        const rounds = settled.filter((round) => round.groupId === group.id).sort((a, b) => a.roundNumber - b.roundNumber);
+        if (rounds.length === 0) return null;
+
+        const yMax = Math.max(
+          100,
+          ...rounds.map((round) => round.startingGroupWealth > 0 ? round.totalContribution / round.startingGroupWealth * 100 : 0),
+          ...rounds.map((round) => round.minimumAmount !== undefined && round.startingGroupWealth > 0 ? round.minimumAmount / round.startingGroupWealth * 100 : 0),
+        );
+        const normalizedMax = Math.ceil(yMax / 10) * 10;
+
+        return (
+          <section className="pool-pattern-group" key={group.id}>
+            <header>
+              <div>
+                <span>Külön csoportdiagram</span>
+                <h4>{group.name}</h4>
+              </div>
+              <div className="pool-pattern-legend">
+                {group.memberIds.map((playerId, index) => (
+                  <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{playerName(session, playerId)}</span>
+                ))}
+              </div>
+            </header>
+
+            <div className="pool-pattern-chart">
+              <div className="pool-pattern-y-axis">
+                <span>{normalizedMax}%</span>
+                <span>{Math.round(normalizedMax / 2)}%</span>
+                <span>0%</span>
+              </div>
+              <div className="pool-pattern-rounds" style={{ gridTemplateColumns: 'repeat(' + rounds.length + ', minmax(0, 1fr))' }}>
+                {rounds.map((round) => {
+                  const groupWealth = Math.max(1, round.startingGroupWealth);
+                  const totalPercent = round.totalContribution / groupWealth * 100;
+                  const minimumPercent = round.minimumAmount === undefined ? undefined : round.minimumAmount / groupWealth * 100;
+                  const gap = minimumPercent === undefined ? undefined : totalPercent - minimumPercent;
+
+                  return (
+                    <div className="pool-pattern-round" key={round.id}>
+                      <div className="pool-pattern-total">{Math.round(totalPercent * 10) / 10}%</div>
+                      <div className="pool-pattern-track">
+                        {minimumPercent !== undefined && (
+                          <div
+                            className="pool-pattern-minimum"
+                            style={{ bottom: Math.min(100, minimumPercent / normalizedMax * 100) + '%' }}
+                            title={'Minimum: ' + (Math.round(minimumPercent * 10) / 10) + '%'}
+                          >
+                            <span>minimum {Math.round(minimumPercent * 10) / 10}%</span>
+                          </div>
+                        )}
+                        <div className="pool-pattern-stack" style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
+                          {round.memberIds.map((playerId) => {
+                            const memberIndex = group.memberIds.indexOf(playerId);
+                            const amount = round.contributions[playerId] ?? 0;
+                            const segmentOfGroupWealth = amount / groupWealth * 100;
+                            const ownWealth = round.startingPlayerWealth?.[playerId] ?? 0;
+                            const ownPercent = ownWealth > 0 ? amount / ownWealth * 100 : 0;
+                            const potPercent = round.totalContribution > 0 ? amount / round.totalContribution * 100 : 0;
+                            const segmentShareOfBar = totalPercent > 0 ? segmentOfGroupWealth / totalPercent * 100 : 0;
+                            return (
+                              <div
+                                className="pool-pattern-segment"
+                                key={playerId}
+                                style={{
+                                  height: segmentShareOfBar + '%',
+                                  background: poolPlayerColor(Math.max(0, memberIndex)),
+                                }}
+                                title={playerName(session, playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <strong>{round.roundNumber}. kör</strong>
+                      {gap !== undefined && (
+                        <small className={gap >= 0 ? 'is-over' : 'is-under'}>
+                          {gap >= 0 ? '+' : '−'}{Math.abs(Math.round(gap * 10) / 10)} százalékpont
+                        </small>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderPatternProjectionFromElement(game: PatternGame) {
+  const source = document.getElementById('patterns-stage-' + game);
+  const target = ensureProjectorWindow();
+  if (!source || !target) return false;
+
+  projectorContentMode = 'debrief';
+  const doc = target.document;
+  const gameLabel = PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '';
+  doc.title = 'Kreditjáték – Mintázatok – ' + gameLabel;
+  doc.head.replaceChildren();
+
+  document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach((link) => {
+    const copy = doc.createElement('link');
+    copy.rel = 'stylesheet';
+    copy.href = link.href;
+    doc.head.appendChild(copy);
+  });
+
+  const projectionStyle = doc.createElement('style');
+  projectionStyle.textContent = [
+    'html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#f4f7fb}',
+    'body{padding:22px 30px;display:flex;align-items:stretch}',
+    '.patterns-stage{width:100%;height:100%;max-width:none!important;margin:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important}',
+    '.pattern-card{box-shadow:none!important;border-radius:16px!important;max-height:100%;overflow:hidden}',
+    '.pattern-chart-area{min-height:0;flex:1}',
+    '.pattern-question{font-size:clamp(20px,2vw,30px)!important}',
+    '.patterns-stage .pattern-toolbar{display:none!important}',
+    '.pool-pattern-groups{max-height:68vh;overflow:auto}'
+  ].join('');
+  doc.head.appendChild(projectionStyle);
+  doc.body.replaceChildren(doc.importNode(source, true));
+  return true;
+}
+
+function DebriefPatternsView({ session }: { session: GameSession }) {
+  const [game, setGame] = useState<PatternGame>(() => {
+    if (session.roundKey === '2a' || session.roundKey === '2b') return 'dictator';
+    if (session.roundKey === '3a' || session.roundKey === '3b') return 'trust';
+    if (session.roundKey === '4' || session.roundKey === 'report') return 'publicGoods';
+    return 'ultimatum';
+  });
+  const [showNames, setShowNames] = useState(false);
+  const [projectionError, setProjectionError] = useState('');
+
+  const project = () => {
+    setProjectionError('');
+    if (!renderPatternProjectionFromElement(game)) {
+      setProjectionError('A kivetítőablak nem nyílt meg. Engedélyezd a felugró ablakot, majd próbáld újra.');
+    }
+  };
+
+  return (
+    <div className="debrief-workspace-body patterns-workspace">
+      <div className="patterns-game-tabs">
+        {PATTERN_GAME_OPTIONS.map((option) => (
+          <button
+            type="button"
+            key={option.id}
+            className={game === option.id ? 'active' : ''}
+            onClick={() => setGame(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <section className="patterns-stage" id={'patterns-stage-' + game}>
+        <div className="pattern-card">
+          <header className="pattern-card-head">
+            <div>
+              <span>Mintázatok · {PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label}</span>
+              <h3>{PATTERN_TITLES[game]}</h3>
+            </div>
+            <div className="pattern-toolbar">
+              {game !== 'publicGoods' && (
+                <button
+                  type="button"
+                  className={showNames ? 'secondary active' : 'secondary'}
+                  onClick={() => setShowNames((value) => !value)}
+                >
+                  {showNames ? 'Párok elrejtése' : 'Párok mutatása'}
+                </button>
+              )}
+              <button type="button" className="secondary pattern-project-button" onClick={project}>
+                <BarChart3 size={15} />Kivetítés
+              </button>
+            </div>
+          </header>
+
+          <div className="pattern-chart-area">
+            {game === 'ultimatum' && <SplitDecisionPattern session={session} game="ultimatum" showNames={showNames} />}
+            {game === 'dictator' && <SplitDecisionPattern session={session} game="dictator" showNames={showNames} />}
+            {game === 'trust' && <TrustMatrixPattern session={session} showNames={showNames} />}
+            {game === 'publicGoods' && <PublicGoodsPatterns session={session} />}
+          </div>
+
+          <div className="pattern-question">
+            <span>Hívókérdés</span>
+            <strong>{PATTERN_QUESTIONS[game]}</strong>
+          </div>
+        </div>
+      </section>
+
+      {projectionError && <div className="error">{projectionError}</div>}
+    </div>
+  );
+}
+
 function DebriefEventsView({ session }: { session: GameSession }) {
   const events = useMemo(() => buildInterestingEvents(session), [session]);
   const pinnedIds = new Set(session.pinnedDebriefEventIds ?? []);
@@ -3472,7 +3871,7 @@ function DebriefWorkspace({
   onOpenChange: (open: boolean) => void;
 }) {
   const finalMode = session.roundKey === 'report';
-  const [tab, setTab] = useState<'group' | 'events' | 'participants'>(finalMode ? 'group' : 'events');
+  const [tab, setTab] = useState<'group' | 'events' | 'participants' | 'patterns'>(finalMode ? 'group' : 'events');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
@@ -3505,11 +3904,13 @@ function DebriefWorkspace({
         <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
         <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
         <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+        <button type="button" className={tab === 'patterns' ? 'active' : ''} onClick={() => setTab('patterns')}>Mintázatok</button>
       </div>
 
       {tab === 'group' && <DebriefGroupView session={session} />}
       {tab === 'events' && <DebriefEventsView session={session} />}
       {tab === 'participants' && <DebriefParticipantsView session={session} />}
+      {tab === 'patterns' && <DebriefPatternsView session={session} />}
     </>
   ) : (
     <div className="debrief-empty-state">
