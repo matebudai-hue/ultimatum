@@ -38,6 +38,20 @@ export const selfReportItemText = (item: ParticipantSelfReportItem): string[] =>
   }
 
   if (item.game === 'dictator') {
+    if (item.role === 'receiver') {
+      if (item.timedOutRole === 'dictator') {
+        return [
+          item.roundLabel,
+          'A másik játékos nem döntött időben',
+          'Időtúllépés · 0 kredit érkezett',
+        ];
+      }
+      return [
+        item.roundLabel,
+        `${credits(item.amount ?? 0)} érkezett`,
+        'Ebben a körben nem volt döntési lehetőséged',
+      ];
+    }
     if (item.timedOutRole === 'dictator') {
       return [item.roundLabel, 'Nem döntöttél időben', 'Időtúllépés · 0 kredit került átadásra'];
     }
