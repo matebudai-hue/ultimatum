@@ -237,7 +237,7 @@ assert.ok(shareText.includes(firstPlayer.name));
 assert.equal(shareText.includes(firstPlayer.id), false);
 
 const participantView = buildParticipantProjection(state, firstPlayer.id);
-assert.equal(participantView.selfReport?.length, 11);
+assert.equal(participantView.selfReport?.length, 12);
 assert.equal(
   participantView.reflections?.every((reflection) => reflection.playerId === firstPlayer.id),
   true,
