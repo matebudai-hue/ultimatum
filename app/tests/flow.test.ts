@@ -127,7 +127,16 @@ function testUltimatumTechnicalProtection() {
 
   localSessionStore.reopenTechnicalDecision(game.code, pair.id, pair.playerA);
   state = localSessionStore.get(game.code)!;
-  assert.equal(state.strategicTechnicalIssues.length, 0);
+  assert.equal(
+    state.strategicTechnicalIssues.filter((issue) => !issue.resolvedAt).length,
+    0,
+    'Újranyitás után ne maradjon aktív technikai hiba.',
+  );
+  assert.equal(
+    state.strategicTechnicalIssues.filter((issue) => issue.resolution === 'reopened').length,
+    1,
+    'Az auditban maradjon meg, hogy a technikai hibát újranyitással oldottuk meg.',
+  );
   assert.ok(localSessionStore.ultimatumDeadlineAt(state, pair.id, pair.playerA));
 
   console.log('ULTIMATUM TECHNICAL PROTECTION OK');
