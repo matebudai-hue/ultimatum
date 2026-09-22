@@ -1501,3 +1501,23 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .pool-sticky-clock strong{font-size:22px;margin:0 0 0 auto}
   .pool-sticky-clock small{margin:0}
 }
+
+
+/* ===== Riport utáni Közös kassza tanulókör ===== */
+.post-report-learning-panel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:18px 20px;
+  border:1px solid #b7c7d9;
+  background:#f8fbff;
+}
+.post-report-learning-panel h2{margin:2px 0 6px;color:var(--navy)}
+.post-report-learning-panel p{margin:0;max-width:900px;line-height:1.45;color:#475569}
+.post-report-learning-panel small{display:block;margin-top:7px;color:#64748b;font-weight:700}
+.post-report-learning-panel .primary{flex:0 0 auto;min-height:42px}
+@media(max-width:900px){
+  .post-report-learning-panel{align-items:stretch;flex-direction:column}
+  .post-report-learning-panel .primary{width:100%}
+}
