@@ -226,6 +226,58 @@ function testStrategicTechnicalProtectionBeyondUltimatum() {
 }
 
 
+function testStrategicTransportGraceDoesNotAddPlayTime() {
+  const lateGame = localSessionStore.create(100_000, 2);
+  localSessionStore.join(lateGame.code, 'late-a', 'A');
+  localSessionStore.join(lateGame.code, 'late-b', 'B');
+  let state = localSessionStore.startGame(lateGame.code);
+  const pairing = state.pairings.find((item) => item.roundKey === '1a')!;
+  const proposer = pairing.playerA as string;
+  localSessionStore.ackStrategicTaskVisible(lateGame.code, proposer);
+  state = localSessionStore.get(lateGame.code)!;
+  const deadline = localSessionStore.strategicDeadlineAt(state, pairing.id, proposer)!;
+  const deadlineMs = new Date(deadline).getTime();
+
+  assert.throws(
+    () => localSessionStore.submitStrategicDecision(
+      lateGame.code,
+      proposer,
+      { type: 'ultimatum_offer', amount: 40_000 },
+      new Date(deadlineMs + 1).toISOString(),
+    ),
+    /Lejárt a 60 másodperces döntési idő/,
+    'A technikai védősáv nem adhat plusz játékidőt.',
+  );
+
+  const onTimeGame = localSessionStore.create(100_000, 2);
+  localSessionStore.join(onTimeGame.code, 'ontime-a', 'A');
+  localSessionStore.join(onTimeGame.code, 'ontime-b', 'B');
+  state = localSessionStore.startGame(onTimeGame.code);
+  const onTimePair = state.pairings.find((item) => item.roundKey === '1a')!;
+  const onTimeProposer = onTimePair.playerA as string;
+  localSessionStore.ackStrategicTaskVisible(onTimeGame.code, onTimeProposer);
+  state = localSessionStore.get(onTimeGame.code)!;
+  const onTimeDeadline = localSessionStore.strategicDeadlineAt(state, onTimePair.id, onTimeProposer)!;
+
+  localSessionStore.submitStrategicDecision(
+    onTimeGame.code,
+    onTimeProposer,
+    { type: 'ultimatum_offer', amount: 40_000 },
+    new Date(new Date(onTimeDeadline).getTime() - 1).toISOString(),
+  );
+  state = localSessionStore.get(onTimeGame.code)!;
+  assert.ok(
+    state.decisions.some((decision) =>
+      decision.pairingId === onTimePair.id &&
+      decision.type === 'ultimatum_offer' &&
+      decision.amount === 40_000
+    ),
+    'Az időben elküldött döntést a hiteles beküldési idő alapján fogadjuk el.',
+  );
+
+  console.log('STRATEGIC TRANSPORT GRACE DOES NOT ADD PLAY TIME OK');
+}
+
 function testRecordedSubmitIntentSurvivesNetworkDelay() {
   const game = localSessionStore.create(100_000, 2);
   localSessionStore.join(game.code, 'delay-a', 'A');
@@ -930,6 +982,7 @@ testUltimatumTechnicalProtection();
 testDictatorAndTrustSixtySecondTimeouts();
 testStrategicTechnicalProtectionBeyondUltimatum();
 testRecordedSubmitIntentSurvivesNetworkDelay();
+testStrategicTransportGraceDoesNotAddPlayTime();
 testSettlementRules();
 testPairingInvariantsForAllSupportedCounts();
 testFinishAvailableFromFirstActiveRound();
