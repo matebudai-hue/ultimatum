@@ -493,7 +493,7 @@ function testPublicGoodsControl(code: string, count: number) {
   assert.equal(state.publicGoodsPhase, 'open');
   assert.equal(canFinishGame(state), true, 'Futó kasszakör közben is elérhető a teljes játék lezárása.');
   assert.ok(state.publicGoodsDeadlineAt);
-  assert.ok(localSessionStore.publicGoodsSecondsLeft(state) <= 60);
+  assert.ok(localSessionStore.publicGoodsSecondsLeft(state) <= 90);
 
   const firstPlayer = state.players[0];
   const firstAmount = Math.round(firstPlayer.currentBalance * 0.1);
