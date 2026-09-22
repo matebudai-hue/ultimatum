@@ -175,10 +175,171 @@ export function downloadCsv(session: GameSession) {
 
 
 export function createTechnicalAudit(session: GameSession) {
+  const playerNameById = new Map(session.players.map((player) => [player.id, player.name]));
+  const playerNameFor = (playerId: string | 'BOT') =>
+    playerId === 'BOT' ? 'Rendszerjátékos' : playerNameById.get(playerId) ?? playerId;
+
+  const timeline: Array<Record<string, unknown> & { at: string; event: string }> = [];
+
+  timeline.push({
+    at: session.createdAt,
+    event: 'session_created',
+    code: session.code,
+    startingCredit: session.startingCredit,
+    expectedPlayerCount: session.expectedPlayerCount,
+  });
+
+  for (const player of session.players) {
+    if (player.joinedAt) {
+      timeline.push({
+        at: player.joinedAt,
+        event: 'player_joined',
+        playerId: player.id,
+        playerName: player.name,
+      });
+    }
+    if (player.lastSeenAt) {
+      timeline.push({
+        at: player.lastSeenAt,
+        event: 'player_last_seen',
+        playerId: player.id,
+        playerName: player.name,
+      });
+    }
+  }
+
+  for (const [key, at] of Object.entries(session.strategicTaskSeenAt)) {
+    const separator = key.lastIndexOf(':');
+    const pairingId = separator >= 0 ? key.slice(0, separator) : key;
+    const playerId = separator >= 0 ? key.slice(separator + 1) : '';
+    timeline.push({
+      at,
+      event: 'strategic_task_seen',
+      pairingId,
+      playerId,
+      playerName: playerNameFor(playerId),
+    });
+  }
+
+  for (const [key, at] of Object.entries(session.strategicSubmitIntentAt)) {
+    const separator = key.lastIndexOf(':');
+    const pairingId = separator >= 0 ? key.slice(0, separator) : key;
+    const playerId = separator >= 0 ? key.slice(separator + 1) : '';
+    timeline.push({
+      at,
+      event: 'strategic_submit_intent',
+      pairingId,
+      playerId,
+      playerName: playerNameFor(playerId),
+    });
+  }
+
+  for (const decision of session.decisions) {
+    timeline.push({
+      at: decision.submittedAt,
+      event: 'decision_submitted',
+      roundKey: decision.roundKey,
+      pairingId: decision.pairingId,
+      playerId: decision.playerId,
+      playerName: playerNameFor(decision.playerId),
+      decisionType: decision.type,
+      amount: decision.amount,
+      accepted: decision.accepted,
+      timedOutRole: decision.timedOutRole,
+      isBotDecision: decision.isBotDecision ?? false,
+      publicGoodsRound: decision.publicGoodsRound,
+      groupId: decision.groupId,
+    });
+  }
+
+  for (const issue of session.strategicTechnicalIssues) {
+    timeline.push({
+      at: issue.detectedAt,
+      event: 'strategic_technical_issue',
+      roundKey: issue.roundKey,
+      pairingId: issue.pairingId,
+      playerId: issue.playerId,
+      playerName: playerNameFor(issue.playerId),
+      role: issue.role,
+    });
+  }
+
+  for (const transaction of session.transactions) {
+    timeline.push({
+      at: transaction.createdAt,
+      event: 'transaction',
+      roundKey: transaction.roundKey,
+      playerId: transaction.playerId,
+      playerName: playerNameFor(transaction.playerId),
+      amount: transaction.amount,
+      reason: transaction.reason,
+      balanceBefore: transaction.balanceBefore,
+      balanceAfter: transaction.balanceAfter,
+    });
+  }
+
+  for (const correction of session.manualCorrections) {
+    timeline.push({
+      at: correction.createdAt,
+      event: 'manual_correction',
+      kind: correction.kind,
+      roundKey: correction.roundKey,
+      pairingId: correction.pairingId,
+      publicGoodsRound: correction.publicGoodsRound,
+      playerId: correction.playerId,
+      playerName: playerNameFor(correction.playerId),
+      field: correction.field,
+      beforeValue: correction.beforeValue,
+      afterValue: correction.afterValue,
+      note: correction.note,
+    });
+  }
+
+  for (const round of session.publicGoodsRounds) {
+    if (!round.settledAt) continue;
+    timeline.push({
+      at: round.settledAt,
+      event: 'public_goods_settled',
+      roundNumber: round.roundNumber,
+      groupId: round.groupId,
+      status: round.status,
+      success: round.success,
+      totalContribution: round.totalContribution,
+      minimumMode: round.minimumMode,
+      minimumAmount: round.minimumAmount,
+      payoutPerPlayer: round.payoutPerPlayer,
+    });
+  }
+
+  if (session.publicGoodsContinuation) {
+    timeline.push({
+      at: session.publicGoodsContinuation.startedAt,
+      event: 'post_report_public_goods_restart',
+      firstContinuationRoundNumber: session.publicGoodsContinuation.firstContinuationRoundNumber,
+    });
+  }
+
+  timeline.sort((a, b) => a.at.localeCompare(b.at));
+
   return {
-    auditVersion: 1,
+    auditVersion: 2,
     exportedAt: new Date().toISOString(),
-    purpose: 'Kreditjáték technikai audit – teljes tréneri session állapot',
+    purpose: 'Kreditjáték technikai audit – teljes tréneri session állapot és időrendi eseménynapló',
+    summary: {
+      code: session.code,
+      status: session.status,
+      roundKey: session.roundKey,
+      startingCredit: session.startingCredit,
+      players: session.players.filter((player) => !player.isBot).length,
+      decisions: session.decisions.length,
+      strategicTechnicalIssues: session.strategicTechnicalIssues.length,
+      manualCorrections: session.manualCorrections.length,
+      transactions: session.transactions.length,
+      publicGoodsRounds: session.publicGoodsRounds.length,
+      botDecisions: session.decisions.filter((decision) => decision.isBotDecision).length,
+      timedOutDecisions: session.decisions.filter((decision) => decision.timedOutRole).length,
+    },
+    timeline,
     session: {
       ...session,
       players: session.players.map((player) => ({
