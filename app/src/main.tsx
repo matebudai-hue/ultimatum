@@ -4246,15 +4246,15 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           <div className="decision-consequence">
             <span>Beteszel: <strong>{formatCredits(amount)}</strong></span>
             <span>Nálad marad: <strong>{formatCredits(Math.max(0, player.currentBalance - amount))}</strong></span>
-          <span>A befizetés után nálad marad: <strong>{formatCredits(Math.max(0, player.currentBalance - amount))}</strong></span>
-        </div>
-        <button className="primary big" disabled={!canEdit} type="submit">
+          </div>
+        )}
+        <button className="primary big" disabled={!canEdit || amount === ''} type="submit">
           {currentRound.contributions[playerId] !== undefined ? 'Tét módosítása' : 'Tét mentése'}
         </button>
       </form>
 
       {currentRound.contributions[playerId] !== undefined && (
-        <div className="stake-saved">Mentett tét: <strong>{formatCredits(existingAmount)}</strong></div>
+        <div className="stake-saved">Mentett tét: <strong>{formatCredits(existingAmount ?? 0)}</strong></div>
       )}
       {!canEdit && <div className="waiting-box">A döntési idő lejárt. A tréner zárja a téteket.</div>}
     </>
