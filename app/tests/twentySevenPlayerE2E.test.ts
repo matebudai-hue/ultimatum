@@ -198,9 +198,9 @@ assert.equal(state.debriefPhase, 'reflection');
 
 for (const player of state.players) {
   const report = buildSelfReport(state, player.id);
-  assert.equal(report.filter((item) => item.game !== 'publicGoods').length, 5, `${player.name}: 5 stratégiai döntés.`);
+  assert.equal(report.filter((item) => item.game !== 'publicGoods').length, 6, `${player.name}: 6 stratégiai kör.`);
   assert.equal(report.filter((item) => item.game === 'publicGoods').length, 6, `${player.name}: 6 kasszaköri döntés.`);
-  assert.equal(report.length, 11, `${player.name}: összesen 11 saját döntési csempe.`);
+  assert.equal(report.length, 12, `${player.name}: összesen 12 saját döntési csempe.`);
 
   const selected = report.slice(0, player.id.endsWith('-1') ? 3 : 1);
   localSessionStore.submitReflection(
