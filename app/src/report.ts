@@ -275,6 +275,7 @@ export function createTechnicalAudit(session: GameSession) {
       isBotDecision: decision.isBotDecision ?? false,
       publicGoodsRound: decision.publicGoodsRound,
       groupId: decision.groupId,
+      submissionSource: decision.submissionSource,
       submitIntentAt: decision.submitIntentAt,
     });
   }
