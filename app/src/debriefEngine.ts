@@ -213,7 +213,11 @@ export const buildSelfReport = (session: GameSession, playerId: string): SelfRep
       id: publicGoodsDecisionId(round, playerId),
       game: 'publicGoods',
       roundKey: '4',
-      roundLabel: `Kassza ${round.roundNumber}. kör`,
+      roundLabel:
+        session.publicGoodsContinuation &&
+        round.roundNumber >= session.publicGoodsContinuation.firstContinuationRoundNumber
+          ? `Tanulókör ${round.roundNumber - session.publicGoodsContinuation.firstContinuationRoundNumber + 1}. kör`
+          : `Kassza ${round.roundNumber}. kör`,
       role: 'contributor',
       playerId,
       publicGoodsRound: round.roundNumber,
