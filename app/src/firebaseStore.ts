@@ -292,7 +292,7 @@ const applyCommand = (
   if (!before) throw new Error('A játék nem található.');
 
   if (command.type === 'ackStrategicTaskVisible') {
-    const session = localSessionStore.ackStrategicTaskVisible(code, playerId);
+    const session = localSessionStore.ackStrategicTaskVisible(code, playerId, commandEventAt(command));
     return { session, affected: [playerId] };
   }
 
