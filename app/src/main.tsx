@@ -967,8 +967,8 @@ function ensureRulesProjectionWindow() {
   const availableHeight = window.screen.availHeight || 1080;
   const width = Math.min(1480, Math.max(1180, availableWidth - 360));
   const height = Math.min(860, Math.max(720, availableHeight - 180));
-  const left = Math.max(0, Math.round((availableWidth - width) / 2 + (window.screen.availLeft || 0)));
-  const top = Math.max(0, Math.round((availableHeight - height) / 2 + (window.screen.availTop || 0)));
+  const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+  const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
 
   rulesProjectionWindow = window.open(
     '',
