@@ -12,6 +12,22 @@ const signedCredits = (value: number) =>
 
 export const selfReportItemText = (item: ParticipantSelfReportItem): string[] => {
   if (item.game === 'ultimatum') {
+    if (item.timedOutRole === 'proposer') {
+      return [
+        item.roundLabel,
+        item.role === 'proposer' ? 'Nem küldtél ajánlatot időben' : 'A másik játékos nem küldött ajánlatot időben',
+        'Időtúllépés · ebből a párosításból 0 kredit',
+      ];
+    }
+    if (item.timedOutRole === 'receiver') {
+      return [
+        item.roundLabel,
+        item.role === 'receiver'
+          ? `${credits(item.amount ?? 0)} ajánlatra nem döntöttél időben`
+          : `${credits(item.amount ?? 0)} ajánlat · a másik játékos ideje lejárt`,
+        'Időtúllépés · ebből a párosításból 0 kredit',
+      ];
+    }
     const main = item.role === 'proposer'
       ? `${credits(item.amount ?? 0)} ajánlat`
       : `${credits(item.amount ?? 0)} ajánlat érkezett`;
@@ -22,6 +38,9 @@ export const selfReportItemText = (item: ParticipantSelfReportItem): string[] =>
   }
 
   if (item.game === 'dictator') {
+    if (item.timedOutRole === 'dictator') {
+      return [item.roundLabel, 'Nem döntöttél időben', 'Időtúllépés · 0 kredit került átadásra'];
+    }
     return [
       item.roundLabel,
       `${credits(item.amount ?? 0)} átadva`,
@@ -31,10 +50,20 @@ export const selfReportItemText = (item: ParticipantSelfReportItem): string[] =>
 
   if (item.game === 'trust') {
     if (item.role === 'sender') {
+      if (item.timedOutRole === 'sender') {
+        return [item.roundLabel, 'Nem döntöttél időben a küldésről', 'Időtúllépés · 0 kredit küldés'];
+      }
       return [
         item.roundLabel,
         `${credits(item.sentAmount ?? 0)} elküldve → ${credits(item.multipliedAmount ?? 0)} a bank után`,
         `${credits(item.returnedAmount ?? 0)} érkezett vissza`,
+      ];
+    }
+    if (item.timedOutRole === 'returner') {
+      return [
+        item.roundLabel,
+        `${credits(item.multipliedAmount ?? 0)} került hozzád`,
+        `Nem döntöttél időben a visszaadásról · ${credits(item.keptAmount ?? 0)} maradt nálad`,
       ];
     }
     return [
