@@ -4383,7 +4383,12 @@ function ParticipantReflectionPanel({
   const currentPlayer = session.players.find((player) => player.id === playerId);
   const firstStage = session.firstStageFinalBalance[playerId] ?? currentPlayer?.currentBalance ?? 0;
   const finalWealth = currentPlayer?.currentBalance ?? firstStage;
-  const publicGoodsResult = finalWealth - firstStage;
+  const continuation = session.publicGoodsContinuation;
+  const firstPoolFinalWealth = continuation?.baselineFinalBalance[playerId];
+  const learningStartWealth = continuation?.restartBalance[playerId];
+  const publicGoodsResult = (firstPoolFinalWealth ?? finalWealth) - firstStage;
+  const learningResult =
+    learningStartWealth === undefined ? undefined : finalWealth - learningStartWealth;
 
   useEffect(() => {
     if (!sending || submitted) return;
@@ -4405,7 +4410,14 @@ function ParticipantReflectionPanel({
     playerName,
     report,
     ownReflections,
-    { firstStage, publicGoodsResult, finalWealth },
+    {
+      firstStage,
+      publicGoodsResult,
+      finalWealth,
+      firstPoolFinalWealth,
+      learningStartWealth,
+      learningResult,
+    },
   );
 
   const printReport = () => {
@@ -4749,13 +4761,33 @@ function ParticipantClient({ code: initial }: { code?: string }) {
 
         {session.roundKey === 'report' && currentPlayer && (() => {
           const firstStage = session.firstStageFinalBalance[playerId] ?? currentPlayer.currentBalance;
-          const poolResult = currentPlayer.currentBalance - firstStage;
+          const continuation = session.publicGoodsContinuation;
+          const firstPoolFinal = continuation?.baselineFinalBalance[playerId];
+          const learningStart = continuation?.restartBalance[playerId];
+          const firstPoolResult = (firstPoolFinal ?? currentPlayer.currentBalance) - firstStage;
+          const learningResult = learningStart === undefined ? undefined : currentPlayer.currentBalance - learningStart;
+
           return (
             <div className="game-finish">
               <div className="final-summary reflection-final-summary">
                 <div><span>Az első három játék után</span><strong>{formatCredits(firstStage)}</strong></div>
-                <div><span>Közös kassza eredménye</span><strong className={poolResult >= 0 ? 'good' : 'bad'}>{poolResult >= 0 ? '+' : ''}{formatCredits(poolResult)}</strong></div>
-                <div className="final-total"><span>Végső vagyon</span><strong>{formatCredits(currentPlayer.currentBalance)}</strong></div>
+                <div>
+                  <span>{continuation ? 'Első Közös kassza eredménye' : 'Közös kassza eredménye'}</span>
+                  <strong className={firstPoolResult >= 0 ? 'good' : 'bad'}>{firstPoolResult >= 0 ? '+' : ''}{formatCredits(firstPoolResult)}</strong>
+                </div>
+                {continuation && firstPoolFinal !== undefined && (
+                  <div><span>Első lezárás végső vagyona</span><strong>{formatCredits(firstPoolFinal)}</strong></div>
+                )}
+                {continuation && learningStart !== undefined && (
+                  <div><span>Tanulókör induló vagyona</span><strong>{formatCredits(learningStart)}</strong></div>
+                )}
+                {continuation && learningResult !== undefined && (
+                  <div>
+                    <span>Tanulókör eredménye</span>
+                    <strong className={learningResult >= 0 ? 'good' : 'bad'}>{learningResult >= 0 ? '+' : ''}{formatCredits(learningResult)}</strong>
+                  </div>
+                )}
+                <div className="final-total"><span>{continuation ? 'Új végső vagyon' : 'Végső vagyon'}</span><strong>{formatCredits(currentPlayer.currentBalance)}</strong></div>
               </div>
               <ParticipantReflectionPanel session={session} playerId={playerId} />
             </div>
