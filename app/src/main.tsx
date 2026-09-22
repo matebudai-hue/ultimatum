@@ -482,7 +482,7 @@ function PlayerRoundState({ session, playerId }: { session: GameSession; playerI
             className="state-action"
             onClick={() => gameStore.reopenTechnicalDecision(session.code, pairing.id, playerId)}
           >
-            ${STRATEGIC_DECISION_SECONDS} mp újra
+            {STRATEGIC_DECISION_SECONDS} mp újra
           </button>
         </span>
       );
