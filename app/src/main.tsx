@@ -3755,7 +3755,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
         <>
           <UltimatumRules credit={session.startingCredit} role="receiver" />
           <div className="waiting-box">
-            Várakozás a másik játékos ajánlatára… A te ${STRATEGIC_DECISION_SECONDS} másodperced még nem indult el.
+            Várakozás a másik játékos ajánlatára… A te 60 másodperced még nem indult el.
           </div>
         </>
       );
@@ -3881,7 +3881,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
         </div>
         <div className="submitted">
           <Check size={28} />
-          <strong>{giveDecision?.timedOutRole === 'dictator' ? 'Lejárt a ${STRATEGIC_DECISION_SECONDS} másodperc. 0 kreditet adtál.' : `${formatCredits(given)} kreditet adtál a másik játékosnak.`}</strong>
+          <strong>{giveDecision?.timedOutRole === 'dictator' ? 'Lejárt a 60 másodperc. 0 kreditet adtál.' : `${formatCredits(given)} kreditet adtál a másik játékosnak.`}</strong>
           <span>Nálad {formatCredits(session.startingCredit - given)} kredit marad ebből a körből.</span>
           <span>{closed ? 'A kör könyvelve.' : 'Várakozás a kör könyvelésére.'}</span>
         </div>
@@ -3932,7 +3932,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       return (
         <div className="submitted">
           <Check size={28} />
-          <strong>{sentDecision.timedOutRole === 'sender' ? 'Lejárt a ${STRATEGIC_DECISION_SECONDS} másodperc. Nem küldtél kreditet.' : `Elküldtél ${formatCredits(sent)} kreditet.`}</strong>
+          <strong>{sentDecision.timedOutRole === 'sender' ? 'Lejárt a 60 másodperc. Nem küldtél kreditet.' : `Elküldtél ${formatCredits(sent)} kreditet.`}</strong>
           <span>A bank {formatCredits(tripled)} kreditet adott a másik játékosnak.</span>
           <span>Várakozás arra, hogy eldöntse, mennyit ad vissza.</span>
         </div>
@@ -4000,7 +4000,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     <div className="submitted">
       <Check size={28} />
       <strong>{formatCredits(tripled)} kredit került hozzád.</strong>
-      <span>{returnedDecision.timedOutRole === 'returner' ? 'Lejárt a ${STRATEGIC_DECISION_SECONDS} másodperc, ezért 0 kreditet adtál vissza.' : `${formatCredits(returned)} kreditet visszaadtál.`}</span>
+      <span>{returnedDecision.timedOutRole === 'returner' ? 'Lejárt a 60 másodperc, ezért 0 kreditet adtál vissza.' : `${formatCredits(returned)} kreditet visszaadtál.`}</span>
       <span><strong>{formatCredits(tripled - returned)} kredit marad nálad.</strong></span>
       <span>{closed ? 'A kör könyvelve.' : 'Várakozás a kör könyvelésére.'}</span>
     </div>
