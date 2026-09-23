@@ -43,6 +43,103 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .choice-card.light{background:#fff;color:var(--navy);border:1px solid var(--border)}
 .choice-card strong{font-size:22px}.choice-card span{line-height:1.45;color:#cbd5e1}.choice-card.light span{color:var(--muted)}
 .setup-panel{padding:24px}.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.starting-credit-presets{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+.starting-credit-presets button{
+  min-height:38px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:#f8fafc;
+  color:#334155;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.starting-credit-presets button:hover{background:#eef2f7;border-color:#94a3b8}
+.starting-credit-presets button.active{
+  background:var(--navy);
+  border-color:var(--navy);
+  color:#fff;
+}
+.setup-confirm-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(15,23,42,.58);
+  backdrop-filter:blur(4px);
+}
+.setup-confirm-dialog{
+  width:min(520px,100%);
+  border:1px solid #dbe3ed;
+  border-radius:22px;
+  background:#fff;
+  padding:24px;
+  box-shadow:0 28px 90px rgba(15,23,42,.28);
+}
+.setup-confirm-dialog h2{
+  margin:5px 0 18px;
+  color:var(--navy);
+  font-size:26px;
+  line-height:1.12;
+}
+.setup-confirm-values{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.setup-confirm-values>div{
+  padding:14px;
+  border:1px solid #dbe3ed;
+  border-radius:14px;
+  background:#f8fafc;
+}
+.setup-confirm-values span{
+  display:block;
+  margin-bottom:4px;
+  color:#64748b;
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.setup-confirm-values strong{
+  display:block;
+  color:var(--navy);
+  font-size:22px;
+  font-variant-numeric:tabular-nums;
+}
+.setup-confirm-note{
+  margin:14px 0 0;
+  color:#64748b;
+  font-size:11px;
+  line-height:1.45;
+}
+.setup-confirm-actions{
+  display:grid;
+  grid-template-columns:1fr 1.4fr;
+  gap:9px;
+  margin-top:20px;
+}
+.setup-confirm-actions button{
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+@media(max-width:520px){
+  .starting-credit-presets{grid-template-columns:1fr 1fr 1fr}
+  .starting-credit-presets button{font-size:10px;padding:6px 4px}
+  .setup-confirm-values,.setup-confirm-actions{grid-template-columns:1fr}
+  .setup-confirm-dialog{padding:20px}
+}
+
 
 .trainer-header{display:flex;justify-content:space-between;align-items:end;margin:4px 0 14px}
 .trainer-header h1{font-size:clamp(34px,5vw,56px)}
