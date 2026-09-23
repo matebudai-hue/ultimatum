@@ -1920,6 +1920,112 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .legend-kept{background:#dbe4ee;border:1px solid #cbd5e1}
 .legend-rejected{background:#d93636}
 
+
+/* Bizalom · egyszerű páronkénti sávnézet */
+.trust-view-toggle{
+  display:inline-flex;
+  gap:5px;
+  padding:3px;
+  border:1px solid #d7e0ea;
+  border-radius:10px;
+  background:#f8fafc;
+}
+.trust-view-toggle .secondary{
+  min-height:30px;
+  padding:5px 9px;
+}
+.trust-bars{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.trust-bars-scale{
+  margin-left:130px;
+  display:flex;
+  justify-content:space-between;
+  color:#94a3b8;
+  font-size:8px;
+  font-weight:900;
+}
+.trust-bars-row{
+  display:grid;
+  grid-template-columns:118px minmax(0,1fr);
+  grid-template-rows:auto auto;
+  column-gap:12px;
+  row-gap:7px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  background:#fff;
+}
+.trust-bars-pair{
+  grid-row:1 / span 2;
+  color:#10213a;
+  font-size:10px;
+  font-weight:950;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.trust-bars-line{
+  min-width:0;
+  display:grid;
+  grid-template-columns:210px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+}
+.trust-bars-label{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+}
+.trust-bars-label strong{
+  color:#334155;
+  font-size:9px;
+}
+.trust-bars-label span{
+  color:#64748b;
+  font-size:9px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.trust-bars-track{
+  position:relative;
+  height:18px;
+  border-radius:999px;
+  overflow:hidden;
+  background:
+    linear-gradient(to right,
+      transparent 0,
+      transparent calc(50% - .5px),
+      rgba(100,116,139,.22) 50%,
+      transparent calc(50% + .5px),
+      transparent 100%),
+    #eef2f7;
+}
+.trust-bars-fill{
+  height:100%;
+  border-radius:999px;
+  min-width:0;
+}
+.trust-bars-fill.sent{
+  background:linear-gradient(90deg,#4059ad 0%,#263b82 100%);
+}
+.trust-bars-fill.returned{
+  background:linear-gradient(90deg,#149d92 0%,#08746d 100%);
+}
+.trust-bars-note{
+  margin-top:2px;
+  color:#64748b;
+  font-size:9px;
+  line-height:1.4;
+  font-weight:750;
+  text-align:right;
+}
+
 /* Bizalom-mátrix */
 .trust-matrix-wrap{
   width:100%;
