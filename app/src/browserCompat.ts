@@ -50,6 +50,9 @@ export const writeStorage = (key: string, value: string) => {
   }
 };
 
+export const formatCreditInput = (value: number | '') =>
+  value === '' ? '' : Math.max(0, Math.round(value)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
 export const parseCreditInput = (raw: string): number | '' => {
   const digits = raw.replace(/[^0-9]/g, '');
   if (!digits) return '';
