@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/debriefGrouping.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/technicalAudit.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsx tests/resilienceStress.test.ts && tsc --noEmit",
+    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/debriefGrouping.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/browserCompat.test.ts && tsx tests/technicalAudit.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsx tests/resilienceStress.test.ts && tsc --noEmit",
     "preview": "vite preview",
     "test:rules": "tsx tests/firebaseRules.test.ts",
     "test:projection": "tsx tests/firebaseProjection.test.ts",
