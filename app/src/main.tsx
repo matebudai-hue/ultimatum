@@ -3392,6 +3392,77 @@ function SplitDecisionPattern({
   );
 }
 
+
+function TrustBarsPattern({ session, showNames }: { session: GameSession; showNames: boolean }) {
+  const rows = patternPairings(session, 'trust')
+    .map((pairing) => {
+      const pairDecisions = decisionsFor(session, pairing);
+      const sent = pairDecisions.find((decision) => decision.type === 'trust_send')?.amount ?? 0;
+      const returned = pairDecisions.find((decision) => decision.type === 'trust_return')?.amount ?? 0;
+      const multiplied = sent * 3;
+      const sentPercent = session.startingCredit > 0 ? sent / session.startingCredit * 100 : 0;
+      const returnPercent = multiplied > 0 ? returned / multiplied * 100 : 0;
+      return {
+        pairing,
+        sent,
+        returned,
+        multiplied,
+        sentPercent: Math.max(0, Math.min(100, sentPercent)),
+        returnPercent: Math.max(0, Math.min(100, returnPercent)),
+        giver: playerName(session, pairing.playerA),
+        receiver: playerName(session, pairing.playerB),
+      };
+    })
+    .sort((a, b) => a.sentPercent - b.sentPercent);
+
+  if (rows.length === 0) {
+    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+  }
+
+  return (
+    <div className="trust-bars">
+      <div className="trust-bars-scale">
+        <span>0%</span>
+        <span>50%</span>
+        <span>100%</span>
+      </div>
+      {rows.map((row, index) => {
+        const pairLabel = showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár';
+        return (
+          <div className="trust-bars-row" key={row.pairing.id}>
+            <div className="trust-bars-pair" title={row.giver + ' → ' + row.receiver}>
+              {pairLabel}
+            </div>
+
+            <div className="trust-bars-line">
+              <div className="trust-bars-label">
+                <strong>Küldött</strong>
+                <span>{Math.round(row.sentPercent * 10) / 10}% · {formatCredits(row.sent)} kredit</span>
+              </div>
+              <div className="trust-bars-track">
+                <div className="trust-bars-fill sent" style={{ width: row.sentPercent + '%' }} />
+              </div>
+            </div>
+
+            <div className="trust-bars-line">
+              <div className="trust-bars-label">
+                <strong>Visszaadott</strong>
+                <span>{Math.round(row.returnPercent * 10) / 10}% · {formatCredits(row.returned)} kredit</span>
+              </div>
+              <div className="trust-bars-track">
+                <div className="trust-bars-fill returned" style={{ width: row.returnPercent + '%' }} />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div className="trust-bars-note">
+        A visszaadás százaléka mindig a bank által megháromszorozott összegből értendő.
+      </div>
+    </div>
+  );
+}
+
 function TrustMatrixPattern({ session, showNames }: { session: GameSession; showNames: boolean }) {
   const rows = patternPairings(session, 'trust').map((pairing) => {
     const pairDecisions = decisionsFor(session, pairing);
@@ -3660,6 +3731,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
     return 'ultimatum';
   });
   const [showNames, setShowNames] = useState(false);
+  const [trustView, setTrustView] = useState<'simple' | 'matrix'>('simple');
   const settledPoolGroups = session.groups.filter((group) =>
     session.publicGoodsRounds.some((round) => round.status === 'settled' && round.groupId === group.id)
   );
@@ -3679,7 +3751,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
       renderPatternProjectionFromElement(game);
     });
     return () => window.cancelAnimationFrame(id);
-  }, [game, showNames, selectedPoolGroupId, session]);
+  }, [game, showNames, trustView, selectedPoolGroupId, session]);
 
   const project = () => {
     setProjectionError('');
@@ -3708,9 +3780,31 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
           <header className="pattern-card-head">
             <div>
               <span>Mintázatok · {PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label}</span>
-              <h3>{PATTERN_TITLES[game]}</h3>
+              <h3>{
+                game === 'trust' && trustView === 'simple'
+                  ? 'Ki mennyit küldött, és mennyit adott vissza a másik?'
+                  : PATTERN_TITLES[game]
+              }</h3>
             </div>
             <div className="pattern-toolbar">
+              {game === 'trust' && (
+                <div className="trust-view-toggle">
+                  <button
+                    type="button"
+                    className={trustView === 'simple' ? 'secondary active' : 'secondary'}
+                    onClick={() => setTrustView('simple')}
+                  >
+                    Egyszerű
+                  </button>
+                  <button
+                    type="button"
+                    className={trustView === 'matrix' ? 'secondary active' : 'secondary'}
+                    onClick={() => setTrustView('matrix')}
+                  >
+                    Mátrix
+                  </button>
+                </div>
+              )}
               {game !== 'publicGoods' && (
                 <button
                   type="button"
@@ -3729,7 +3823,8 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
           <div className="pattern-chart-area">
             {game === 'ultimatum' && <SplitDecisionPattern session={session} game="ultimatum" showNames={showNames} />}
             {game === 'dictator' && <SplitDecisionPattern session={session} game="dictator" showNames={showNames} />}
-            {game === 'trust' && <TrustMatrixPattern session={session} showNames={showNames} />}
+            {game === 'trust' && trustView === 'simple' && <TrustBarsPattern session={session} showNames={showNames} />}
+            {game === 'trust' && trustView === 'matrix' && <TrustMatrixPattern session={session} showNames={showNames} />}
             {game === 'publicGoods' && (
               <PublicGoodsPatterns
                 session={session}
