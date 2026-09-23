@@ -4237,6 +4237,7 @@ function AmountDecision({
   giveLabel = 'Odaadod',
   keepLabel = 'Nálad marad',
   onSubmit,
+  submitting = false,
 }: {
   max: number;
   label: string;
@@ -4244,6 +4245,7 @@ function AmountDecision({
   giveLabel?: string;
   keepLabel?: string;
   onSubmit: (amount: number) => void;
+  submitting?: boolean;
 }) {
   const [amount, setAmount] = useState<number | ''>('');
   const numericAmount = amount === '' ? null : Math.round(amount);
@@ -4273,7 +4275,9 @@ function AmountDecision({
           <span>{keepLabel}: <strong>{formatCredits(Math.max(0, max - numericAmount))}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > max}>{button}</button>
+      <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
+        {submitting ? 'Küldés…' : button}
+      </button>
     </form>
   );
 }
@@ -4309,9 +4313,11 @@ function UltimatumRules({ credit, role }: { credit: number; role: 'proposer' | '
 function TrustSendDecision({
   max,
   onSubmit,
+  submitting = false,
 }: {
   max: number;
   onSubmit: (amount: number) => void;
+  submitting?: boolean;
 }) {
   const [amount, setAmount] = useState<number | ''>('');
   const numericAmount = amount === '' ? null : Math.round(amount);
@@ -4342,7 +4348,9 @@ function TrustSendDecision({
           <span>A másikhoz kerül: <strong>{formatCredits(tripled)}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > max}>Küldés</button>
+      <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
+        {submitting ? 'Küldés…' : 'Küldés'}
+      </button>
     </form>
   );
 }
@@ -4350,9 +4358,11 @@ function TrustSendDecision({
 function TrustReturnDecision({
   available,
   onSubmit,
+  submitting = false,
 }: {
   available: number;
   onSubmit: (amount: number) => void;
+  submitting?: boolean;
 }) {
   const [amount, setAmount] = useState<number | ''>('');
   const numericAmount = amount === '' ? null : Math.round(amount);
@@ -4382,7 +4392,9 @@ function TrustReturnDecision({
           <span>Nálad marad: <strong>{formatCredits(kept)}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > available}>Visszaadás elküldése</button>
+      <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > available}>
+        {submitting ? 'Küldés…' : 'Visszaadás elküldése'}
+      </button>
     </form>
   );
 }
@@ -4392,6 +4404,17 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   const decisions = pairing ? decisionsFor(session, pairing) : [];
   const offerDecision = decisions.find((decision) => decision.type === 'ultimatum_offer');
   const responseDecision = decisions.find((decision) => decision.type === 'ultimatum_response');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setSubmitting(false);
+  }, [session.roundKey, decisions.map((decision) => decision.id).join('|')]);
+
+  useEffect(() => {
+    if (!submitting) return;
+    const timeout = window.setTimeout(() => setSubmitting(false), 5_000);
+    return () => window.clearTimeout(timeout);
+  }, [submitting]);
 
   useEffect(() => {
     if (!pairing) return;
@@ -4417,6 +4440,8 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   );
 
   const submit = (payload: { type: Decision['type']; amount?: number; accepted?: boolean }) => {
+    if (submitting) return;
+    setSubmitting(true);
     gameStore.markStrategicSubmitIntent(session.code, playerId);
     return gameStore.submitStrategicDecision(session.code, playerId, payload);
   };
@@ -4480,6 +4505,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               giveLabel="Felajánlasz"
               keepLabel="Elfogadáskor nálad marad"
               onSubmit={(amount) => submit({ type: 'ultimatum_offer', amount })}
+              submitting={submitting}
             />
           </>
         );
@@ -4527,8 +4553,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <DeadlineTimer deadlineAt={receiverDeadline} />
           </div>
           <div className="decision-buttons">
-            <button className="primary" onClick={() => submit({ type: 'ultimatum_response', accepted: true })}>Elfogadom</button>
-            <button className="danger" onClick={() => submit({ type: 'ultimatum_response', accepted: false })}>Elutasítom</button>
+            <button className="primary" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: true })}>
+              {submitting ? 'Küldés…' : 'Elfogadom'}
+            </button>
+            <button className="danger" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: false })}>
+              {submitting ? 'Küldés…' : 'Elutasítom'}
+            </button>
           </div>
         </>
       );
@@ -4620,6 +4650,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             giveLabel="Odaadod"
             keepLabel="Nálad marad"
             onSubmit={(amount) => submit({ type: 'dictator_give', amount })}
+            submitting={submitting}
           />
         </>
       );
@@ -4743,6 +4774,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
         <TrustReturnDecision
           available={tripled}
           onSubmit={(amount) => submit({ type: 'trust_return', amount })}
+          submitting={submitting}
         />
       </>
     );
@@ -4769,6 +4801,17 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   );
   const existingAmount = currentRound?.contributions[playerId];
   const [amount, setAmount] = useState<number | ''>(existingAmount ?? '');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setSaving(false);
+  }, [existingAmount, session.publicGoodsRoundNumber]);
+
+  useEffect(() => {
+    if (!saving) return;
+    const timeout = window.setTimeout(() => setSaving(false), 4_000);
+    return () => window.clearTimeout(timeout);
+  }, [saving]);
 
   useEffect(() => {
     setAmount(currentRound?.contributions[playerId] ?? '');
@@ -4921,6 +4964,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           amount >= 0 &&
           amount <= player.currentBalance
         ) {
+          setSaving(true);
           gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
         }
       }}>
@@ -4946,8 +4990,8 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         {amount !== '' && amount > player.currentBalance && (
           <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
         )}
-        <button className="primary big" disabled={!canEdit || amount === '' || amount < 0 || amount > player.currentBalance} type="submit">
-          {currentRound.contributions[playerId] !== undefined ? 'Tét módosítása' : 'Tét mentése'}
+        <button className="primary big" disabled={saving || !canEdit || amount === '' || amount < 0 || amount > player.currentBalance} type="submit">
+          {saving ? 'Tét küldése…' : currentRound.contributions[playerId] !== undefined ? 'Tét módosítása' : 'Tét mentése'}
         </button>
       </form>
 
