@@ -415,17 +415,29 @@ const appendCommand = async (
     serverCreatedAt: serverTimestamp(),
   };
 
-  try {
-    await updateDoc(
-      playerRef(code, playerId),
-      new FieldPath('commands', key),
-      command,
-      'lastSeenAt',
-      serverTimestamp(),
-    );
-    emitSyncStatus('ok');
-  } catch (error) {
-    emitSyncStatus('error', error instanceof Error ? error.message : 'A döntést nem sikerült elküldeni.');
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await updateDoc(
+        playerRef(code, playerId),
+        new FieldPath('commands', key),
+        command,
+        'lastSeenAt',
+        serverTimestamp(),
+      );
+      emitSyncStatus('ok');
+      lastError = undefined;
+      break;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) {
+        await new Promise((resolve) => window.setTimeout(resolve, attempt === 0 ? 250 : 650));
+      }
+    }
+  }
+
+  if (lastError) {
+    emitSyncStatus('error', lastError instanceof Error ? lastError.message : 'A döntést nem sikerült elküldeni.');
     return;
   }
 
