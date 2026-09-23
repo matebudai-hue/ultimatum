@@ -264,15 +264,31 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
   const [playerCount, setPlayerCount] = useState(12);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [pendingSetup, setPendingSetup] = useState<{
+    count: number;
+    credit: number;
+    virtual: boolean;
+  } | null>(null);
 
-  const create = async (virtual = false) => {
+  const normalizedSetup = (virtual = false) => {
+    const rawStartingCredit = startingCredit === '' ? 0 : startingCredit;
+    return {
+      credit: Math.max(1_000, Math.min(1_000_000, Math.round(rawStartingCredit / 100) * 100)),
+      count: Math.max(2, Math.min(MAX_PLAYERS, Math.round(playerCount))),
+      virtual,
+    };
+  };
+
+  const requestCreate = (virtual = false) => {
+    setCreateError('');
+    setPendingSetup(normalizedSetup(virtual));
+  };
+
+  const create = async ({ virtual, credit, count }: { virtual: boolean; credit: number; count: number }) => {
     setCreating(true);
     setCreateError('');
     try {
       await gameStore.ready();
-      const rawStartingCredit = startingCredit === '' ? 0 : startingCredit;
-      const credit = Math.max(1_000, Math.min(1_000_000, Math.round(rawStartingCredit / 100) * 100));
-      const count = Math.max(2, Math.min(MAX_PLAYERS, Math.round(playerCount)));
       const created = gameStore.create(credit, count);
       const prepared = virtual ? fillVirtualPlayers(created) : created;
       await gameStore.afterCreate(prepared);
@@ -318,19 +334,80 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
               value={formatCreditInput(startingCredit)}
               onChange={(event) => setStartingCredit(parseCreditInput(event.target.value))}
             />
+            <div className="starting-credit-presets" aria-label="Gyors induló kredit választás">
+              {[1_000, 100_000, 1_000_000].map((value) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={startingCredit === value ? 'active' : ''}
+                  onClick={() => setStartingCredit(value)}
+                >
+                  {formatCreditInput(value)}
+                </button>
+              ))}
+            </div>
             <small>1 000–1 000 000, 100-as lépésekben.</small>
           </label>
         </div>
         {createError && <div className="error">{createError}</div>}
         <div className="setup-actions">
-          <button className="primary big" disabled={creating} onClick={() => void create(false)}><Play size={19} />{creating ? 'Kapcsolódás…' : 'Játék előkészítése'}</button>
+          <button className="primary big" disabled={creating} onClick={() => requestCreate(false)}><Play size={19} />{creating ? 'Kapcsolódás…' : 'Játék előkészítése'}</button>
           {testMode && (
-            <button className="secondary big test-create" disabled={creating} onClick={() => void create(true)}>
+            <button className="secondary big test-create" disabled={creating} onClick={() => requestCreate(true)}>
               <Users size={19} />Tesztjáték virtuális résztvevőkkel
             </button>
           )}
         </div>
       </section>
+
+      {pendingSetup && (
+        <div className="setup-confirm-backdrop" role="presentation" onMouseDown={() => !creating && setPendingSetup(null)}>
+          <section
+            className="setup-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="setup-confirm-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <p className="eyebrow">Indítás előtti ellenőrzés</p>
+            <h2 id="setup-confirm-title">Biztosan így indítod el a játékot?</h2>
+            <div className="setup-confirm-values">
+              <div>
+                <span>Játékosok száma</span>
+                <strong>{pendingSetup.count} fő</strong>
+              </div>
+              <div>
+                <span>Induló kredit</span>
+                <strong>{formatCreditInput(pendingSetup.credit)}</strong>
+              </div>
+            </div>
+            <p className="setup-confirm-note">A játék létrehozása után ezekkel az alapértékekkel indul a Kreditjáték.</p>
+            <div className="setup-confirm-actions">
+              <button
+                type="button"
+                className="secondary"
+                disabled={creating}
+                onClick={() => setPendingSetup(null)}
+              >
+                Vissza
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={creating}
+                onClick={() => {
+                  const setup = pendingSetup;
+                  setPendingSetup(null);
+                  void create(setup);
+                }}
+              >
+                <Play size={17} />
+                {creating ? 'Indítás…' : 'Igen, induljon'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
