@@ -5071,7 +5071,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
             pattern="[0-9 ]*"
             autoComplete="off"
             disabled={!canEdit}
-            value={amount}
+            value={formatCreditInput(amount)}
             placeholder="Írd be az összeget"
             onChange={(event) => setAmount(parseCreditInput(event.target.value))}
           />
