@@ -37,6 +37,7 @@ import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
+import { makeUuid, parseCreditInput, readStorage, writeStorage } from './browserCompat';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -120,10 +121,10 @@ function ensureTrainerDemo() {
 
 function sessionPlayerId() {
   if (forcedTestPlayerId) return forcedTestPlayerId;
-  let id = localStorage.getItem('kreditjatek_player_id');
+  let id = readStorage('kreditjatek_player_id');
   if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('kreditjatek_player_id', id);
+    id = makeUuid();
+    writeStorage('kreditjatek_player_id', id);
   }
   return id;
 }
@@ -4249,20 +4250,20 @@ function AmountDecision({
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
-      if (numericAmount === null) return;
+      if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>{label}</span>
         <input
-          type="number"
-          min={0}
-          max={max}
-          step={100}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
           value={amount}
           placeholder="Írd be az összeget"
           required
-          onChange={(event) => setAmount(event.target.value === '' ? '' : Number(event.target.value))}
+          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
         />
       </label>
       <p className="limit">0 – {formatCredits(max)}</p>
@@ -4272,7 +4273,7 @@ function AmountDecision({
           <span>{keepLabel}: <strong>{formatCredits(Math.max(0, max - numericAmount))}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null}>{button}</button>
+      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > max}>{button}</button>
     </form>
   );
 }
@@ -4318,20 +4319,20 @@ function TrustSendDecision({
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
-      if (numericAmount === null) return;
+      if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>Mennyit küldesz a másik játékosnak?</span>
         <input
-          type="number"
-          min={0}
-          max={max}
-          step={100}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
           value={amount}
           placeholder="Írd be az összeget"
           required
-          onChange={(event) => setAmount(event.target.value === '' ? '' : Number(event.target.value))}
+          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
         />
       </label>
       {numericAmount !== null && tripled !== null && (
@@ -4341,7 +4342,7 @@ function TrustSendDecision({
           <span>A másikhoz kerül: <strong>{formatCredits(tripled)}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null}>Küldés</button>
+      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > max}>Küldés</button>
     </form>
   );
 }
@@ -4359,20 +4360,20 @@ function TrustReturnDecision({
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
-      if (numericAmount === null) return;
+      if (numericAmount === null || numericAmount < 0 || numericAmount > available) return;
       onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>Mennyit adsz vissza?</span>
         <input
-          type="number"
-          min={0}
-          max={available}
-          step={100}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
           value={amount}
           placeholder="Írd be az összeget"
           required
-          onChange={(event) => setAmount(event.target.value === '' ? '' : Number(event.target.value))}
+          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
         />
       </label>
       {numericAmount !== null && kept !== null && (
@@ -4381,7 +4382,7 @@ function TrustReturnDecision({
           <span>Nálad marad: <strong>{formatCredits(kept)}</strong></span>
         </div>
       )}
-      <button className="primary big" type="submit" disabled={numericAmount === null}>Visszaadás elküldése</button>
+      <button className="primary big" type="submit" disabled={numericAmount === null || numericAmount < 0 || numericAmount > available}>Visszaadás elküldése</button>
     </form>
   );
 }
@@ -4914,19 +4915,26 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
 
       <form className="decision-form" onSubmit={(event) => {
         event.preventDefault();
-        if (canEdit && amount !== '') gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
+        if (
+          canEdit &&
+          amount !== '' &&
+          amount >= 0 &&
+          amount <= player.currentBalance
+        ) {
+          gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
+        }
       }}>
         <label className="field">
           <span>Befizetés</span>
           <input
-            type="number"
-            min={0}
-            max={player.currentBalance}
-            step={100}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
             disabled={!canEdit}
             value={amount}
             placeholder="Írd be az összeget"
-            onChange={(event) => setAmount(event.target.value === '' ? '' : Number(event.target.value))}
+            onChange={(event) => setAmount(parseCreditInput(event.target.value))}
           />
         </label>
         {amount !== '' && (
@@ -4935,7 +4943,10 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
             <span>Nálad marad: <strong>{formatCredits(Math.max(0, player.currentBalance - amount))}</strong></span>
           </div>
         )}
-        <button className="primary big" disabled={!canEdit || amount === ''} type="submit">
+        {amount !== '' && amount > player.currentBalance && (
+          <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
+        )}
+        <button className="primary big" disabled={!canEdit || amount === '' || amount < 0 || amount > player.currentBalance} type="submit">
           {currentRound.contributions[playerId] !== undefined ? 'Tét módosítása' : 'Tét mentése'}
         </button>
       </form>
@@ -5366,8 +5377,8 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           <p>A tréner által megadott kóddal lépj be. Ezután ezen a telefonon kapod a döntéseidet.</p>
         </header>
         <form className="panel join-panel" onSubmit={submitJoin}>
-          <label className="field"><span>Játékkód</span><input className="join-code-input" value={code} maxLength={6} autoCapitalize="characters" onChange={(e) => setCode(e.target.value.toUpperCase())} /></label>
-          <label className="field"><span>Neved</span><input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></label>
+          <label className="field"><span>Játékkód</span><input className="join-code-input" value={code} maxLength={6} autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" onChange={(e) => setCode(e.target.value.toUpperCase())} /></label>
+          <label className="field"><span>Neved</span><input value={name} maxLength={60} autoComplete="name" enterKeyHint="go" onChange={(e) => setName(e.target.value)} /></label>
           {error && <div className="error">{error}</div>}
           <button className="primary big" type="submit">Belépek a játékba</button>
         </form>
