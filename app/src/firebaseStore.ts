@@ -580,9 +580,13 @@ const subscribePlayer = (code: string, listener: Listener) => {
 
   const resume = () => {
     if (disposed || document.visibilityState === 'hidden') return;
+    const cachedNow = readPlayerProjection(code, playerId);
     void refreshOnce();
     void start();
     void updateDoc(playerRef(code, playerId), { lastSeenAt: serverTimestamp() }).catch(() => undefined);
+    if (cachedNow && STRATEGIC_ROUNDS.includes(cachedNow.roundKey as StrategicRound)) {
+      void appendCommand(code, 'ackStrategicTaskVisible');
+    }
   };
 
   window.addEventListener('online', resume);
