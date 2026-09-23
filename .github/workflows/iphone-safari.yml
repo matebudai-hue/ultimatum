@@ -1,0 +1,54 @@
+name: iPhone Safari E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/src/**'
+      - 'app/tests/iphoneSafari.e2e.spec.ts'
+      - 'app/playwright.config.ts'
+      - 'app/package.json'
+      - '.github/workflows/iphone-safari.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iphone-safari-main
+  cancel-in-progress: true
+
+jobs:
+  iphone-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install app dependencies
+        working-directory: app
+        run: npm install --no-audit --no-fund
+
+      - name: Install WebKit
+        working-directory: app
+        run: npx playwright install --with-deps webkit
+
+      - name: iPhone Safari Ultimatum E2E
+        working-directory: app
+        run: npm run test:iphone
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iphone-safari-failure
+          path: |
+            app/test-results
+            app/playwright-report
+          if-no-files-found: ignore
