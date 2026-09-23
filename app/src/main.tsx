@@ -37,7 +37,7 @@ import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
-import { makeUuid, parseCreditInput, readStorage, writeStorage } from './browserCompat';
+import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage } from './browserCompat';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -4355,9 +4355,9 @@ function AmountDecision({
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
+          pattern="[0-9 ]*"
           autoComplete="off"
-          value={amount}
+          value={formatCreditInput(amount)}
           placeholder="Írd be az összeget"
           required
           onChange={(event) => setAmount(parseCreditInput(event.target.value))}
@@ -4428,9 +4428,9 @@ function TrustSendDecision({
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
+          pattern="[0-9 ]*"
           autoComplete="off"
-          value={amount}
+          value={formatCreditInput(amount)}
           placeholder="Írd be az összeget"
           required
           onChange={(event) => setAmount(parseCreditInput(event.target.value))}
@@ -4473,9 +4473,9 @@ function TrustReturnDecision({
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
+          pattern="[0-9 ]*"
           autoComplete="off"
-          value={amount}
+          value={formatCreditInput(amount)}
           placeholder="Írd be az összeget"
           required
           onChange={(event) => setAmount(parseCreditInput(event.target.value))}
@@ -5068,7 +5068,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           <input
             type="text"
             inputMode="numeric"
-            pattern="[0-9]*"
+            pattern="[0-9 ]*"
             autoComplete="off"
             disabled={!canEdit}
             value={amount}
