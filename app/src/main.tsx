@@ -324,9 +324,10 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
             />
             <small>2–{MAX_PLAYERS} fő.</small>
           </label>
-          <label className="field">
+          <div className="field">
             <span>Induló kredit</span>
             <input
+              aria-label="Induló kredit"
               type="text"
               inputMode="numeric"
               pattern="[0-9 ]*"
@@ -347,7 +348,7 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
               ))}
             </div>
             <small>1 000–1 000 000, 100-as lépésekben.</small>
-          </label>
+          </div>
         </div>
         {createError && <div className="error">{createError}</div>}
         <div className="setup-actions">
