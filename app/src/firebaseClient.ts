@@ -16,6 +16,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(app);
 export const firestore = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
+  experimentalAutoDetectLongPolling: true,
 });
 
 let readyPromise: Promise<User> | null = null;
@@ -27,7 +28,10 @@ export const ensureFirebaseUser = () => {
       if (firebaseAuth.currentUser) return firebaseAuth.currentUser;
       const credential = await signInAnonymously(firebaseAuth);
       return credential.user;
-    })();
+    })().catch((error) => {
+      readyPromise = null;
+      throw error;
+    });
   }
   return readyPromise;
 };
