@@ -16,7 +16,8 @@
     "test:ten-player-e2e": "tsx tests/tenPlayerE2E.test.ts",
     "test:27-player-e2e": "tsx tests/twentySevenPlayerE2E.test.ts",
     "test:debrief-grouping": "tsx tests/debriefGrouping.test.ts",
-    "test:resilience": "tsx tests/resilienceStress.test.ts"
+    "test:resilience": "tsx tests/resilienceStress.test.ts",
+    "test:iphone": "playwright test tests/iphoneSafari.e2e.spec.ts --project=iphone-webkit"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -34,6 +35,7 @@
     "tsx": "latest",
     "typescript": "latest",
     "vite": "latest",
-    "@firebase/rules-unit-testing": "latest"
+    "@firebase/rules-unit-testing": "latest",
+    "@playwright/test": "latest"
   }
 }
