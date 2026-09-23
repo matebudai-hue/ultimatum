@@ -260,7 +260,7 @@ function Landing({ onTrainer, onPlayer }: { onTrainer: () => void; onPlayer: () 
 }
 
 function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: GameSession) => void; testMode?: boolean }) {
-  const [startingCredit, setStartingCredit] = useState(100_000);
+  const [startingCredit, setStartingCredit] = useState<number | ''>(100_000);
   const [playerCount, setPlayerCount] = useState(12);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -270,7 +270,8 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
     setCreateError('');
     try {
       await gameStore.ready();
-      const credit = Math.max(1_000, Math.min(1_000_000, Math.round(startingCredit / 100) * 100));
+      const rawStartingCredit = startingCredit === '' ? 0 : startingCredit;
+      const credit = Math.max(1_000, Math.min(1_000_000, Math.round(rawStartingCredit / 100) * 100));
       const count = Math.max(2, Math.min(MAX_PLAYERS, Math.round(playerCount)));
       const created = gameStore.create(credit, count);
       const prepared = virtual ? fillVirtualPlayers(created) : created;
@@ -310,12 +311,12 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
           <label className="field">
             <span>Induló kredit</span>
             <input
-              type="number"
-              min={1000}
-              max={1000000}
-              step={100}
-              value={startingCredit}
-              onChange={(event) => setStartingCredit(Number(event.target.value))}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9 ]*"
+              autoComplete="off"
+              value={formatCreditInput(startingCredit)}
+              onChange={(event) => setStartingCredit(parseCreditInput(event.target.value))}
             />
             <small>1 000–1 000 000, 100-as lépésekben.</small>
           </label>
