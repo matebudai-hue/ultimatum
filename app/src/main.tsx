@@ -5320,7 +5320,39 @@ function ParticipantClient({ code: initial }: { code?: string }) {
   const [joined, setJoined] = useState(false);
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const [error, setError] = useState('');
-  const [joining, setJoining] = useState(false);
+  const [joining, setJoining] = useState(Boolean(initial && existing));
+
+  useEffect(() => {
+    if (!initial || !existing || joined) return;
+    let cancelled = false;
+
+    const resumeExisting = async () => {
+      setJoining(true);
+      setError('');
+      try {
+        await gameStore.ready();
+        const resolvedPlayerId = gameStore.resolvePlayerId(initialPlayerId);
+        const resumed = await gameStore.resumePlayer(initial, resolvedPlayerId);
+        if (cancelled || !resumed) return;
+        setPlayerId(resolvedPlayerId);
+        setCode(initial);
+        setName(resumed.name);
+        setSession(resumed.session);
+        setJoined(true);
+      } catch {
+        if (!cancelled) {
+          setError('Az automatikus visszacsatlakozás nem sikerült. Add meg újra a neved, és lépj be.');
+        }
+      } finally {
+        if (!cancelled) setJoining(false);
+      }
+    };
+
+    void resumeExisting();
+    return () => {
+      cancelled = true;
+    };
+  }, [initial, initialPlayerId, Boolean(existing), joined]);
 
   useEffect(() => {
     if (!joined || !code) return;
