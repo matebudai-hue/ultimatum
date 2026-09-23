@@ -16,6 +16,7 @@ import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { ensureFirebaseUser, firebaseAuth, firestore } from './firebaseClient';
 import { localSessionStore } from './sessionStore';
 import { buildParticipantProjection } from './firebaseProjection';
+import { makeUuid, readStorage, writeStorage } from './browserCompat';
 
 type CommandType =
   | 'ackStrategicTaskVisible'
@@ -81,7 +82,7 @@ const currentLocalPlayerId = () => {
   if (typeof window === 'undefined') return '';
   const params = new URLSearchParams(window.location.search);
   const forced = params.get('testPlayer');
-  return forced || localStorage.getItem('kreditjatek_player_id') || '';
+  return forced || readStorage('kreditjatek_player_id') || '';
 };
 
 const gameRef = (code: string) => doc(firestore, 'games', code.toUpperCase());
@@ -149,11 +150,11 @@ const playerCacheKey = (code: string, playerId: string) =>
   playerProjectionPrefix + code.toUpperCase() + '_' + playerId;
 
 const cachePlayerProjection = (code: string, playerId: string, session: GameSession) => {
-  localStorage.setItem(playerCacheKey(code, playerId), JSON.stringify(session));
+  writeStorage(playerCacheKey(code, playerId), JSON.stringify(session));
 };
 
 const readPlayerProjection = (code: string, playerId: string): GameSession | null => {
-  const raw = localStorage.getItem(playerCacheKey(code, playerId));
+  const raw = readStorage(playerCacheKey(code, playerId));
   return raw ? JSON.parse(raw) as GameSession : null;
 };
 
@@ -404,10 +405,10 @@ const appendCommand = async (
   const playerId = currentLocalPlayerId();
   if (!playerId) throw new Error('A résztvevő azonosítója hiányzik.');
 
-  const key = crypto.randomUUID().replace(/-/g, '');
+  const key = makeUuid().replace(/-/g, '');
   const command: PlayerCommand = {
     id: key,
-    nonce: crypto.randomUUID(),
+    nonce: makeUuid(),
     type,
     payload,
     createdAt: new Date().toISOString(),
@@ -508,25 +509,94 @@ const subscribeTrainer = (code: string, listener: Listener) => {
 
 const subscribePlayer = (code: string, listener: Listener) => {
   let unsubscribe: () => void = () => {};
+  let retryTimer: number | undefined;
   let disposed = false;
+  let starting = false;
   const playerId = currentLocalPlayerId();
   const cached = playerId ? readPlayerProjection(code, playerId) : null;
   listener(cached);
 
-  void ensureFirebaseUser().then(() => {
+  const clearRetry = () => {
+    if (retryTimer !== undefined) {
+      window.clearTimeout(retryTimer);
+      retryTimer = undefined;
+    }
+  };
+
+  const refreshOnce = async () => {
     if (disposed || !playerId) return;
-    unsubscribe = onSnapshot(playerRef(code, playerId), (snapshot) => {
+    try {
+      await ensureFirebaseUser();
+      const snapshot = await getDoc(playerRef(code, playerId));
       if (!snapshot.exists()) return;
       const data = snapshot.data() as RemotePlayer;
       if (!data.view) return;
       cachePlayerProjection(code, playerId, data.view);
       listener(data.view);
-    });
-  });
+      emitSyncStatus('ok');
+    } catch (error) {
+      emitSyncStatus('error', error instanceof Error ? error.message : 'Kapcsolati hiba az iPhone kliensen.');
+    }
+  };
+
+  const start = async () => {
+    if (disposed || !playerId || starting) return;
+    starting = true;
+    clearRetry();
+    try {
+      await ensureFirebaseUser();
+      if (disposed) return;
+      unsubscribe();
+      unsubscribe = onSnapshot(
+        playerRef(code, playerId),
+        (snapshot) => {
+          if (!snapshot.exists()) return;
+          const data = snapshot.data() as RemotePlayer;
+          if (!data.view) return;
+          cachePlayerProjection(code, playerId, data.view);
+          listener(data.view);
+          emitSyncStatus('ok');
+        },
+        (error) => {
+          if (disposed) return;
+          emitSyncStatus('error', error.message || 'A résztvevői kapcsolat megszakadt.');
+          unsubscribe();
+          retryTimer = window.setTimeout(() => {
+            void start();
+          }, 900);
+        },
+      );
+    } catch (error) {
+      if (!disposed) {
+        emitSyncStatus('error', error instanceof Error ? error.message : 'A résztvevői kapcsolat nem indult el.');
+        retryTimer = window.setTimeout(() => {
+          void start();
+        }, 900);
+      }
+    } finally {
+      starting = false;
+    }
+  };
+
+  const resume = () => {
+    if (disposed || document.visibilityState === 'hidden') return;
+    void refreshOnce();
+    void start();
+    void updateDoc(playerRef(code, playerId), { lastSeenAt: serverTimestamp() }).catch(() => undefined);
+  };
+
+  window.addEventListener('online', resume);
+  window.addEventListener('pageshow', resume);
+  document.addEventListener('visibilitychange', resume);
+  void start();
 
   return () => {
     disposed = true;
+    clearRetry();
     unsubscribe();
+    window.removeEventListener('online', resume);
+    window.removeEventListener('pageshow', resume);
+    document.removeEventListener('visibilitychange', resume);
   };
 };
 
