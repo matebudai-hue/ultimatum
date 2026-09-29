@@ -2112,6 +2112,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   padding:5px 11px;
 }
 .pool-pattern-group{
+  position:relative;
   border:1px solid #dce4ed;
   border-radius:14px;
   background:#fff;
@@ -2218,10 +2219,81 @@ button:disabled{opacity:.45;cursor:not-allowed}
   box-shadow:0 10px 24px rgba(15,23,42,.11);
 }
 .pool-pattern-segment{
+  position:relative;
   width:100%;
   min-height:0;
   border-top:1px solid rgba(255,255,255,.55);
+  cursor:default;
+  outline:none;
 }
+.pool-pattern-segment:hover,
+.pool-pattern-segment:focus{
+  z-index:2;
+  filter:brightness(1.08);
+  box-shadow:inset 0 0 0 2px rgba(15,23,42,.45);
+}
+.pool-pattern-hover-card{
+  position:absolute;
+  top:61px;
+  right:18px;
+  z-index:12;
+  width:min(520px,calc(100% - 36px));
+  display:grid;
+  grid-template-columns:minmax(150px,1.35fr) repeat(3,minmax(92px,1fr));
+  align-items:center;
+  gap:8px;
+  padding:9px 11px;
+  border:1px solid #cbd7e5;
+  border-radius:11px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 14px 34px rgba(15,23,42,.18);
+  pointer-events:none;
+}
+.pool-pattern-hover-card>div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.pool-pattern-hover-card>div:not(.pool-pattern-hover-person){
+  padding-left:9px;
+  border-left:1px solid #e2e8f0;
+}
+.pool-pattern-hover-card strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#10213a;
+  font-size:11px;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.pool-pattern-hover-card span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#64748b;
+  font-size:7px;
+  font-weight:850;
+}
+.pool-pattern-hover-person{
+  display:grid!important;
+  grid-template-columns:10px minmax(0,1fr);
+  align-items:center;
+  gap:7px!important;
+}
+.pool-pattern-hover-person i{
+  width:9px;
+  height:28px;
+  border-radius:999px;
+}
+.pool-pattern-hover-person div{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
 .pool-pattern-minimum{
   position:absolute;
   left:-11px;
