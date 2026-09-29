@@ -3472,71 +3472,105 @@ function SplitDecisionPattern({
 }
 
 
-function TrustBarsPattern({ session, showNames }: { session: GameSession; showNames: boolean }) {
+function TrustBarsPattern({
+  session,
+  showNames,
+  page,
+  onPageChange,
+}: {
+  session: GameSession;
+  showNames: boolean;
+  page: number;
+  onPageChange: (page: number) => void;
+}) {
+  const PAGE_SIZE = 12;
   const rows = patternPairings(session, 'trust')
     .map((pairing) => {
       const pairDecisions = decisionsFor(session, pairing);
       const sent = pairDecisions.find((decision) => decision.type === 'trust_send')?.amount ?? 0;
       const returned = pairDecisions.find((decision) => decision.type === 'trust_return')?.amount ?? 0;
-      const multiplied = sent * 3;
-      const sentPercent = session.startingCredit > 0 ? sent / session.startingCredit * 100 : 0;
-      const returnPercent = multiplied > 0 ? returned / multiplied * 100 : 0;
       return {
         pairing,
         sent,
         returned,
-        multiplied,
-        sentPercent: Math.max(0, Math.min(100, sentPercent)),
-        returnPercent: Math.max(0, Math.min(100, returnPercent)),
+        multiplied: sent * 3,
         giver: playerName(session, pairing.playerA),
         receiver: playerName(session, pairing.playerB),
       };
     })
-    .sort((a, b) => a.sentPercent - b.sentPercent);
+    .sort((a, b) => b.sent - a.sent || b.returned - a.returned);
 
   if (rows.length === 0) {
     return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
   }
 
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(0, page), pageCount - 1);
+  const start = safePage * PAGE_SIZE;
+  const visibleRows = rows.slice(start, start + PAGE_SIZE);
+
+  useEffect(() => {
+    if (page !== safePage) onPageChange(safePage);
+  }, [page, safePage, onPageChange]);
+
   return (
-    <div className="trust-bars">
-      <div className="trust-bars-scale">
-        <span>0%</span>
-        <span>50%</span>
-        <span>100%</span>
+    <div className="trust-flow">
+      <div className="trust-flow-explainer">
+        <span><i className="sent" />küldés</span>
+        <span><b>×3</b> banki szorzás</span>
+        <span><i className="returned" />vissza a küldőnek</span>
       </div>
-      {rows.map((row, index) => {
-        const pairLabel = showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár';
-        return (
-          <div className="trust-bars-row" key={row.pairing.id}>
-            <div className="trust-bars-pair" title={row.giver + ' → ' + row.receiver}>
-              {pairLabel}
-            </div>
 
-            <div className="trust-bars-line">
-              <div className="trust-bars-label">
-                <strong>Küldött</strong>
-                <span>{Math.round(row.sentPercent * 10) / 10}% · {formatCredits(row.sent)} kredit</span>
+      <div className="trust-flow-grid">
+        {visibleRows.map((row, index) => {
+          const globalIndex = start + index;
+          const pairLabel = showNames ? row.giver + ' → ' + row.receiver : (globalIndex + 1) + '. pár';
+          return (
+            <article className="trust-flow-card" key={row.pairing.id}>
+              <div className="trust-flow-card-head">
+                <strong>{pairLabel}</strong>
+                <span>{row.pairing.roundKey.toUpperCase()}</span>
               </div>
-              <div className="trust-bars-track">
-                <div className="trust-bars-fill sent" style={{ width: row.sentPercent + '%' }} />
-              </div>
-            </div>
 
-            <div className="trust-bars-line">
-              <div className="trust-bars-label">
-                <strong>Visszaadott</strong>
-                <span>{Math.round(row.returnPercent * 10) / 10}% · {formatCredits(row.returned)} kredit</span>
+              <div className="trust-flow-people" aria-hidden={!showNames}>
+                <span>{showNames ? row.giver : 'Küldő'}</span>
+                <b>→</b>
+                <span>{showNames ? row.receiver : 'Fogadó'}</span>
               </div>
-              <div className="trust-bars-track">
-                <div className="trust-bars-fill returned" style={{ width: row.returnPercent + '%' }} />
+
+              <div className="trust-flow-line sent">
+                <span className="trust-flow-label">Elküldött</span>
+                <strong>{formatCredits(row.sent)}</strong>
+                <span className="trust-flow-vector" aria-hidden="true" />
+                <span className="trust-flow-context">bank után {formatCredits(row.multiplied)}</span>
               </div>
-            </div>
+
+              <div className="trust-flow-line returned">
+                <span className="trust-flow-label">Visszajött</span>
+                <strong>{formatCredits(row.returned)}</strong>
+                <span className="trust-flow-vector" aria-hidden="true" />
+                <span className="trust-flow-context">a fogadótól</span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="trust-flow-pager">
+        <span className="trust-flow-page-status">
+          {start + 1}–{Math.min(rows.length, start + PAGE_SIZE)} / {rows.length} pár
+        </span>
+        {pageCount > 1 && (
+          <div>
+            <button type="button" className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>
+              Előző
+            </button>
+            <strong>{safePage + 1}/{pageCount}</strong>
+            <button type="button" className="secondary" disabled={safePage >= pageCount - 1} onClick={() => onPageChange(safePage + 1)}>
+              Következő
+            </button>
           </div>
-        );
-      })}
-      <div className="trust-bars-note">
-        A visszaadás százaléka mindig a bank által megháromszorozott összegből értendő.
+        )}
       </div>
     </div>
   );
@@ -3630,16 +3664,31 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
   );
 }
 
+type PoolPatternHover = {
+  groupId: string;
+  roundId: string;
+  roundLabel: string;
+  playerId: string;
+  player: string;
+  amount: number;
+  ownPercent: number;
+  potPercent: number;
+};
+
 const poolPlayerColor = (index: number) => 'hsl(' + ((index * 47 + 198) % 360) + ' 58% ' + (46 + (index % 3) * 7) + '%)';
 
 function PublicGoodsPatterns({
   session,
   selectedGroupId,
   onSelectGroup,
+  hoveredSegment,
+  onHoverSegment,
 }: {
   session: GameSession;
   selectedGroupId: string;
   onSelectGroup: (groupId: string) => void;
+  hoveredSegment: PoolPatternHover | null;
+  onHoverSegment: (segment: PoolPatternHover | null) => void;
 }) {
   const settled = session.publicGoodsRounds.filter((round) => round.status === 'settled');
   const groupsWithRounds = session.groups.filter((group) => settled.some((round) => round.groupId === group.id));
@@ -3688,6 +3737,30 @@ function PublicGoodsPatterns({
           </div>
         </header>
 
+        {hoveredSegment && hoveredSegment.groupId === group.id && (
+          <div className="pool-pattern-hover-card" role="status" aria-live="polite">
+            <div className="pool-pattern-hover-person">
+              <i style={{ background: poolPlayerColor(Math.max(0, group.memberIds.indexOf(hoveredSegment.playerId))) }} />
+              <div>
+                <strong>{hoveredSegment.player}</strong>
+                <span>{hoveredSegment.roundLabel}</span>
+              </div>
+            </div>
+            <div>
+              <strong>{formatCredits(hoveredSegment.amount)}</strong>
+              <span>befizetés</span>
+            </div>
+            <div>
+              <strong>{Math.round(hoveredSegment.ownPercent * 10) / 10}%</strong>
+              <span>saját vagyonából</span>
+            </div>
+            <div>
+              <strong>{Math.round(hoveredSegment.potPercent * 10) / 10}%</strong>
+              <span>a kasszából</span>
+            </div>
+          </div>
+        )}
+
         <div className="pool-pattern-chart">
           <div className="pool-pattern-y-axis">
             <span>{normalizedMax}%</span>
@@ -3735,11 +3808,36 @@ function PublicGoodsPatterns({
                           <div
                             className="pool-pattern-segment"
                             key={playerId}
+                            tabIndex={0}
+                            role="img"
+                            aria-label={playerName(session, playerId) + ' · befizetés ' + formatCredits(amount) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
                             style={{
                               height: segmentShareOfBar + '%',
                               background: poolPlayerColor(Math.max(0, memberIndex)),
                             }}
                             title={playerName(session, playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
+                            onMouseEnter={() => onHoverSegment({
+                              groupId: group.id,
+                              roundId: round.id,
+                              roundLabel: learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör',
+                              playerId,
+                              player: playerName(session, playerId),
+                              amount,
+                              ownPercent,
+                              potPercent,
+                            })}
+                            onMouseLeave={() => onHoverSegment(null)}
+                            onFocus={() => onHoverSegment({
+                              groupId: group.id,
+                              roundId: round.id,
+                              roundLabel: learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör',
+                              playerId,
+                              player: playerName(session, playerId),
+                              amount,
+                              ownPercent,
+                              potPercent,
+                            })}
+                            onBlur={() => onHoverSegment(null)}
                           />
                         );
                       })}
@@ -3793,6 +3891,12 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.patterns-stage .pattern-toolbar{display:none!important}',
     '.pool-pattern-group-tabs{display:none!important}',
     '.pool-pattern-groups{max-height:none!important;overflow:hidden!important}',
+    '.trust-flow-pager button{display:none!important}',
+    '.trust-flow-grid{gap:6px!important}',
+    '.trust-flow-card{padding:7px 9px!important}',
+    '.trust-flow-card-head strong{font-size:11px!important}',
+    '.trust-flow-people{font-size:10px!important}',
+    '.trust-flow-line strong{font-size:13px!important}',
     '.split-pattern-value,.split-pattern-label{font-size:12px!important}',
     '.split-pattern-status,.pattern-legend,.pool-pattern-y-axis,.pool-pattern-round>strong,.pool-pattern-round>small{font-size:11px!important}',
     '.pool-pattern-legend span,.pool-pattern-minimum span{font-size:10px!important}'
@@ -3811,6 +3915,8 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
   });
   const [showNames, setShowNames] = useState(false);
   const [trustView, setTrustView] = useState<'simple' | 'matrix'>('simple');
+  const [trustPage, setTrustPage] = useState(0);
+  const [poolHover, setPoolHover] = useState<PoolPatternHover | null>(null);
   const settledPoolGroups = session.groups.filter((group) =>
     session.publicGoodsRounds.some((round) => round.status === 'settled' && round.groupId === group.id)
   );
@@ -3830,7 +3936,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
       renderPatternProjectionFromElement(game);
     });
     return () => window.cancelAnimationFrame(id);
-  }, [game, showNames, trustView, selectedPoolGroupId, session]);
+  }, [game, showNames, trustView, trustPage, selectedPoolGroupId, poolHover, session]);
 
   const project = () => {
     setProjectionError('');
@@ -3902,13 +4008,25 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
           <div className="pattern-chart-area">
             {game === 'ultimatum' && <SplitDecisionPattern session={session} game="ultimatum" showNames={showNames} />}
             {game === 'dictator' && <SplitDecisionPattern session={session} game="dictator" showNames={showNames} />}
-            {game === 'trust' && trustView === 'simple' && <TrustBarsPattern session={session} showNames={showNames} />}
+            {game === 'trust' && trustView === 'simple' && (
+              <TrustBarsPattern
+                session={session}
+                showNames={showNames}
+                page={trustPage}
+                onPageChange={setTrustPage}
+              />
+            )}
             {game === 'trust' && trustView === 'matrix' && <TrustMatrixPattern session={session} showNames={showNames} />}
             {game === 'publicGoods' && (
               <PublicGoodsPatterns
                 session={session}
                 selectedGroupId={selectedPoolGroupId}
-                onSelectGroup={setSelectedPoolGroupId}
+                onSelectGroup={(groupId) => {
+                  setPoolHover(null);
+                  setSelectedPoolGroupId(groupId);
+                }}
+                hoveredSegment={poolHover}
+                onHoverSegment={setPoolHover}
               />
             )}
           </div>
