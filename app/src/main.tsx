@@ -3509,10 +3509,6 @@ function TrustBarsPattern({
   const start = safePage * PAGE_SIZE;
   const visibleRows = rows.slice(start, start + PAGE_SIZE);
 
-  useEffect(() => {
-    if (page !== safePage) onPageChange(safePage);
-  }, [page, safePage, onPageChange]);
-
   return (
     <div className="trust-flow">
       <div className="trust-flow-explainer">
@@ -3524,7 +3520,7 @@ function TrustBarsPattern({
       <div className="trust-flow-grid">
         {visibleRows.map((row, index) => {
           const globalIndex = start + index;
-          const pairLabel = showNames ? row.giver + ' → ' + row.receiver : (globalIndex + 1) + '. pár';
+          const pairLabel = (globalIndex + 1) + '. pár';
           return (
             <article className="trust-flow-card" key={row.pairing.id}>
               <div className="trust-flow-card-head">
