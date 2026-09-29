@@ -3888,7 +3888,7 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pool-pattern-group-tabs{display:none!important}',
     '.pool-pattern-groups{max-height:none!important;overflow:hidden!important}',
     '.trust-flow-pager button{display:none!important}',
-    '.trust-flow-grid{gap:6px!important}',
+    '.trust-flow-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}',
     '.trust-flow-card{padding:7px 9px!important}',
     '.trust-flow-card-head strong{font-size:11px!important}',
     '.trust-flow-people{font-size:10px!important}',
