@@ -3483,80 +3483,139 @@ function TrustBarsPattern({
   page: number;
   onPageChange: (page: number) => void;
 }) {
-  const PAGE_SIZE = 12;
-  const rows = patternPairings(session, 'trust')
-    .map((pairing) => {
-      const pairDecisions = decisionsFor(session, pairing);
-      const sent = pairDecisions.find((decision) => decision.type === 'trust_send')?.amount ?? 0;
-      const returned = pairDecisions.find((decision) => decision.type === 'trust_return')?.amount ?? 0;
-      return {
-        pairing,
-        sent,
-        returned,
-        multiplied: sent * 3,
-        giver: playerName(session, pairing.playerA),
-        receiver: playerName(session, pairing.playerB),
-      };
-    })
-    .sort((a, b) => b.sent - a.sent || b.returned - a.returned);
+  const PAGE_SIZE_PER_ROUND = 6;
+  const formatAmount = (value: number) =>
+    new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value);
 
-  if (rows.length === 0) {
+  const rows = patternPairings(session, 'trust').map((pairing) => {
+    const pairDecisions = decisionsFor(session, pairing);
+    const sent = pairDecisions.find((decision) => decision.type === 'trust_send')?.amount ?? 0;
+    const returned = pairDecisions.find((decision) => decision.type === 'trust_return')?.amount ?? 0;
+    const multiplied = sent * 3;
+    const sendPercent = session.startingCredit > 0
+      ? Math.max(0, Math.min(100, Math.round(sent / session.startingCredit * 100)))
+      : 0;
+    const returnPercent = multiplied > 0
+      ? Math.max(0, Math.min(100, Math.round(returned / multiplied * 100)))
+      : 0;
+
+    return {
+      pairing,
+      sent,
+      returned,
+      multiplied,
+      sendPercent,
+      returnPercent,
+      giver: playerName(session, pairing.playerA),
+      receiver: playerName(session, pairing.playerB),
+    };
+  });
+
+  const roundA = rows.filter((row) => row.pairing.roundKey === '3a');
+  const roundB = rows.filter((row) => row.pairing.roundKey === '3b');
+
+  if (roundA.length === 0 && roundB.length === 0) {
     return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
   }
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pageCount = Math.max(
+    1,
+    Math.ceil(roundA.length / PAGE_SIZE_PER_ROUND),
+    Math.ceil(roundB.length / PAGE_SIZE_PER_ROUND),
+  );
   const safePage = Math.min(Math.max(0, page), pageCount - 1);
-  const start = safePage * PAGE_SIZE;
-  const visibleRows = rows.slice(start, start + PAGE_SIZE);
+  const startIndex = safePage * PAGE_SIZE_PER_ROUND;
+  const visibleA = roundA.slice(startIndex, startIndex + PAGE_SIZE_PER_ROUND);
+  const visibleB = roundB.slice(startIndex, startIndex + PAGE_SIZE_PER_ROUND);
 
-  return (
-    <div className="trust-flow">
-      <div className="trust-flow-explainer">
-        <span><i className="sent" />küldés</span>
-        <span><b>×3</b> banki szorzás</span>
-        <span><i className="returned" />vissza a küldőnek</span>
-      </div>
+  const renderRound = (
+    title: string,
+    subtitle: string,
+    rowsForRound: typeof rows,
+    roundClass: string,
+  ) => (
+    <section className={'trust-simple-round ' + roundClass}>
+      <header className="trust-simple-round-head">
+        <div>
+          <strong>{title}</strong>
+          <span>{subtitle}</span>
+        </div>
+        <div className="trust-simple-story-key">
+          <span>küldött</span><b>→</b><span>bank után</span><b>→</b><span>vissza</span>
+        </div>
+      </header>
 
-      <div className="trust-flow-grid">
-        {visibleRows.map((row, index) => {
-          const globalIndex = start + index;
-          const pairLabel = (globalIndex + 1) + '. pár';
+      <div className="trust-simple-list">
+        {rowsForRound.length === 0 ? (
+          <div className="trust-simple-round-empty">Ezen az oldalon nincs több pár.</div>
+        ) : rowsForRound.map((row, index) => {
+          const pairNumber = startIndex + index + 1;
+          const pairText = showNames
+            ? row.giver + ' → ' + row.receiver
+            : pairNumber + '. pár · Küldő → Fogadó';
+
           return (
-            <article className="trust-flow-card" key={row.pairing.id}>
-              <div className="trust-flow-card-head">
-                <strong>{pairLabel}</strong>
-                <span>{row.pairing.roundKey.toUpperCase()}</span>
+            <article className="trust-simple-pair" key={row.pairing.id}>
+              <div className="trust-simple-pair-head">
+                <strong title={showNames ? pairText : undefined}>{pairText}</strong>
+                <div className="trust-simple-story" aria-label={
+                  formatAmount(row.sent) + ' kredit ment, ' +
+                  formatAmount(row.multiplied) + ' kredit lett belőle, ' +
+                  formatAmount(row.returned) + ' kredit jött vissza'
+                }>
+                  <span>{formatAmount(row.sent)}</span>
+                  <b>→</b>
+                  <span>{formatAmount(row.multiplied)}</span>
+                  <b>→</b>
+                  <span>{formatAmount(row.returned)}</span>
+                </div>
               </div>
 
-              <div className="trust-flow-people" aria-hidden={!showNames}>
-                <span>{showNames ? row.giver : 'Küldő'}</span>
-                <b>→</b>
-                <span>{showNames ? row.receiver : 'Fogadó'}</span>
+              <div className="trust-simple-metric">
+                <span className="trust-simple-label">küldött</span>
+                <div className="trust-simple-bar" aria-label={'Küldött arány ' + row.sendPercent + '%'}>
+                  <i
+                    className={'trust-simple-fill ' + (row.sendPercent >= 50 ? 'is-high' : 'is-low')}
+                    style={{ width: row.sendPercent + '%' }}
+                  />
+                </div>
+                <strong className={row.sendPercent >= 50 ? 'is-high' : 'is-low'}>{row.sendPercent}%</strong>
               </div>
 
-              <div className="trust-flow-line sent">
-                <span className="trust-flow-label">Elküldött</span>
-                <strong>{formatCredits(row.sent)}</strong>
-                <span className="trust-flow-vector" aria-hidden="true" />
-                <span className="trust-flow-context">bank után {formatCredits(row.multiplied)}</span>
-              </div>
-
-              <div className="trust-flow-line returned">
-                <span className="trust-flow-label">Visszajött</span>
-                <strong>{formatCredits(row.returned)}</strong>
-                <span className="trust-flow-vector" aria-hidden="true" />
-                <span className="trust-flow-context">a fogadótól</span>
+              <div className="trust-simple-metric">
+                <span className="trust-simple-label">visszaadott</span>
+                <div className="trust-simple-bar" aria-label={'Visszaadott arány ' + row.returnPercent + '%'}>
+                  <i
+                    className={'trust-simple-fill ' + (row.returnPercent >= 50 ? 'is-high' : 'is-low')}
+                    style={{ width: row.returnPercent + '%' }}
+                  />
+                </div>
+                <strong className={row.returnPercent >= 50 ? 'is-high' : 'is-low'}>{row.returnPercent}%</strong>
               </div>
             </article>
           );
         })}
       </div>
+    </section>
+  );
 
-      <div className="trust-flow-pager">
-        <span className="trust-flow-page-status">
-          {start + 1}–{Math.min(rows.length, start + PAGE_SIZE)} / {rows.length} pár
-        </span>
-        {pageCount > 1 && (
+  return (
+    <div className="trust-simple">
+      <div className="trust-simple-legend" aria-label="Színjelmagyarázat">
+        <span><i className="is-low" />0–49%</span>
+        <span><i className="is-high" />50–100%</span>
+      </div>
+
+      <div className="trust-simple-rounds">
+        {renderRound('1. kör', '3A · első párosítás', visibleA, 'round-a')}
+        {renderRound('2. kör', '3B · új párok', visibleB, 'round-b')}
+      </div>
+
+      {pageCount > 1 && (
+        <div className="trust-flow-pager">
+          <span className="trust-flow-page-status">
+            {safePage + 1}/{pageCount}. oldal
+          </span>
           <div>
             <button type="button" className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>
               Előző
@@ -3566,11 +3625,12 @@ function TrustBarsPattern({
               Következő
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function TrustMatrixPattern({ session, showNames }: { session: GameSession; showNames: boolean }) {
   const rows = patternPairings(session, 'trust').map((pairing) => {
@@ -3888,11 +3948,12 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pool-pattern-group-tabs{display:none!important}',
     '.pool-pattern-groups{max-height:none!important;overflow:hidden!important}',
     '.trust-flow-pager button{display:none!important}',
-    '.trust-flow-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}',
-    '.trust-flow-card{padding:7px 9px!important}',
-    '.trust-flow-card-head strong{font-size:11px!important}',
-    '.trust-flow-people{font-size:10px!important}',
-    '.trust-flow-line strong{font-size:13px!important}',
+    '.trust-simple-rounds{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}',
+    '.trust-simple-pair{padding:9px 11px!important}',
+    '.trust-simple-pair-head>strong{font-size:13px!important}',
+    '.trust-simple-story{font-size:15px!important}',
+    '.trust-simple-metric{grid-template-columns:82px minmax(0,1fr) 42px!important}',
+    '.trust-simple-label,.trust-simple-metric>strong{font-size:11px!important}',
     '.split-pattern-value,.split-pattern-label{font-size:12px!important}',
     '.split-pattern-status,.pattern-legend,.pool-pattern-y-axis,.pool-pattern-round>strong,.pool-pattern-round>small{font-size:11px!important}',
     '.pool-pattern-legend span,.pool-pattern-minimum span{font-size:10px!important}'
@@ -3963,7 +4024,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
               <span>Mintázatok · {PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label}</span>
               <h3>{
                 game === 'trust' && trustView === 'simple'
-                  ? 'Ki mennyit küldött, és mennyit adott vissza a másik?'
+                  ? 'Ki kinek adott bizalmat – és mennyi jött vissza?'
                   : PATTERN_TITLES[game]
               }</h3>
             </div>
