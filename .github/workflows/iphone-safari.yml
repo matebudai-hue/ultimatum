@@ -35,7 +35,7 @@ jobs:
 
       - name: Install app dependencies
         working-directory: app
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Install WebKit
         working-directory: app

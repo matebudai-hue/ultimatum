@@ -33,7 +33,7 @@ jobs:
 
       - name: Install
         working-directory: app
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Test
         working-directory: app

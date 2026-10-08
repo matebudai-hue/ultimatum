@@ -38,5 +38,8 @@
     "vite": "latest",
     "@firebase/rules-unit-testing": "latest",
     "@playwright/test": "latest"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.6"
   }
 }
