@@ -2556,3 +2556,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .pool-pattern-rounds{gap:7px}
   .pool-pattern-track{width:70%}
 }
+
+.amount-preview { display: block; font-size: 1rem; line-height: 1.5; padding: .65rem 0; overflow-wrap: anywhere; }
+.stake-saved { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
+.decision-buttons { gap: 1.5rem; }

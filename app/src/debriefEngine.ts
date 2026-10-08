@@ -1,3 +1,4 @@
+import { publicGoodsPlayerPayout } from './gameEngine';
 import { GameSession, Pairing, ParticipantSelfReportItem, PublicGoodsRound, StrategicRound } from './gameTypes';
 
 export type DebriefGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
@@ -116,7 +117,7 @@ const publicGoodsNet = (session: GameSession, round: PublicGoodsRound, playerId:
   );
   if (transaction) return transaction.amount;
   const contribution = round.contributions[playerId] ?? 0;
-  return round.success ? (round.payoutPerPlayer ?? 0) - contribution : -contribution;
+  return round.success ? publicGoodsPlayerPayout(round, playerId) - contribution : -contribution;
 };
 
 const publicGoodsFacts = (session: GameSession, round: PublicGoodsRound, playerId: string) => {
@@ -135,7 +136,7 @@ const publicGoodsFacts = (session: GameSession, round: PublicGoodsRound, playerI
     startingWealth,
     ownWealthPercent: roundedPercent(contribution, startingWealth),
     potPercent: roundedPercent(contribution, total),
-    payout: round.success ? round.payoutPerPlayer ?? 0 : 0,
+    payout: publicGoodsPlayerPayout(round, playerId),
     netAmount: publicGoodsNet(session, round, playerId),
     automated,
   };

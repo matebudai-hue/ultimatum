@@ -21,6 +21,8 @@ import {
   botUltimatumOffer,
   settleOneWayGive,
   settlePublicGoods,
+  publicGoodsPayouts,
+  publicGoodsPlayerPayout,
   settleTrust,
   settleUltimatum,
 } from './gameEngine';
@@ -130,7 +132,7 @@ const strategicDeadlineAt = (
   return new Date(new Date(seenAt).getTime() + STRATEGIC_DECISION_SECONDS * 1000).toISOString();
 };
 
-const addDecision = (session: GameSession, decision: Omit<Decision, 'id' | 'submittedAt'>) => {
+const addDecision = (session: GameSession, decision: Omit<Decision, 'id' | 'submittedAt'>, submittedAt?: string) => {
   const exists = session.decisions.some((item) =>
     item.roundKey === decision.roundKey &&
     item.pairingId === decision.pairingId &&
@@ -142,7 +144,9 @@ const addDecision = (session: GameSession, decision: Omit<Decision, 'id' | 'subm
   session.decisions.push({
     ...decision,
     id: crypto.randomUUID(),
-    submittedAt: new Date().toISOString(),
+    submittedAt: submittedAt ?? new Date().toISOString(),
+    processedAt: new Date().toISOString(),
+    timestampSource: submittedAt ? 'command_event' : 'trainer_clock',
   });
 };
 
@@ -908,7 +912,7 @@ export const localSessionStore = {
       amount: payload.amount,
       accepted: payload.accepted,
       submitIntentAt,
-    });
+    }, submittedAt);
     const resolvedAt = new Date().toISOString();
     for (const issue of session.strategicTechnicalIssues) {
       if (issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt) {
@@ -1114,10 +1118,8 @@ export const localSessionStore = {
 
     const before = round.contributions[playerId] ?? 0;
     const oldContributions = { ...round.contributions };
-    const oldTotal = Object.values(oldContributions).reduce((sum, value) => sum + value, 0);
-    const oldSuccess = round.minimumAmount === undefined || oldTotal >= round.minimumAmount;
-    const oldPayout = oldSuccess && round.memberIds.length > 0 ? Math.round((oldTotal * 2) / round.memberIds.length) : 0;
 
+    const oldPayouts = Object.fromEntries(round.memberIds.map(id => [id, publicGoodsPlayerPayout(round, id)]));
     round.contributions[playerId] = Math.round(newAmount);
     round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
     upsertPublicGoodsDecision(
@@ -1134,16 +1136,18 @@ export const localSessionStore = {
     if (round.status === 'settled') {
       const newSuccess = round.minimumAmount === undefined || round.totalContribution >= round.minimumAmount;
       const newPayout = newSuccess && round.memberIds.length > 0
-        ? Math.round((round.totalContribution * 2) / round.memberIds.length)
+        ? Math.floor((round.totalContribution * 2) / round.memberIds.length)
         : 0;
 
+      const newPayouts = publicGoodsPayouts(round.memberIds, round.totalContribution, newSuccess);
       for (const memberId of round.memberIds) {
-        const oldNet = -(oldContributions[memberId] ?? 0) + oldPayout;
-        const newNet = -(round.contributions[memberId] ?? 0) + newPayout;
+        const oldNet = -(oldContributions[memberId] ?? 0) + oldPayouts[memberId];
+        const newNet = -(round.contributions[memberId] ?? 0) + newPayouts[memberId];
         applyManualDelta(session, memberId, newNet - oldNet, 'manual_public_goods_correction', '4');
       }
       round.success = newSuccess;
       round.payoutPerPlayer = newPayout;
+      round.payoutByPlayer = newPayouts;
     }
 
     session.manualCorrections.push({
@@ -1383,6 +1387,7 @@ export const localSessionStore = {
       round.totalContribution = result.totalContribution;
       round.success = result.success;
       round.payoutPerPlayer = result.payoutPerPlayer;
+      round.payoutByPlayer = result.payoutByPlayer;
       round.status = 'settled';
       round.settledAt = new Date().toISOString();
       session.transactions.push(...result.transactions);

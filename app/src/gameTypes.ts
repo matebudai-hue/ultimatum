@@ -59,6 +59,8 @@ export type Decision = {
   submissionSource?: 'participant' | 'bot' | 'missing_default' | 'manual_correction';
   submittedAt: string;
   submitIntentAt?: string;
+  processedAt?: string;
+  timestampSource?: 'command_event' | 'trainer_clock';
   submissionHistory?: Array<{
     amount: number;
     submittedAt: string;
@@ -122,6 +124,7 @@ export type PublicGoodsRound = {
   status: 'open' | 'locked' | 'settled';
   success?: boolean;
   payoutPerPlayer?: number;
+  payoutByPlayer?: Record<string, number>;
   settledAt?: string;
 };
 

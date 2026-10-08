@@ -25,6 +25,7 @@ const identifyRoles = async (a: Page, b: Page) => {
 };
 
 const sendOffer = async (proposer: Page, amount: string) => {
+  proposer.once('dialog', dialog => dialog.accept());
   const input = proposer.getByLabel('A másik játékosnak felajánlott kredit');
   await expect(input).toBeVisible();
   await input.fill(amount);
@@ -87,6 +88,7 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
     roles = await identifyRoles(iphoneA, iphoneB);
     await sendOffer(roles.proposer, '35000');
 
+    roles.receiver.once('dialog', dialog => dialog.accept());
     const reject = roles.receiver.getByRole('button', { name: 'Elutasítom' });
     await expect(reject).toBeVisible({ timeout: 25_000 });
     await expect(reject).toBeEnabled();

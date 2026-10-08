@@ -1016,6 +1016,8 @@ testSettlementRules();
 testPairingInvariantsForAllSupportedCounts();
 testFinishAvailableFromFirstActiveRound();
 for (const count of [2, 3, 4, 5, 6, 7, 50, 100]) {
+  // Each scenario is independent; do not accumulate earlier sessions in the 5 MB test store.
+  localStorage.clear();
   const code = runStrategicStage(count);
   testPublicGoodsControl(code, count);
 }

@@ -1,3 +1,5 @@
+import { AmountInput, useAmountDraft, confirmAmount } from './AmountInput';
+import { publicGoodsPlayerPayout } from './gameEngine';
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
@@ -252,7 +254,7 @@ function Landing({ onTrainer, onPlayer }: { onTrainer: () => void; onPlayer: () 
         <button className="choice-card light" onClick={onPlayer}>
           <Smartphone size={30} />
           <strong>Résztvevőként csatlakozom</strong>
-          <span>Játékkód vagy QR után névvel belépés.</span>
+          <span>QR-kóddal vagy meghívólinkkel, névvel belépés.</span>
         </button>
       </section>
     </main>
@@ -1857,12 +1859,12 @@ function GroupBox({ session, groupId }: { session: GameSession; groupId: string 
                 <td className="wealth-cell">{formatCredits(player.currentBalance)}</td>
                 {groupRounds.map((round) => {
                   const contribution = round.contributions[player.id];
-                  const payout = round.status === 'settled' ? (round.payoutPerPlayer ?? 0) : undefined;
+                  const payout = round.status === 'settled' ? publicGoodsPlayerPayout(round, player.id) : undefined;
                   const net = contribution !== undefined && payout !== undefined ? payout - contribution : undefined;
                   return (
                     <td key={round.id} className={round.status === 'settled' ? (round.success ? 'pool-result-success' : 'pool-result-failed') : ''}>
                       <div className="pool-cell">
-                        <span>Be: <b>{contribution === undefined ? '–' : formatCredits(contribution)}</b></span>
+                        <span>Be: <b>{contribution === undefined ? 'Még nem küldött' : session.decisions.some(d => d.playerId === player.id && d.publicGoodsRound === round.roundNumber && d.submissionSource === 'missing_default') ? 'Nem küldött · 0 kr' : formatCredits(contribution)}</b></span>
                         <span>Vissza: <b>{payout === undefined ? '–' : formatCredits(payout)}</b></span>
                         {net !== undefined && <span className={net >= 0 ? 'good' : 'bad'}>Nettó: <b>{net >= 0 ? '+' : ''}{formatCredits(net)}</b></span>}
                       </div>
@@ -1893,7 +1895,7 @@ function GroupBox({ session, groupId }: { session: GameSession; groupId: string 
                 {' '}kassza {formatCredits(round.totalContribution)}
                 {round.minimumMode !== 'none' && shortfall > 0 ? ` · hiány ${formatCredits(shortfall)}` : ''}
                 {' · '}{round.status === 'settled'
-                  ? (round.success ? `sikeres · ${formatCredits(round.payoutPerPlayer ?? 0)}/fő` : 'sikertelen · tét elveszett')
+                  ? (round.success ? `sikeres · ${formatCredits(round.payoutPerPlayer ?? 0)}/fő alapösszeg` : 'sikertelen · tét elveszett')
                   : round.status === 'locked'
                     ? 'lezárva'
                     : 'folyamatban'}
@@ -2003,7 +2005,10 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
 function ReportPanel({ session }: { session: GameSession }) {
   type SummaryGame = 'ultimatum' | 'dictator' | 'trust' | 'pool';
 
-  const summary = reportSummary(session);
+  const [includeBots, setIncludeBots] = useState(false);
+  const botPair = (p: Pairing) => p.playerA === 'BOT' || p.playerB === 'BOT' || p.playerAIsBot || p.playerBIsBot || session.decisions.some(d => d.pairingId === p.id && d.isBotDecision);
+  const reportSession = includeBots ? session : { ...session, pairings: session.pairings.filter(p => !botPair(p)) };
+  const summary = reportSummary(session, includeBots);
   const currentSummaryGame: SummaryGame | null =
     session.roundKey === '1a' || session.roundKey === '1b' ? 'ultimatum' :
     session.roundKey === '2a' || session.roundKey === '2b' ? 'dictator' :
@@ -2050,7 +2055,7 @@ function ReportPanel({ session }: { session: GameSession }) {
     return { className: 'upcoming', label: 'következik' };
   };
 
-  const ultimatumOffers = session.pairings
+  const ultimatumOffers = reportSession.pairings
     .filter((pairing) => pairing.gameId === 'ultimatum')
     .flatMap((pairing) => {
       const decisions = decisionsFor(session, pairing);
@@ -2066,7 +2071,7 @@ function ReportPanel({ session }: { session: GameSession }) {
       }];
     });
 
-  const dictatorTransfers = session.pairings
+  const dictatorTransfers = reportSession.pairings
     .filter((pairing) => pairing.gameId === 'dictator')
     .flatMap((pairing) => {
       const decision = decisionsFor(session, pairing).find((item) => item.type === 'dictator_give');
@@ -2085,7 +2090,7 @@ function ReportPanel({ session }: { session: GameSession }) {
       }];
     });
 
-  const trustTransfers = session.pairings
+  const trustTransfers = reportSession.pairings
     .filter((pairing) => pairing.gameId === 'trust')
     .flatMap((pairing) => {
       const decisions = decisionsFor(session, pairing);
@@ -2159,6 +2164,8 @@ function ReportPanel({ session }: { session: GameSession }) {
         </button>
       </div>
 
+      <label className="field"><span><input type="checkbox" checked={includeBots} onChange={event => setIncludeBots(event.target.checked)} /> Rendszerjátékossal játszott párok beszámítása</span></label>
+      <p className="game-summary-note">Alapértelmezésben csak az ember–ember párok szerepelnek a páros játékok összesítőiben. A teljes CSV minden döntést tartalmaz, gépi jelöléssel.</p>
       <div className="game-summary-stack">
         <section className={blockClass('ultimatum')}>
           <button className="game-summary-toggle" type="button" onClick={() => toggleGame('ultimatum')} aria-expanded={openGames.ultimatum}>
@@ -2197,7 +2204,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                         return (
                           <div className="ultimatum-offer-row" key={pairing.id}>
                             <span className="offer-route">
-                              <b>{playerName(session, pairing.playerA)}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
+                              <b>{playerName(session, pairing.playerA)}{botPair(pairing) ? ' · gépi partnerrel játszott pár' : ''}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
                             </span>
                             <strong className="offer-amount">{formatCredits(amount)}</strong>
                             <span className={'offer-status ' + statusClass}>{statusLabel}</span>
@@ -2246,7 +2253,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                       ) : rows.map(({ pairing, amount, percent, band, bandLabel, timedOut }) => (
                         <div className="dictator-transfer-row" key={pairing.id}>
                           <span className="offer-route">
-                            <b>{playerName(session, pairing.playerA)}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
+                            <b>{playerName(session, pairing.playerA)}{botPair(pairing) ? ' · gépi partnerrel játszott pár' : ''}</b><i>→</i><b>{playerName(session, pairing.playerB)}</b>
                           </span>
                           <strong className="offer-amount">{formatCredits(amount)}</strong>
                           <span className={'dictator-band ' + band}>
@@ -2308,7 +2315,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                           <div className="trust-moves">
                             <div className="trust-move">
                               <span className="trust-direction">
-                                <b>Oda:</b> {playerName(session, pairing.playerA)} <i>→</i> {playerName(session, pairing.playerB)}
+                                <b>Oda:</b> {botPair(pairing) && <small>Gépi partnerrel játszott pár · </small>}{playerName(session, pairing.playerA)} <i>→</i> {playerName(session, pairing.playerB)}
                               </span>
                               <span className={'trust-value ' + sendBand}>
                                 {sendTimedOut ? 'idő → 0' : formatCredits(sent) + ' · ' + sendPercent + '%'}
@@ -2391,7 +2398,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                             const resultText =
                               round.status === 'settled'
                                 ? round.success
-                                  ? 'Bank ' + formatCredits(round.totalContribution * 2) + ' · ' + formatCredits(round.payoutPerPlayer ?? 0) + '/fő'
+                                  ? 'Bank ' + formatCredits(round.totalContribution * 2) + ' · ' + formatCredits(round.payoutPerPlayer ?? 0) + '/fő alapösszeg (maradék: legfeljebb +1 kr)'
                                   : 'Sikertelen · a befizetés elveszett'
                                 : round.status === 'locked'
                                   ? 'Tétek lezárva · elszámolásra vár'
@@ -2402,6 +2409,9 @@ function ReportPanel({ session }: { session: GameSession }) {
                                   <div>
                                     <b>{groupName}</b>
                                     <small>{round.memberIds.length} fő · {resultText}</small>
+                                    <small>Befizetés / kör eleji csoportvagyon: {round.startingGroupWealth > 0 ? (round.totalContribution / round.startingGroupWealth * 100).toLocaleString('hu-HU', { maximumFractionDigits: 1 }) + '%' : '–'}</small>
+                                    <small>Kör végi / kör eleji vagyon: {round.status === 'settled' && round.startingGroupWealth > 0 ? ((round.startingGroupWealth - round.totalContribution + round.memberIds.reduce((sum, id) => sum + publicGoodsPlayerPayout(round, id), 0)) / round.startingGroupWealth).toLocaleString('hu-HU', { maximumFractionDigits: 3 }) + '×' : '–'}</small>
+                                    <small>Egy befizetett kreditből személyenként {round.memberIds.length ? (2 / round.memberIds.length).toLocaleString('hu-HU', { maximumFractionDigits: 3 }) : 0} kredit jár vissza sikeres körben.</small>
                                   </div>
                                   <div className="pool-total">
                                     <span>Teljes kassza</span>
@@ -2431,7 +2441,7 @@ function ReportPanel({ session }: { session: GameSession }) {
                                         ? Math.round((contribution / round.totalContribution) * 100)
                                         : 0;
                                     const delta = contribution !== undefined && round.status === 'settled'
-                                      ? (round.payoutPerPlayer ?? 0) - contribution
+                                      ? publicGoodsPlayerPayout(round, playerId) - contribution
                                       : undefined;
                                     const endWealth = delta === undefined ? undefined : startWealth + delta;
 
@@ -4587,6 +4597,7 @@ function AmountDecision({
   keepLabel = 'Nálad marad',
   onSubmit,
   submitting = false,
+  draftKey,
 }: {
   max: number;
   label: string;
@@ -4595,27 +4606,19 @@ function AmountDecision({
   keepLabel?: string;
   onSubmit: (amount: number) => void;
   submitting?: boolean;
+  draftKey: string;
 }) {
-  const [amount, setAmount] = useState<number | ''>('');
+  const [amount, setAmount] = useAmountDraft(draftKey);
   const numericAmount = amount === '' ? null : Math.round(amount);
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
-      onSubmit(numericAmount);
+      if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>{label}</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9 ]*"
-          autoComplete="off"
-          value={formatCreditInput(amount)}
-          placeholder="Írd be az összeget"
-          required
-          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
-        />
+        <AmountInput value={amount} onChange={setAmount} max={max} disabled={submitting} />
       </label>
       <p className="limit">0 – {formatCredits(max)}</p>
       {numericAmount !== null && (
@@ -4663,32 +4666,25 @@ function TrustSendDecision({
   max,
   onSubmit,
   submitting = false,
+  draftKey,
 }: {
   max: number;
   onSubmit: (amount: number) => void;
   submitting?: boolean;
+  draftKey: string;
 }) {
-  const [amount, setAmount] = useState<number | ''>('');
+  const [amount, setAmount] = useAmountDraft(draftKey);
   const numericAmount = amount === '' ? null : Math.round(amount);
   const tripled = numericAmount === null ? null : numericAmount * 3;
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
-      onSubmit(numericAmount);
+      if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>Mennyit küldesz a másik játékosnak?</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9 ]*"
-          autoComplete="off"
-          value={formatCreditInput(amount)}
-          placeholder="Írd be az összeget"
-          required
-          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
-        />
+        <AmountInput value={amount} onChange={setAmount} max={max} disabled={submitting} />
       </label>
       {numericAmount !== null && tripled !== null && (
         <div className="decision-consequence">
@@ -4708,32 +4704,25 @@ function TrustReturnDecision({
   available,
   onSubmit,
   submitting = false,
+  draftKey,
 }: {
   available: number;
   onSubmit: (amount: number) => void;
   submitting?: boolean;
+  draftKey: string;
 }) {
-  const [amount, setAmount] = useState<number | ''>('');
+  const [amount, setAmount] = useAmountDraft(draftKey);
   const numericAmount = amount === '' ? null : Math.round(amount);
   const kept = numericAmount === null ? null : Math.max(0, available - numericAmount);
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
       if (numericAmount === null || numericAmount < 0 || numericAmount > available) return;
-      onSubmit(numericAmount);
+      if (!submitting && confirmAmount(numericAmount, available)) onSubmit(numericAmount);
     }}>
       <label className="field">
         <span>Mennyit adsz vissza?</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9 ]*"
-          autoComplete="off"
-          value={formatCreditInput(amount)}
-          placeholder="Írd be az összeget"
-          required
-          onChange={(event) => setAmount(parseCreditInput(event.target.value))}
-        />
+        <AmountInput value={amount} onChange={setAmount} max={available} disabled={submitting} />
       </label>
       {numericAmount !== null && kept !== null && (
         <div className="decision-consequence">
@@ -4848,6 +4837,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               <DeadlineTimer deadlineAt={proposerDeadline} />
             </div>
             <AmountDecision
+              draftKey={session.code + ":" + playerId + ":" + pairing.id}
               max={session.startingCredit}
               label="A másik játékosnak felajánlott kredit"
               button="Ajánlat elküldése"
@@ -4905,7 +4895,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <button className="primary" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: true })}>
               {submitting ? 'Küldés…' : 'Elfogadom'}
             </button>
-            <button className="danger" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: false })}>
+            <button className="danger" disabled={submitting} onClick={() => { if (window.confirm('Elutasítod? Ebben a körben mindketten 0 kreditet kaptok.')) submit({ type: 'ultimatum_response', accepted: false }); }}>
               {submitting ? 'Küldés…' : 'Elutasítom'}
             </button>
           </div>
@@ -4993,6 +4983,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
           </div>
           <AmountDecision
+              draftKey={session.code + ":" + playerId + ":" + pairing.id}
             max={session.startingCredit}
             label="A másik játékosnak adott kredit"
             button="Döntés elküldése"
@@ -5051,8 +5042,10 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
           </div>
           <TrustSendDecision
+              draftKey={session.code + ":" + playerId + ":" + pairing.id}
             max={session.startingCredit}
             onSubmit={(amount) => submit({ type: 'trust_send', amount })}
+            submitting={submitting}
           />
         </>
       );
@@ -5121,6 +5114,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
           <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
         </div>
         <TrustReturnDecision
+              draftKey={session.code + ":" + playerId + ":" + pairing.id}
           available={tripled}
           onSubmit={(amount) => submit({ type: 'trust_return', amount })}
           submitting={submitting}
@@ -5149,12 +5143,19 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     (item) => item.roundNumber === session.publicGoodsRoundNumber && item.memberIds.includes(playerId),
   );
   const existingAmount = currentRound?.contributions[playerId];
-  const [amount, setAmount] = useState<number | ''>(existingAmount ?? '');
+  const [amount, setAmount] = useAmountDraft(session.code + ':' + playerId + ':pool:' + session.publicGoodsRoundNumber, existingAmount ?? '');
+  const [editingRound, setEditingRound] = useState<string | null>(null);
+  const editing = existingAmount === undefined || editingRound === currentRound?.id;
+  const [pendingAmount, setPendingAmount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setSaving(false);
-  }, [existingAmount, session.publicGoodsRoundNumber]);
+    if (pendingAmount !== null && existingAmount === pendingAmount) {
+      setSaving(false);
+      setPendingAmount(null);
+      setEditingRound(null);
+    }
+  }, [existingAmount, pendingAmount, session.publicGoodsRoundNumber]);
 
   useEffect(() => {
     if (!saving) return;
@@ -5162,9 +5163,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     return () => window.clearTimeout(timeout);
   }, [saving]);
 
-  useEffect(() => {
-    setAmount(currentRound?.contributions[playerId] ?? '');
-  }, [currentRound?.contributions[playerId], session.publicGoodsRoundNumber]);
+  useEffect(() => { setSaving(false); setPendingAmount(null); setEditingRound(null); }, [session.publicGoodsRoundNumber]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 300);
@@ -5202,7 +5201,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     }
 
     const contribution = currentRound.contributions[playerId] ?? 0;
-    const payout = currentRound.payoutPerPlayer ?? 0;
+    const payout = publicGoodsPlayerPayout(currentRound, playerId);
     const personalResult = payout - contribution;
 
     if (currentRound.success) {
@@ -5215,7 +5214,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
               A bank ezt megduplázta: <strong>{formatCredits(currentRound.totalContribution * 2)}</strong>.
             </p>
             <p>
-              Minden csoporttag <strong>{formatCredits(payout)}</strong> kreditet kapott vissza.
+              Te <strong>{formatCredits(payout)}</strong> kreditet kaptál vissza. A kerekítési maradék miatt legfeljebb 1 kredit eltérés lehet a csoporttagok között.
             </p>
           </div>
           <div className="submitted">
@@ -5267,7 +5266,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         )}
         <div className="submitted">
           <Check size={28} />
-          <strong>Tét lezárva: {formatCredits(existingAmount ?? 0)}</strong>
+          <strong>{session.decisions.some(d => d.playerId === playerId && d.publicGoodsRound === session.publicGoodsRoundNumber && d.submissionSource === 'missing_default') ? 'Nem érkezett be döntés. A lezárt tét: 0 kredit.' : 'Tét lezárva: ' + formatCredits(existingAmount ?? 0)}</strong>
           <span>Várakozás a banki elszámolásra.</span>
         </div>
       </>
@@ -5305,30 +5304,23 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} />
       </div>
 
-      <form className="decision-form" onSubmit={(event) => {
+      {editing && <form className="decision-form" onSubmit={(event) => {
         event.preventDefault();
         if (
-          canEdit &&
+          !saving && canEdit &&
           amount !== '' &&
           amount >= 0 &&
           amount <= player.currentBalance
         ) {
+          if (!confirmAmount(amount, player.currentBalance)) return;
+          setPendingAmount(Math.round(amount));
           setSaving(true);
           gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
         }
       }}>
         <label className="field">
           <span>Befizetés</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9 ]*"
-            autoComplete="off"
-            disabled={!canEdit}
-            value={formatCreditInput(amount)}
-            placeholder="Írd be az összeget"
-            onChange={(event) => setAmount(parseCreditInput(event.target.value))}
-          />
+          <AmountInput value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} />
         </label>
         {amount !== '' && (
           <div className="decision-consequence">
@@ -5339,14 +5331,18 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         {amount !== '' && amount > player.currentBalance && (
           <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
         )}
-        <button className="primary big" disabled={saving || !canEdit || amount === '' || amount < 0 || amount > player.currentBalance} type="submit">
+        <button className="primary big" disabled={saving || !canEdit || amount === '' || amount < 0 || amount > player.currentBalance || amount === existingAmount} type="submit">
           {saving ? 'Tét küldése…' : currentRound.contributions[playerId] !== undefined ? 'Tét módosítása' : 'Tét mentése'}
         </button>
-      </form>
+      </form>}
 
       {currentRound.contributions[playerId] !== undefined && (
-        <div className="stake-saved">Mentett tét: <strong>{formatCredits(existingAmount ?? 0)}</strong></div>
+        <div className="stake-saved" role="status">
+          Beérkezett: <strong>{formatCredits(existingAmount ?? 0)}</strong>
+          {canEdit && !editing && <button type="button" className="secondary" onClick={() => { setAmount(existingAmount ?? 0); setEditingRound(currentRound.id); }}>Módosítom</button>}
+        </div>
       )}
+      {pendingAmount !== null && !saving && <div className="waiting-box" role="status">A beküldés visszaigazolására várunk. Ellenőrizd a kapcsolatot; a beírt összeget megőriztük.</div>}
       {!canEdit && <div className="waiting-box">A döntési idő lejárt. A tréner zárja a téteket.</div>}
     </>
   );
@@ -5799,14 +5795,13 @@ function ParticipantClient({ code: initial }: { code?: string }) {
         <header className="brand participant-brand">
           <p className="eyebrow">Kreditjáték · résztvevő</p>
           <h1>Csatlakozás</h1>
-          <p>A tréner által megadott kóddal lépj be. Ezután ezen a telefonon kapod a döntéseidet.</p>
+          <p>{initial ? 'Add meg a neved. Ezen a telefonon kapod a döntéseidet.' : 'Olvasd be a tréner QR-kódját, vagy nyisd meg a tőle kapott meghívólinket.'}</p>
         </header>
-        <form className="panel join-panel" onSubmit={submitJoin}>
-          <label className="field"><span>Játékkód</span><input className="join-code-input" value={code} maxLength={6} autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" onChange={(e) => setCode(e.target.value.toUpperCase())} /></label>
+        {initial && <form className="panel join-panel" onSubmit={submitJoin}>
           <label className="field"><span>Neved</span><input value={name} maxLength={60} autoComplete="name" enterKeyHint="go" onChange={(e) => setName(e.target.value)} /></label>
           {error && <div className="error">{error}</div>}
           <button className="primary big" type="submit">Belépek a játékba</button>
-        </form>
+        </form>}
       </main>
     );
   }

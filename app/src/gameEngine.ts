@@ -1,4 +1,4 @@
-import { Pairing, Player, RoundKey, Transaction } from './gameTypes';
+import { Pairing, Player, PublicGoodsRound, RoundKey, Transaction } from './gameTypes';
 
 const average = (values: number[]): number =>
   values.length === 0 ? 0 : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
@@ -66,6 +66,18 @@ export const settleTrust = (
   return makeTransactions(players, pairing.roundKey, rows);
 };
 
+// Integer credits: distribute the remainder in stable member-id order.
+export const publicGoodsPayouts = (memberIds: string[], total: number, success: boolean) => {
+  const ids = [...memberIds].sort();
+  const base = success && ids.length ? Math.floor(total * 2 / ids.length) : 0;
+  const remainder = success ? total * 2 - base * ids.length : 0;
+  return Object.fromEntries(ids.map((id, index) => [id, base + (index < remainder ? 1 : 0)]));
+};
+
+// Old sessions retain the exact payout they originally booked.
+export const publicGoodsPlayerPayout = (round: PublicGoodsRound, playerId: string) =>
+  round.success ? round.payoutByPlayer?.[playerId] ?? round.payoutPerPlayer ?? 0 : 0;
+
 export const settlePublicGoods = (
   players: Player[],
   contributions: Record<string, number>,
@@ -75,11 +87,12 @@ export const settlePublicGoods = (
   const humans = players.filter((player) => !player.isBot);
   const totalContribution = Object.values(contributions).reduce((sum, value) => sum + value, 0);
   const success = minimumAmount === undefined || totalContribution >= minimumAmount;
-  const payoutPerPlayer = success && humans.length > 0 ? Math.round((totalContribution * 2) / humans.length) : 0;
+  const payoutPerPlayer = success && humans.length > 0 ? Math.floor((totalContribution * 2) / humans.length) : 0;
+  const payoutByPlayer = publicGoodsPayouts(humans.map(player => player.id), totalContribution, success);
   const transactions = humans.map((player) =>
-    makeTransaction(player, roundKey, -(contributions[player.id] ?? 0) + payoutPerPlayer, success ? 'public_goods_payout' : 'public_goods_failed_loss'),
+    makeTransaction(player, roundKey, -(contributions[player.id] ?? 0) + payoutByPlayer[player.id], success ? 'public_goods_payout' : 'public_goods_failed_loss'),
   );
-  return { success, totalContribution, payoutPerPlayer, transactions };
+  return { success, totalContribution, payoutPerPlayer, payoutByPlayer, transactions };
 };
 
 export const applyTransactions = (players: Player[], transactions: Transaction[]): Player[] => {

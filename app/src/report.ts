@@ -1,3 +1,4 @@
+import { publicGoodsPlayerPayout } from './gameEngine';
 import { GameSession, Player } from './gameTypes';
 
 const esc = (value: string | number | boolean | undefined | null) => {
@@ -7,17 +8,19 @@ const esc = (value: string | number | boolean | undefined | null) => {
 
 const playerName = (players: Player[], id: string) => players.find((player) => player.id === id)?.name ?? id;
 
-export function reportSummary(session: GameSession) {
-  const offers = session.decisions.filter((d) => d.type === 'ultimatum_offer');
-  const responses = session.decisions.filter((d) => d.type === 'ultimatum_response');
+export function reportSummary(session: GameSession, includeBots = true) {
+  const botPairings = new Set(session.pairings.filter(p => p.playerA === 'BOT' || p.playerB === 'BOT' || p.playerAIsBot || p.playerBIsBot || session.decisions.some(d => d.pairingId === p.id && d.isBotDecision)).map(p => p.id));
+  const decisions = includeBots ? session.decisions : session.decisions.filter(d => !d.isBotDecision && d.playerId !== 'BOT' && !botPairings.has(d.pairingId ?? ''));
+  const offers = decisions.filter((d) => d.type === 'ultimatum_offer');
+  const responses = decisions.filter((d) => d.type === 'ultimatum_response');
   const acceptedPairings = new Set(responses.filter((d) => d.accepted).map((d) => d.pairingId));
   const rejectedPairings = new Set(responses.filter((d) => d.accepted === false).map((d) => d.pairingId));
   const acceptedOffers = offers.filter((d) => acceptedPairings.has(d.pairingId));
   const rejectedOffers = offers.filter((d) => rejectedPairings.has(d.pairingId));
-  const timeouts = session.decisions.filter((d) => d.type === 'ultimatum_timeout');
-  const dictator = session.decisions.filter((d) => d.type === 'dictator_give');
-  const trustSend = session.decisions.filter((d) => d.type === 'trust_send');
-  const trustReturn = session.decisions.filter((d) => d.type === 'trust_return');
+  const timeouts = decisions.filter((d) => d.type === 'ultimatum_timeout');
+  const dictator = decisions.filter((d) => d.type === 'dictator_give');
+  const trustSend = decisions.filter((d) => d.type === 'trust_send');
+  const trustReturn = decisions.filter((d) => d.type === 'trust_return');
   const dictatorTimeouts = dictator.filter((d) => d.timedOutRole === 'dictator');
   const trustSendTimeouts = trustSend.filter((d) => d.timedOutRole === 'sender');
   const trustReturnTimeouts = trustReturn.filter((d) => d.timedOutRole === 'returner');
@@ -123,7 +126,7 @@ export function createCsv(session: GameSession): string {
     ]),
     [],
     ['KÖZÖS KASSZA'],
-    ['Kör', 'Csoport', 'Minimum mód', 'Minimum', 'Befizetés', 'Státusz', 'Siker', 'Visszaosztás/fő'],
+    ['Kör', 'Csoport', 'Minimum mód', 'Minimum', 'Befizetés', 'Státusz', 'Siker', 'Visszaosztás alapösszeg/fő'],
     ...session.publicGoodsRounds.map((round) => [
       round.roundNumber,
       session.groups.find((g) => g.id === round.groupId)?.name ?? round.groupId,
@@ -149,13 +152,14 @@ export function createCsv(session: GameSession): string {
       correction.note,
     ]),
     ['KÖZÖS KASSZA – EGYÉNI BEFIZETÉSEK'],
-    ['Kör', 'Csoport', 'Játékos', 'Befizetés'],
+    ['Kör', 'Csoport', 'Játékos', 'Befizetés', 'Visszaosztás'],
     ...session.publicGoodsRounds.flatMap((round) =>
       Object.entries(round.contributions).map(([playerId, amount]) => [
         round.roundNumber,
         session.groups.find((g) => g.id === round.groupId)?.name ?? round.groupId,
         playerName(session.players, playerId),
         amount,
+        publicGoodsPlayerPayout(round, playerId),
       ])
     ),
   ];
@@ -277,6 +281,8 @@ export function createTechnicalAudit(session: GameSession) {
       groupId: decision.groupId,
       submissionSource: decision.submissionSource,
       submitIntentAt: decision.submitIntentAt,
+      processedAt: decision.processedAt,
+      timestampSource: decision.timestampSource ?? 'legacy_mixed_clocks',
     });
   }
 
@@ -350,6 +356,7 @@ export function createTechnicalAudit(session: GameSession) {
       minimumMode: round.minimumMode,
       minimumAmount: round.minimumAmount,
       payoutPerPlayer: round.payoutPerPlayer,
+      payoutByPlayer: round.payoutByPlayer,
     });
   }
 
@@ -364,8 +371,9 @@ export function createTechnicalAudit(session: GameSession) {
   timeline.sort((a, b) => a.at.localeCompare(b.at));
 
   return {
-    auditVersion: 2,
+    auditVersion: 3,
     exportedAt: new Date().toISOString(),
+    clockNote: 'A command_event időpont a fogadott parancs eseményideje; processedAt a tréner órája. Eltérő órákból reakcióidő és hálózati késés nem számítható.',
     purpose: 'Kreditjáték technikai audit – tréneri session állapot és megőrzött időrendi eseménynapló',
     summary: {
       code: session.code,
@@ -379,7 +387,8 @@ export function createTechnicalAudit(session: GameSession) {
       publicGoodsSubmissionEvents: session.decisions.reduce((sum, decision) => sum + (decision.submissionHistory?.length ?? 0), 0),
       manualCorrections: session.manualCorrections.length,
       transactions: session.transactions.length,
-      publicGoodsRounds: session.publicGoodsRounds.length,
+      publicGoodsRounds: new Set(session.publicGoodsRounds.map(round => round.roundNumber)).size,
+      publicGoodsGroupSettlements: session.publicGoodsRounds.filter(round => round.status === 'settled').length,
       botDecisions: session.decisions.filter((decision) => decision.isBotDecision).length,
       timedOutDecisions: session.decisions.filter((decision) => decision.timedOutRole).length,
     },
