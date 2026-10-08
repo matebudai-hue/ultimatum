@@ -9,13 +9,15 @@ on:
       - 'app/playwright.config.ts'
       - 'app/package.json'
       - '.github/workflows/iphone-safari.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: iphone-safari-main
+  group: iphone-safari-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
