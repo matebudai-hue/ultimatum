@@ -110,6 +110,8 @@ const publicGoodsDecisionId = (round: PublicGoodsRound, playerId: string) =>
   `decision:publicGoods:r${round.roundNumber}:${round.groupId}:${playerId}`;
 
 const publicGoodsNet = (session: GameSession, round: PublicGoodsRound, playerId: string) => {
+  // New settlements and manual corrections carry the authoritative exact payout.
+  if (round.payoutByPlayer) return publicGoodsPlayerPayout(round, playerId) - (round.contributions[playerId] ?? 0);
   const transaction = session.transactions.find((item) =>
     item.playerId === playerId &&
     item.roundKey === '4' &&

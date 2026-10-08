@@ -5145,9 +5145,10 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   const existingAmount = currentRound?.contributions[playerId];
   const [amount, setAmount] = useAmountDraft(session.code + ':' + playerId + ':pool:' + session.publicGoodsRoundNumber, existingAmount ?? '');
   const [editingRound, setEditingRound] = useState<string | null>(null);
-  const editing = existingAmount === undefined || editingRound === currentRound?.id;
+  const editing = existingAmount === undefined || editingRound === currentRound?.id || amount !== existingAmount;
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     if (pendingAmount !== null && existingAmount === pendingAmount) {
@@ -5304,6 +5305,8 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} />
       </div>
 
+      {submitError && <div className="error" role="alert">{submitError}</div>}
+      {editing && existingAmount !== undefined && amount !== existingAmount && <p role="status">A módosításod még nincs beküldve. A korábbi beérkezett tét marad érvényben.</p>}
       {editing && <form className="decision-form" onSubmit={(event) => {
         event.preventDefault();
         if (
@@ -5315,7 +5318,14 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           if (!confirmAmount(amount, player.currentBalance)) return;
           setPendingAmount(Math.round(amount));
           setSaving(true);
-          gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
+          setSubmitError('');
+          try {
+            gameStore.submitPublicGoods(session.code, playerId, Math.round(amount));
+          } catch (error) {
+            setSaving(false);
+            setPendingAmount(null);
+            setSubmitError(error instanceof Error ? error.message : 'A tétet nem sikerült elküldeni.');
+          }
         }
       }}>
         <label className="field">

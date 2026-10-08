@@ -3,6 +3,7 @@ import { JSDOM } from 'jsdom';
 import { publicGoodsPayouts, publicGoodsPlayerPayout, settlePublicGoods } from '../src/gameEngine';
 import { createTechnicalAudit, reportSummary } from '../src/report';
 import { buildParticipantProjection } from '../src/firebaseProjection';
+import { buildSelfReport } from '../src/debriefEngine';
 import type { Player, PublicGoodsRound } from '../src/gameTypes';
 
 const dom = new JSDOM('', { url: 'http://localhost' });
@@ -52,5 +53,13 @@ assert.deepEqual(Object.keys(projection.publicGoodsRounds[0].payoutByPlayer!), [
 const botPair = session.pairings.find(p => p.roundKey === '1a' && (p.playerA === 'BOT' || p.playerB === 'BOT'))!;
 session.decisions.push({ id: 'bot-offer', roundKey: '1a', pairingId: botPair.id, playerId: 'BOT', type: 'ultimatum_offer', amount: 10000, isBotDecision: true, submittedAt: eventAt });
 assert.ok(reportSummary(session, true).ultimatum.offers > reportSummary(session, false).ultimatum.offers);
-console.log('AUDIT FIXES: exact distribution, legacy compatibility, timestamp provenance, round counts, bot filter, projection privacy PASS');
+session.publicGoodsRounds = [{ ...session.publicGoodsRounds[0], settledAt: eventAt }];
+session.transactions.push({ id: 'original-pg', playerId: 'a', roundKey: '4', amount: 0, createdAt: eventAt, reason: 'public_goods' } as any);
+localSessionStore.replaceFromRemote(session);
+const beforeBalances = Object.fromEntries(session.players.map(p => [p.id, p.currentBalance]));
+const corrected = localSessionStore.correctPublicGoodsContribution(game.code, 1, 'b', 5, 'Test correction');
+assert.equal(corrected.players.find(p => p.id === 'a')!.currentBalance - beforeBalances.a, 5);
+assert.equal(corrected.players.find(p => p.id === 'b')!.currentBalance - beforeBalances.b, 0);
+assert.equal(buildSelfReport(corrected, 'a').find(item => item.game === 'publicGoods')!.netAmount, 5);
+console.log('AUDIT FIXES: exact distribution, legacy compatibility, timestamps, counts, bot filter, privacy and corrected self-report PASS');
 process.exit(0);
