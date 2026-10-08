@@ -7,13 +7,15 @@ on:
     paths:
       - 'app/**'
       - '.github/workflows/kreditjatek.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: kreditjatek-main
+  group: kreditjatek-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,7 +33,7 @@ jobs:
 
       - name: Install
         working-directory: app
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Test
         working-directory: app
@@ -56,6 +58,7 @@ jobs:
         run: npm run build
 
       - name: Publish dashboard
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           rm -rf dashboard
           mkdir -p dashboard

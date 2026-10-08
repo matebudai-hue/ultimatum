@@ -25,6 +25,7 @@ const identifyRoles = async (a: Page, b: Page) => {
 };
 
 const sendOffer = async (proposer: Page, amount: string) => {
+  proposer.once('dialog', dialog => dialog.accept());
   const input = proposer.getByLabel('A másik játékosnak felajánlott kredit');
   await expect(input).toBeVisible();
   await input.fill(amount);

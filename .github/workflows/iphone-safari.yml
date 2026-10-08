@@ -9,13 +9,15 @@ on:
       - 'app/playwright.config.ts'
       - 'app/package.json'
       - '.github/workflows/iphone-safari.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: iphone-safari-main
+  group: iphone-safari-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,7 +35,7 @@ jobs:
 
       - name: Install app dependencies
         working-directory: app
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Install WebKit
         working-directory: app

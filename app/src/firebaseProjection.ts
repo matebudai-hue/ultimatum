@@ -34,6 +34,7 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
             : { [playerId]: round.startingPlayerWealth[playerId] },
         minimumMode: round.minimumAmount === undefined ? 'none' as const : 'custom' as const,
         contributions,
+        payoutByPlayer: round.payoutByPlayer ? { [playerId]: round.payoutByPlayer[playerId] ?? 0 } : undefined,
         totalContribution: round.status === 'settled' && round.success ? round.totalContribution : 0,
       };
     });
