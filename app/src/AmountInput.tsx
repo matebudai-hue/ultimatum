@@ -25,7 +25,6 @@ export function AmountInput({ value, onChange, max, disabled = false }: {
       placeholder="Írd be az összeget"
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
       onChange={event => onChange(parseCreditInput(event.target.value))} />
-    <button type="button" className="secondary" disabled={disabled} onClick={() => onChange(max)}>Teljes összeg</button>
     {value !== '' && <span className="amount-preview" aria-live="polite">
       <strong>{formatCreditInput(value)} kredit</strong>
       {' · '}{max > 0 ? (value / max * 100).toLocaleString('hu-HU', { maximumFractionDigits: 1 }) : 0}% a rendelkezésre álló összegből

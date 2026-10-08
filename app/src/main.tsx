@@ -4895,7 +4895,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <button className="primary" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: true })}>
               {submitting ? 'Küldés…' : 'Elfogadom'}
             </button>
-            <button className="danger" disabled={submitting} onClick={() => { if (window.confirm('Elutasítod? Ebben a körben mindketten 0 kreditet kaptok.')) submit({ type: 'ultimatum_response', accepted: false }); }}>
+            <button className="danger" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: false })}>
               {submitting ? 'Küldés…' : 'Elutasítom'}
             </button>
           </div>

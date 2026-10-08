@@ -88,7 +88,6 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
     roles = await identifyRoles(iphoneA, iphoneB);
     await sendOffer(roles.proposer, '35000');
 
-    roles.receiver.once('dialog', dialog => dialog.accept());
     const reject = roles.receiver.getByRole('button', { name: 'Elutasítom' });
     await expect(reject).toBeVisible({ timeout: 25_000 });
     await expect(reject).toBeEnabled();
