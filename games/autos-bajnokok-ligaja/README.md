@@ -22,6 +22,16 @@ A játék automatikusan a használt böngésző helyi tárhelyén mentődik; nin
 
 Az utolsó eredmény visszavonható. Korábbi meccs javításakor az attól kezdve bevitt eredmények és továbbjutási lépések törlődnek, mert hatással lehetnek a későbbi ellenfelekre.
 
+## Tornaelőzmények és az autók története
+
+A döntő végén a **Torna elmentése az előzményekbe** gomb a rendszerben elmenti a teljes lezárt tornát. A tornának saját név adható. Az **Új bajnokság** indítása is automatikusan elmenti az előző befejezett tornát, mielőtt új játékra vált. Egy már elmentett torna ismételt mentése frissíti a meglévő rekordot, így a statisztikában nem szerepel kétszer.
+
+Az **Előzmények** nézet az új játék előtt és a játék közben is elérhető. A korábbi tornákból visszanézhető a teljes alapszakasz-tabella, minden párharc, az egyes ugratások győztese és az, hogy melyik autó meddig jutott. Az autók összesítésében szerepel a tornák száma, bajnoki címek, döntők, nyolcaddöntős szereplések, összes győzelem/vereség és győzelmi arány. Egy autó nevére kattintva a tornánkénti szereplései is láthatók. A győzelmek és vereségek minden ugratást számolnak, a többmeccses kieséses párharcokban is.
+
+Az autók történetét a nevük kapcsolja össze. Ugyanazt az autót minden tornán ugyanazzal az egyedi névvel nevezd; másik kalapba vagy másik helyre kerülhet. Az elért szakasz egyenrangú kiesői között nincs utólagos helyosztó: a megjelenítési sorrendet a szakasz és az alapszakasz-helyezés adja.
+
+Az előzmények külön böngészőtárban vannak, így az új bajnokság és az aktív játék cseréje megtartja őket. Nincs szerveres szinkron. Az **Összes előzmény letöltése** egy közös JSON mentést készít. A **Mentés betöltése** ezt másik eszközön is beolvassa, és összevonja a meglévő előzményekkel; az ismételt import nem duplázza a tornákat. Üres eszközön a legutóbbi torna autólistáját is előkészíti az új játékhoz.
+
 ## Technika
 
 Függőség nélküli statikus HTML/CSS/JavaScript. A `dist/` könyvtár tetszőleges statikus tárhelyen kiszolgálható. Az ellenőrzésekhez Node.js 24+, `npm ci`, majd `npm test` és `npm run check` használható. A jsdom kizárólag fejlesztési tesztfüggőség, az online oldal nem tölti be. A Sites saját tárhelyén owner-private online oldal fut.

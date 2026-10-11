@@ -2,7 +2,7 @@ const {JSDOM}=require('jsdom');
 const test=require('node:test');
 const fs=require('node:fs');const assert=require('node:assert/strict');
 const base=require('node:path').join(__dirname,'../dist/');
-const E=require(base+'engine.js');const R=require(base+'roster.js');
+const E=require(base+'engine.js');const R=require(base+'roster.js');const H=require(base+'history.js');
 const pots=Array.from({length:4},(_,p)=>Array.from({length:8},(_,i)=>`Autó ${p+1}–${i+1}`));
 function page(storage={}){
  const dom=new JSDOM(fs.readFileSync(base+'index.html','utf8'),{url:'https://autos-bajnokok-ligaja.mbudai.chatgpt.site',runScripts:'outside-only'}),w=dom.window,d=w.document;
@@ -12,7 +12,7 @@ function page(storage={}){
  w.Blob=Blob;w.URL.createObjectURL=blob=>{captured=blob;return 'blob:test';};w.URL.revokeObjectURL=()=>{};
  d.addEventListener('click',e=>{if(e.target.tagName==='A')e.preventDefault();});
  w.addEventListener('error',e=>errors.push(e.error));for(const [k,v] of Object.entries(storage))w.localStorage.setItem(k,v);
- for(const file of ['engine.js','roster.js','app.js'])w.eval(fs.readFileSync(base+file,'utf8'));
+ for(const file of ['engine.js','roster.js','history.js','app.js'])w.eval(fs.readFileSync(base+file,'utf8'));
  const get=id=>d.getElementById(id);const flush=()=>{for(const [id,t] of [...timers])if(t.ms<=450){timers.delete(id);t.fn();}};
  function click(selector){const el=selector.startsWith('#')?get(selector.slice(1)):d.querySelector(selector);assert(el,selector+' is present');assert(!el.disabled,selector+' is enabled');el.click();assert.deepEqual(errors,[]);return el;}
  function fill(values=pots){values.forEach((p,k)=>p.forEach((n,i)=>{get('setupForm').elements['car-'+k+'-'+i].value=n;}));get('setupForm').dispatchEvent(new w.Event('input',{bubbles:true}));}
@@ -43,4 +43,11 @@ test('A felület gombjai: mentés, visszatöltés, új játék, teljes torna és
  // A másik megnyitott lapban új bajnokságot kezdenek: a régi állás ne maradjon kattintható.
  p=page();p.fill();p.start();p.w.localStorage.removeItem('autos-bl-v1');p.w.dispatchEvent(new p.w.StorageEvent('storage',{key:'autos-bl-v1',newValue:null}));assert(p.get('setupForm'),'Másik lapból törölt bajnokságnál a kezdőlapnak kell megjelennie.');p.close();
  console.log('PASS: több megnyitott lap állapotváltása.');
+});
+test('Tornaelőzmény mentése, újranyitás, autók statisztikái és az összes előzmény visszatöltése',async()=>{
+ const finished=E.create(pots,187);while(true){const d=E.derive(finished);if(d.champion)break;if(d.match)finished.events.push({type:'win',stage:d.current.id,tie:d.match.id,winner:d.match.a});else finished.events.push({type:'advance'});}
+ let p=page({'autos-bl-v1':JSON.stringify(finished)});p.get('tournamentTitle').value='Vasárnapi kupa';p.click('#saveChampion');assert.equal(H.load(p.w.localStorage).tournaments.length,1);assert.match(p.get('main').textContent,/szerepel az előzmények/);p.click('#saveChampion');assert.equal(H.load(p.w.localStorage).tournaments.length,1);
+ p.click('[data-view="history"]');assert.equal(p.d.querySelectorAll('.history-card').length,1);assert.equal(p.d.querySelectorAll('tbody tr').length,32);p.click('[data-history-car]');assert.match(p.get('main').textContent,/Bajnoki cím/);assert.match(p.get('main').textContent,/Vasárnapi kupa/);p.click('#backHistory');p.click('.history-card');assert.equal(p.d.querySelectorAll('.archive-game').length,151);assert.equal(p.d.querySelectorAll('[data-edit]').length,0);assert.match(p.get('main').textContent,/Ki meddig jutott/);assert.equal(p.state().events.length,finished.events.length);p.click('#downloadArchived');assert.equal(JSON.parse(await p.blob().text()).events.length,finished.events.length);
+ p.click('[data-view="play"]');p.click('#restartChampion');p.click('#dialogOK');await tick();assert.equal(p.state(),null);assert.equal(H.load(p.w.localStorage).tournaments.length,1);const snapshot=p.snapshot();p.close();p=page(snapshot);p.click('[data-view="history"]');assert.equal(p.d.querySelectorAll('.history-card').length,1);p.click('#exportHistoryButton');const backup=JSON.parse(await p.blob().text());assert.equal(backup.kind,H.KIND);assert.equal(backup.tournaments[0].title,'Vasárnapi kupa');p.click('[data-view="play"]');p.start();assert.equal(p.d.querySelectorAll('.car-prior').length,2);p.close();
+ p=page();const file=p.get('importFile');Object.defineProperty(file,'files',{value:[{size:JSON.stringify(backup).length,text:async()=>JSON.stringify(backup)}]});file.dispatchEvent(new p.w.Event('change'));await tick();assert.equal(H.load(p.w.localStorage).tournaments.length,1);assert.equal(p.state(),null);assert.equal(p.d.querySelectorAll('.history-card').length,1);p.click('[data-view="play"]');assert.equal(p.get('setupForm').elements['car-2-3'].value,pots[2][3]);file.dispatchEvent(new p.w.Event('change'));await tick();assert.equal(H.load(p.w.localStorage).tournaments.length,1);p.close();
 });
