@@ -14,6 +14,10 @@ Pontazonosság: pont → összes kisorsolt ellenfél alapszakaszpontjainak össz
 
 ## Mentés
 
+Az autólista (32 autó és a négy kalap) a bajnokság indításakor külön automatikusan elmentődik. Az **Autólista mentése** gombbal indulás előtt is elmenthető. Az **Új bajnokság** megtartja a korábbi autókat és a kalapbeosztást; az új sorsolás előtt a névmezők már ki vannak töltve. A kezdőoldalon a **Mentett autók betöltése** gombbal bármikor visszatölthető az elmentett lista.
+
+Az **Autólista letöltése** eredmények nélküli `autos-bl-autolista.json` fájlt készít. A **Mentés / autólista betöltése** ezt másik eszközön is beolvassa egy új bajnokság előkészítéséhez. A jelenleg futó bajnokság cseréje előtt megerősítést kér. A korábbi bajnokságmentések továbbra is használhatók.
+
 A játék automatikusan a használt böngésző helyi tárhelyén mentődik; nincs szerveres vagy eszközök közötti automatikus szinkron. Mentés és beállítások → Mentés letöltése / betöltése. A mentés JSON fájl, azonos sorsolást és teljes eseménynaplót tartalmaz. Az Állás másolása a chathez gomb a tabellát és a teljes versenyállást is másolja.
 
 Az utolsó eredmény visszavonható. Korábbi meccs javításakor az attól kezdve bevitt eredmények és továbbjutási lépések törlődnek, mert hatással lehetnek a későbbi ellenfelekre.
