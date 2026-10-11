@@ -24,6 +24,8 @@ Az utolsó eredmény visszavonható. Korábbi meccs javításakor az attól kezd
 
 ## Technika
 
-Függőség nélküli statikus HTML/CSS/JavaScript. A `dist/` könyvtár tetszőleges statikus tárhelyen kiszolgálható. Node.js: `npm test`, `npm run check`. A Sites saját tárhelyén owner-private online oldal fut.
+Függőség nélküli statikus HTML/CSS/JavaScript. A `dist/` könyvtár tetszőleges statikus tárhelyen kiszolgálható. Az ellenőrzésekhez Node.js 24+, `npm ci`, majd `npm test` és `npm run check` használható. A jsdom kizárólag fejlesztési tesztfüggőség, az online oldal nem tölti be. A Sites saját tárhelyén owner-private online oldal fut.
+
+A tesztek 2000 sorsolást, teljes minimum- és maximumhosszú versenyeket, mentést/betöltést és a valódi JavaScript-gombkezelőket ellenőrzik. A DOM-teszt 175 eredményt visz be a felületen, eljut a döntőig, majd ugyanazokkal az autókkal új bajnokságot indít. Ellenőrzi azonos seedű bajnokság importját és a másik lapon indított új játék szinkronját is. A DOM-teszt nem ellenőrzi a CSS vizuális megjelenítését valódi mobilböngészőben.
 
 A bajnokságot determinisztikus sorsolás és eseménynaplóból újraszámolt állapot vezeti. A `dist/engine.js` a külön tesztelhető motor, `dist/app.js` a mobilfelület. Nincsenek API-kulcsok, külső betűtípusok vagy követők.
