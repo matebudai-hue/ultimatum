@@ -1,6 +1,6 @@
 'use strict';
 // Only this app's shell cache changes between releases. Never touch localStorage.
-const CACHE='toyota-omotenashi-shell-20261016-1';
+const CACHE='toyota-omotenashi-shell-20261016-2';
 const ROOT=new URL('./',self.location.href).href;
 const INDEX=new URL('./index.html',self.location.href).href;
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll([ROOT,INDEX]);})());});

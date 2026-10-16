@@ -17,7 +17,7 @@
 <div id="toast" class="toast hidden" role="status"></div><div id="print-area"></div>
 <script>
 'use strict';
-const APP_VERSION='2026.10.16.1';
+const APP_VERSION='2026.10.16.2';
 // The storage key never includes a release number: updates must preserve participant notes.
 const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup';
 const STAGES=['Toyota on the Road','Páros beszélgetések','Gyári megfigyelések','Mit láttunk?','Kaizen a kereskedésben','Személyes vezetői terv','Páros transzfer','Jegyzeteim és mentés'];
@@ -137,7 +137,7 @@ function bind(){
 }
 function renderKeepingScroll(){const y=scrollY;render();scrollTo(0,y);}
 $('stage').onchange=e=>setStage(Number(e.target.value));$('summary-button').onclick=()=>setStage(7);$('prev').onclick=()=>setStage(state.stage-1);$('next').onclick=()=>setStage(state.stage===7?0:state.stage+1);
-window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
+// Every edit is saved synchronously. Closing an old tab must never write a stale snapshot.
 // A second tab must not silently replace notes created in the first tab.
 window.addEventListener('storage',event=>{if(event.key===KEY&&event.newValue&&event.newValue!==JSON.stringify(state)){try{const newer=JSON.parse(event.newValue);if(!valid(newer))return;tabConflict=true;storageOK=false;status();}catch{}}});
 let offlineReady=false;
