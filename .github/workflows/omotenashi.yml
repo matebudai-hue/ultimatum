@@ -5,6 +5,11 @@ on:
     paths:
       - 'omotenashi/**'
       - '.github/workflows/omotenashi.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'omotenashi/**'
+      - '.github/workflows/omotenashi.yml'
   workflow_dispatch:
 permissions:
   contents: read
