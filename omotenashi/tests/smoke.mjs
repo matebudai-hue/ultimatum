@@ -17,7 +17,7 @@ await page.goto(url);assert.equal(await page.getByText('Progrész kiválasztása
 await field('road.expectation').fill('Szeretném megkönnyíteni a kollégáim munkáját.');
 await page.locator('[data-focus="2"]').check();await field('road.other').fill('Kiszámítható átadási folyamat.');
 await page.screenshot({path:root+'/build/omotenashi_qa/01_road.png',fullPage:true});
-await stage(1);await field('pairs.0.partner').fill('Teszt Anna');await field('pairs.0.note').fill('Kulcsokat keresünk az átadás előtt.');
+await stage(1);assert.ok((await page.locator('section.panel').first().textContent()).includes('1. párcsere'));await page.locator('section.panel').first().locator('summary').click();await field('pairs.0.partner').fill('Teszt Anna');await field('pairs.0.note').fill('Kulcsokat keresünk az átadás előtt.');
 await field('pairs.1.note').fill('Egy egyértelmű közös hely kell.');await field('pairs.2.note').fill('Honnan látszik a munka állapota?');
 await page.click('#add-pair');await field('pairs.3.note').fill('Negyedik párcsere.');
 await page.reload();assert.ok(await page.locator('#storage-warning').isHidden());await stage(2);
