@@ -57,11 +57,11 @@ try{
  await page.screenshot({path:root+'/build/omotenashi_qa/06_quiz_question.png',fullPage:true});
  page.once('dialog',d=>d.accept());
  await page.locator('#next-q').click();
- assert.ok((await page.textContent('main')).includes('2900 / 3000'));
+ assert.ok((await page.textContent('main')).includes('29 / 30'));
  assert.equal(await page.locator('article.review').count(),30);
  assert.equal(await page.locator('.review .wrong').count(),1);
  assert.equal(await page.locator('.review .correct').count(),29);
- assert.ok((await page.textContent('main')).includes('termelési igazgatói')===false);
+ assert.ok(!(await page.textContent('main')).includes('Hibátlan eredmény.'));
  await page.screenshot({path:root+'/build/omotenashi_qa/07_quiz_result.png',fullPage:true});
  await page.reload();
  assert.equal(await page.locator('article.review').count(),30);
@@ -80,13 +80,13 @@ try{
   await page.locator('[data-choice="'+questions[i].a+'"]').click();
  }
  page.once('dialog',d=>d.accept());await page.locator('#next-q').click();
- assert.ok((await page.textContent('main')).includes('3000 / 3000'));
- assert.ok((await page.textContent('main')).includes('termelési igazgatói'));
+ assert.ok((await page.textContent('main')).includes('30 / 30'));
+ assert.ok((await page.textContent('main')).includes('Hibátlan eredmény.'));
  // Offline reload of the same in-app quiz page.
  await ctx.setOffline(true);
  await page.reload();
- assert.ok((await page.textContent('main')).includes('3000 / 3000'));
+ assert.ok((await page.textContent('main')).includes('30 / 30'));
  assert.equal(errors.length,0,errors.join('\n'));
  await ctx.close();
- console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score message','restart isolation','offline reopen','mobile overflow','no JS runtime errors']}));
+ console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score and neutral result text','restart isolation','offline reopen','mobile overflow','no JS runtime errors']}));
 }finally{if(browser)await browser.close();server.close();}
