@@ -35,7 +35,7 @@ A feldolgozás lépései:
 
 Indulás előtt internet mellett nyisd meg a linket. Várd meg az „Offline használatra kész” jelzést. Ugyanazon a telefonon, ugyanabban a böngészőben nyisd újra az oldalt: az előző jegyzeteid és saját szempontjaid visszatérnek. A progrészek között a felső választóval és az alsó Előző/Következő gombokkal léphetsz.
 
-A Jegyzeteim részből a teljes szöveg letölthető, másolható, a böngésző nyomtatásával PDF-be menthető és a telefon saját megosztójával/e-mail kliensével továbbadható. A letöltött JSON biztonsági másolat minden adatot megőriz és visszatölthető másik eszközön. A hosszú szöveg nem csonkolódik e-mail-küldéskor: az app ilyenkor fájlcsatolást ajánl.
+A Jegyzeteim részből a teljes szöveg letölthető, másolható, a böngésző nyomtatásával PDF-be menthető és a telefon saját megosztójával/e-mail kliensével továbbadható. A letöltött JSON biztonsági másolat a napló adatait és az elérhető kvízállást is megőrzi; másik eszközön visszatölthető. A kvízállás továbbra is külön tárolódik, de az új biztonsági másolat az összes adatot egyetlen fájlban tartalmazza. A hosszú szöveg nem csonkolódik e-mail-küldéskor: az app ilyenkor fájlcsatolást ajánl.
 
 A privát böngészési mód és a böngészőadatok törlése nem alkalmas két napon át megőrzött jegyzetelésre. Ha a helyi mentés nem működik, az app külön jelzi. Az adatokat nem gyűjtjük központilag.
 
@@ -45,10 +45,14 @@ Gemba/Genchi Genbutsu, Muda, vizuális menedzsment, sztenderdek, átadási ponto
 
 ## Frissítés és adatmegőrzés
 
+A résztvevői napló és a kvíz a szinkron, minden szerkesztésnél azonnal frissülő \`localStorage\` mentés mellett egy második, \`IndexedDB\`-ben tárolt példányt is készít (a \`data-safety.js\` segédmodullal). A helyi főmentés hiányakor, sérülésekor vagy a másodlagos mentés újabb verziójánál az alkalmazás vissza tudja tölteni a jó állapotot. Az új kód automatikus háttérszerverre **nem** küld adatot.
+
+A két helyi tároló ugyanazon böngészőeredethez tartozik, ezért egy böngésző-adattörlés, privát mód vége vagy böngésző általi teljes adattár-eviction **mindkettőt egyszerre** eltávolíthatja. A „Jegyzeteim és mentés” résznél kérhető \`navigator.storage.persist()\` védelem (a böngésző dönt a jóváhagyásáról), illetve letölthető a **napló + kvíz** JSON-másolat. A fájlt a résztvevőnek a Fájlok alkalmazásban, felhőmeghajtón vagy más saját biztonságos helyen meg kell őriznie. Az alkalmazás nem garantálhatja az adatmegőrzést, ha maga a böngésző törli az összes helyi adatot.
+
 A `toyota-omotenashi-notebook-v1` helyi mentési kulcs verziófrissítéskor változatlan marad. A meglévő megfigyelési listát és annak szerkesztéseit nem cseréljük vissza az alaplistára. Az offline gyorsítótár csak ehhez az almappához tartozik, és nem módosítja a többi játékot vagy a Toyota értékesítői megfigyelőappot.
 
 Frissítéskor az `APP_VERSION` és a service worker `CACHE` verziója együtt emelendő. Adatszerkezeti változásnál külön, nem destruktív migráció és mentési teszt szükséges. A böngészőben a Jegyzeteim / Az app frissítése rész kezdeményezhet ellenőrzést.
 
 ## Tesztek
 
-A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a helyi mentést, a lap bezárását és újranyitását, a teljes böngésző újraindítását, az offline újranyitást, egy appfrissítést, a saját szempontok megtartását, az export/importot és a mentési hibát. A kapcsolódó GitHub Actions workflow kizárólag az Omotenashi-app változásainál fut.
+A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független helyi mentést, a lap bezárását és újranyitását, a teljes böngésző újraindítását, az offline újranyitást, egy appfrissítést, a saját szempontok megtartását, az export/importot és a mentési hibát. A kapcsolódó GitHub Actions workflow kizárólag az Omotenashi-app változásainál fut.

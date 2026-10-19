@@ -29,6 +29,9 @@ try{
  assert.equal(await page.locator('a[href="./kviz.html"]').count(),1);
  await page.locator('a[href="./kviz.html"]').click();
  assert.equal(new URL(page.url()).pathname,'/omotenashi/kviz.html');
+ await page.locator('#start').waitFor({state:'visible'}); // External offline-safe storage helper may load just after navigation.
+ const diagnostic=await page.evaluate(()=>({url:location.href,title:document.title,scriptSrc:[...document.scripts].map(x=>({src:x.src,length:x.textContent.length})),header:document.querySelector('main')?.textContent.slice(0,130),questions:typeof QUESTIONS,html:document.documentElement.outerHTML.slice(0,110)}));
+ if(diagnostic.questions!=='object')throw Error('Quiz app was not initialized: '+JSON.stringify(diagnostic)+'; page errors: '+errors.join('; '));
  const questions=await page.evaluate(()=>QUESTIONS.map(q=>({a:q[3],options:q[2].length,why:q[4],term:q[0]})));
  assert.equal(questions.length,30);
  assert.ok(questions.every(q=>q.options===4&&q.why.length>50));
@@ -83,10 +86,15 @@ try{
  assert.ok((await page.textContent('main')).includes('30 / 30'));
  assert.ok((await page.textContent('main')).includes('Hibátlan eredmény.'));
  // Offline reload of the same in-app quiz page.
+ await page.evaluate(async()=>{
+  await OmotSafety.mirror('quiz',JSON.stringify(game));
+  localStorage.removeItem('toyota-omotenashi-quiz-v1');
+ });
  await ctx.setOffline(true);
  await page.reload();
+ await page.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')||'null')?.finished===true;}catch{return false;}});
  assert.ok((await page.textContent('main')).includes('30 / 30'));
  assert.equal(errors.length,0,errors.join('\n'));
  await ctx.close();
- console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score and neutral result text','restart isolation','offline reopen','mobile overflow','no JS runtime errors']}));
+ console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score and neutral result text','restart isolation','offline reopen','IndexedDB quiz rescue','mobile overflow','no JS runtime errors']}));
 }finally{if(browser)await browser.close();server.close();}
