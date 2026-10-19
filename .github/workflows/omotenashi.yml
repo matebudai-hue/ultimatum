@@ -1,6 +1,11 @@
-name: Omotenashi notebook checks
+name: Omotenashi notebook and quiz checks
 on:
   push:
+    branches: [main]
+    paths:
+      - 'omotenashi/**'
+      - '.github/workflows/omotenashi.yml'
+  pull_request:
     branches: [main]
     paths:
       - 'omotenashi/**'
@@ -28,6 +33,10 @@ jobs:
         env:
           OMOTENASHI_APP_DIR: ${{ github.workspace }}/omotenashi
         run: node omotenashi/tests/smoke.mjs
+      - name: Verify self-paced quiz, scoring and offline mode
+        env:
+          OMOTENASHI_APP_DIR: ${{ github.workspace }}/omotenashi
+        run: node omotenashi/tests/quiz.mjs
       - name: Save test report and screenshots
         if: always()
         uses: actions/upload-artifact@v4
