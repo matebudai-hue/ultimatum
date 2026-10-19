@@ -5,9 +5,20 @@ Mobilon használható, bejelentkezést nem kérő résztvevői webapp. A jegyzet
 ## A buszos program négy feladata
 
 1. Mit szeretnél hazavinni ebből a két napból? Szabad jegyzet, választható tanulási fókuszok és saját fókusz.
-2. Kahoot-kvíz. Külön felületen zajlik, nincs az appban.
+2. Toyota Way Challenge – beépített, saját tempóban játszható 30 kérdéses kvíz. Egyénileg, párban vagy kiscsoportban is kitölthető. 16 kiemelt fogalom, 100 pont/helyes válasz, nincs időbónusz. A helyes megoldásokat és a kérdésenkénti magyarázatokat csak a végleges lezárás után mutatja.
 3. Páros beszélgetések párcserékkel. Három konkrét kérdéshez külön jegyzet, további forduló is felvehető. A párcserét a tréner vezeti, biztonságos megállásnál.
 4. Felkészülés a gyárlátogatásra. Tíz konkrét megfigyelési szempontból 2–3 saját fókusz választható. A résztvevő átírhatja, törölheti és bővítheti a saját listáját.
+
+## Beépített Toyota Way Challenge
+
+A Toyota on the Road képernyőről a **Kvíz indítása vagy folytatása** hivatkozás a `kviz.html` belső nézetre visz. A résztvevői app linkje változatlan. A kitöltéshez nem kell Kahoot, belépés vagy regisztráció.
+
+- A válaszok között a lezárásig szabad visszalépni; mind a 30 kérdésre válaszolni kell a pontozáshoz.
+- Két kutatós kérdés közvetlen Google-keresési hivatkozással segíti az utánanézést.
+- A lezárás egy megerősítő lépés; utána a válaszok zárolva vannak, megjelenik a 0–3000 pontos eredmény és az összes kérdés indoklása.
+- A játékos vagy csapat neve opcionális. Az eredmény másolható. A játék csak helyben mentődik, központi ranglista és központi eredménygyűjtés nincs.
+- A kvíz mentési kulcsa `toyota-omotenashi-quiz-v1`, **elkülönül** a jegyzetek változatlan `toyota-omotenashi-notebook-v1` kulcsától. Az új játék kizárólag a kvíz válaszait törli.
+- Az alkalmazás offline gyorsítótára az index és a kvíz oldalt is tartalmazza; az első betöltéshez hálózat kell. A Google-keresésekhez természetesen internet szükséges.
 
 ## Gyárban és a gyárlátogatás után
 
