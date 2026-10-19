@@ -12,12 +12,12 @@
 <header><div class="head"><div class="brand">Toyota Omotenashi Manager<small>Kétnapos tanulási napló</small></div><button class="small-button" id="summary-button">Jegyzeteim</button></div></header>
 <div id="update-banner" class="banner hidden" role="status"></div>
 <div id="storage-warning" class="banner hidden" role="alert"></div>
-<main><label class="section-label" for="stage">Progrész kiválasztása</label><select id="stage"></select><div id="app"></div></main>
+<main><select id="stage" aria-label="Navigáció a programban"></select><div id="app"></div></main>
 <div class="bottom"><div class="bottom-inner"><div class="actions"><button id="prev" class="secondary">Előző</button><button id="next" class="primary">Következő</button></div><div class="save-line"><span id="save-status" role="status" aria-live="polite"></span><span id="offline-status"></span></div></div></div>
 <div id="toast" class="toast hidden" role="status"></div><div id="print-area"></div>
 <script>
 'use strict';
-const APP_VERSION='2026.10.19.3';
+const APP_VERSION='2026.10.19.5';
 // The storage key never includes a release number: updates must preserve participant notes.
 const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup';
 const STAGES=['Toyota on the Road','Páros beszélgetések','Gyári megfigyelések','Mit láttunk?','Kaizen a kereskedésben','Személyes vezetői terv','Páros transzfer','Jegyzeteim és mentés'];
