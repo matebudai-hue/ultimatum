@@ -83,10 +83,15 @@ try{
  assert.ok((await page.textContent('main')).includes('30 / 30'));
  assert.ok((await page.textContent('main')).includes('Hibátlan eredmény.'));
  // Offline reload of the same in-app quiz page.
+ await page.evaluate(async()=>{
+  await OmotSafety.mirror('quiz',JSON.stringify(game));
+  localStorage.removeItem('toyota-omotenashi-quiz-v1');
+ });
  await ctx.setOffline(true);
  await page.reload();
+ await page.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')||'null')?.finished===true;}catch{return false;}});
  assert.ok((await page.textContent('main')).includes('30 / 30'));
  assert.equal(errors.length,0,errors.join('\n'));
  await ctx.close();
- console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score and neutral result text','restart isolation','offline reopen','mobile overflow','no JS runtime errors']}));
+ console.log(JSON.stringify({status:'pass',quizQuestions:30,verified:['quiz link','individual team mode','draft persistence','cannot finish incomplete','no early answer leakage','final score','all explanations','perfect score and neutral result text','restart isolation','offline reopen','IndexedDB quiz rescue','mobile overflow','no JS runtime errors']}));
 }finally{if(browser)await browser.close();server.close();}
