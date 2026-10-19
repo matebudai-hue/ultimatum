@@ -56,3 +56,15 @@ Frissítéskor az `APP_VERSION` és a service worker `CACHE` verziója együtt e
 ## Tesztek
 
 A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független helyi mentést, a lap bezárását és újranyitását, a teljes böngésző újraindítását, az offline újranyitást, egy appfrissítést, a saját szempontok megtartását, az export/importot és a mentési hibát. A kapcsolódó GitHub Actions workflow kizárólag az Omotenashi-app változásainál fut.
+
+## UX-finomítás – 2026-10-19
+
+- Páros beszélgetések: egy párcsere kártyáján a kérdés és a rövid jegyzet jelenik meg először; a partner és a törlés külön nyitható.
+- Gyári megfigyelések: a kiválasztott fókuszok oldalnyitáskor felül jelennek meg; a navigációt az alsó léptető végzi.
+- Személyes vezetői terv: a hét mező két sorral indul, és gépelés közben nő. A korábbi adatok változatlanok.
+- Páros transzfer: a négy kérdés az oldal elejére került, a korábbi vezetői terv és a beszélgetőtárs külön nyitható.
+- Jegyzeteim és mentés: két elsődleges művelet (jegyzetek megosztása, teljes JSON-mentés). A többi beállítás és visszatöltés lenyitható, megmaradt. A jegyzetelőnézet alapból csukva.
+- Kvíz: a kérdésugrás összecsukható. A lezárás utáni képernyő elsőként a tévesztett kérdések magyarázatait mutatja, minden válasz külön megnyitható.
+- Alsó navigáció: a következő programrész megnevezése látható, nincs külön ismételt tovább gomb a gyári megfigyelések között.
+
+**Git-visszaállítási pont:** `backup/omotenashi-ux-elotti-20261019` (`26fc052159f7520594954d1814ca025cd067f81d`). Az app adatsémája és tárolási kulcsai változatlanok; a visszatérési pont a kódot rögzíti, nem a résztvevők egyéni böngészőadatait.
