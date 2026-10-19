@@ -153,18 +153,52 @@ function stamp(){return new Date().toLocaleDateString('sv-SE');}
 function bind(){
  document.querySelectorAll('[data-field]').forEach(el=>el.addEventListener('input',()=>{
   const path=el.dataset.field;setAt(path,path.endsWith('.source')?Number(el.value):el.value);save();
-  if(path.startsWith('observations.')){const i=Number(path.split('.')[1]);const x=state.observations[i];const title=document.querySelector(`[data-point-title="${i}"]`);if(title)title.textContent=x.title;const question=document.querySelector(`[data-point-question="${i}"]`);if(question)question.textContent=x.question;const badge=document.querySelector(`[data-point-badge="${i}"]`);if(badge)badge.textContent=(x.focus?'Fókusz ':'')+(x.evidence.trim()?'Jegyzetelve':'');if($('point-count'))$('point-count').textContent=state.observations.length+' szempont, '+state.observations.filter(x=>x.evidence.trim()).length+' jegyzettel';}
+  if(path.startsWith('observations.')){const i=Number(path.split('.')[1]);const x=state.observations[i];
+   const title=document.querySelector('[data-select-title="'+i+'"]');if(title)title.textContent=x.title;
+   const question=document.querySelector('[data-select-question="'+i+'"]');if(question)question.textContent=x.question;
+   const manageTitle=document.querySelector('[data-manage-title="'+i+'"]');if(manageTitle)manageTitle.textContent=x.title;
+   const noteStatus=document.querySelector('[data-note-status="'+i+'"]');if(noteStatus)noteStatus.textContent=x.evidence.trim()?'Jegyzet rögzítve':'Még nincs jegyzet';
+  }
   if(state.stage===7&&$('report-preview'))$('report-preview').textContent=report();
  }));
  document.querySelectorAll('[data-focus]').forEach(el=>el.onchange=()=>{const value=FOCUS[Number(el.dataset.focus)];state.road.focus=el.checked?[...new Set([...state.road.focus,value])]:state.road.focus.filter(x=>x!==value);save();});
- document.querySelectorAll('details[data-point-id]').forEach(el=>el.ontoggle=()=>{if(el.open)openPoints.add(el.dataset.pointId);else openPoints.delete(el.dataset.pointId);});
- document.querySelectorAll('[data-point-focus]').forEach(el=>el.onchange=()=>{state.observations[Number(el.dataset.pointFocus)].focus=el.checked;save();renderKeepingScroll();});
- document.querySelectorAll('[data-edit-point]').forEach(el=>el.onclick=()=>{const x=state.observations[Number(el.dataset.editPoint)];editing.has(x.id)?editing.delete(x.id):editing.add(x.id);openPoints.add(x.id);renderKeepingScroll();});
- document.querySelectorAll('[data-delete-point]').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.deletePoint),x=state.observations[i];if(!confirm('Törlöd ezt a szempontot és a hozzá tartozó jegyzetet?'))return;if(x.template)state.deletedTemplates.push(x.template);state.observations.splice(i,1);save();renderKeepingScroll();});
+ if($('manage-points'))$('manage-points').ontoggle=()=>{manageOpen=$('manage-points').open;};
+ document.querySelectorAll('[data-point-focus]').forEach(el=>el.onchange=()=>{
+  const i=Number(el.dataset.pointFocus);state.observations[i].focus=el.checked;save();
+  const row=document.querySelector('[data-choice-row="'+i+'"]');if(row)row.classList.toggle('chosen',el.checked);
+  if($('focus-count'))$('focus-count').textContent=state.observations.filter(x=>x.focus).length+' szempont kiválasztva';
+ });
+ document.querySelectorAll('[data-observation-source]').forEach(el=>el.onclick=()=>{
+  const i=Number(el.dataset.observationSource),source=Number(el.dataset.sourceValue);
+  state.observations[i].source=state.observations[i].source===source?0:source;save();
+  document.querySelectorAll('[data-observation-source="'+i+'"]').forEach(button=>{
+   const active=Number(button.dataset.sourceValue)===state.observations[i].source;
+   button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));
+  });
+  const label=document.querySelector('[data-field="observations.'+i+'.evidence"]')?.closest('label');
+  if(label)label.childNodes[0].textContent=state.observations[i].source===3?'Mire nem kaptál választ?':'Mit láttál vagy hallottál?';
+ });
+ document.querySelectorAll('[data-edit-point]').forEach(el=>el.onclick=()=>{
+  const x=state.observations[Number(el.dataset.editPoint)];
+  editing.has(x.id)?editing.delete(x.id):editing.add(x.id);manageOpen=true;renderKeepingScroll();
+ });
+ document.querySelectorAll('[data-delete-point]').forEach(el=>el.onclick=()=>{
+  const i=Number(el.dataset.deletePoint),x=state.observations[i];
+  if(!confirm('Törlöd ezt a szempontot és a hozzá tartozó jegyzetet?'))return;
+  if(x.template)state.deletedTemplates.push(x.template);
+  state.observations.splice(i,1);save();manageOpen=true;renderKeepingScroll();
+ });
  document.querySelectorAll('[data-delete-pair]').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.deletePair);if(!confirm('Törlöd ezt a beszélgetést és a jegyzetét?'))return;state.pairs.splice(i,1);save();renderKeepingScroll();});
  if($('add-pair'))$('add-pair').onclick=()=>{if(state.pairs.length>=40)return toast('Legfeljebb 40 beszélgetési jegyzetet hozhatsz létre.');state.pairs.push({id:uid(),question:PAIR_QUESTIONS[state.pairs.length%3],partner:'',note:''});save();render();document.querySelectorAll('.panel')[state.pairs.length-1]?.scrollIntoView({block:'start'});};
- if($('add-point'))$('add-point').onclick=()=>{if(state.observations.length>=100)return toast('Legfeljebb 100 megfigyelési szempontot hozhatsz létre.');const x=point();x.focus=true;state.observations.push(x);openPoints.add(x.id);editing.add(x.id);save();render();document.querySelector(`[data-point-id="${x.id}"]`).scrollIntoView({block:'start'});document.querySelector(`[data-field="observations.${state.observations.length-1}.title"]`).focus({preventScroll:true});};
- if($('all-points'))$('all-points').onclick=()=>{focusedOnly=false;renderKeepingScroll();};if($('focused-points'))$('focused-points').onclick=()=>{focusedOnly=true;renderKeepingScroll();};
+ if($('add-point'))$('add-point').onclick=()=>{
+  if(state.observations.length>=100)return toast('Legfeljebb 100 megfigyelési szempontot hozhatsz létre.');
+  const x=point();x.focus=true;state.observations.push(x);editing.add(x.id);
+  manageOpen=true;save();render();
+  const field=document.querySelector('[data-field="observations.'+(state.observations.length-1)+'.title"]');
+  field?.scrollIntoView({block:'center'});field?.focus({preventScroll:true});
+ };
+ if($('to-notes'))$('to-notes').onclick=()=>setStage(3);
+ if($('back-to-focus'))$('back-to-focus').onclick=()=>setStage(2);
  if($('download-txt'))$('download-txt').onclick=()=>{save();download('\ufeff'+report(),'Toyota_Omotenashi_jegyzeteim_'+stamp()+'.txt','text/plain;charset=utf-8');};
  if($('backup'))$('backup').onclick=()=>{save();download(JSON.stringify({format:'toyota-omotenashi-notebook',exportedAt:new Date().toISOString(),state},null,2),'Toyota_Omotenashi_biztonsagi_masolat_'+stamp()+'.json','application/json');};
  if($('raw-backup'))$('raw-backup').onclick=()=>{try{download(localStorage.getItem(KEY+'-unreadable')||localStorage.getItem(KEY)||JSON.stringify(state),'Toyota_Omotenashi_helyi_mentes_'+stamp()+'.json','application/json');}catch{toast('A böngésző nem ad hozzáférést a helyi mentéshez. A Másolat letöltése gombot használd.');}};
