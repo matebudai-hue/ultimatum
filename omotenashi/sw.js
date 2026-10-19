@@ -1,6 +1,6 @@
 'use strict';
 // Only this app's shell cache changes between releases. Never touch localStorage.
-const CACHE='toyota-omotenashi-shell-20261019-9';
+const CACHE='toyota-omotenashi-shell-20261019-11';
 const ROOT=new URL('./',self.location.href).href;
 const INDEX=new URL('./index.html',self.location.href).href;
 const QUIZ=new URL('./kviz.html',self.location.href).href;

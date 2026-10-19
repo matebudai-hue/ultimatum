@@ -46,12 +46,12 @@ try{
  assert.equal(await page.locator('[data-choice="1"]').getAttribute('aria-pressed'),'true');
  assert.equal(await page.locator('.map button.done').count(),1);
  // Ensure unfinished quiz cannot be scored and missing answers are located.
- await page.locator('[data-jump="29"]').click();
+ assert.equal(await page.locator('#question-jump').getAttribute('open'),null);await page.locator('#question-jump summary').click();await page.locator('[data-jump="29"]').click();
  await page.locator('#next-q').click();
  assert.ok((await page.textContent('main')).includes('1 / 30. kérdés')||await page.locator('.map button.current').textContent()==='2');
  // Fill all; deliberately miss only one question to test feedback.
  for(let i=0;i<questions.length;i++){
-  await page.locator('[data-jump="'+i+'"]').click();
+  await page.locator('#question-jump summary').click();await page.locator('[data-jump="'+i+'"]').click();
   const selected=i===5?(questions[i].a+1)%4:questions[i].a;
   await page.locator('[data-choice="'+selected+'"]').click();
  }
@@ -61,13 +61,13 @@ try{
  page.once('dialog',d=>d.accept());
  await page.locator('#next-q').click();
  assert.ok((await page.textContent('main')).includes('29 / 30'));
- assert.equal(await page.locator('article.review').count(),30);
- assert.equal(await page.locator('.review .wrong').count(),1);
- assert.equal(await page.locator('.review .correct').count(),29);
+ assert.equal(await page.locator('#missed-review article.review').count(),1);assert.equal(await page.locator('#all-review article.review').count(),30);
+ assert.equal(await page.locator('#missed-review .review .wrong').count(),1);
+ assert.equal(await page.locator('#all-review .review .correct').count(),29);
  assert.ok(!(await page.textContent('main')).includes('Hibátlan eredmény.'));
  await page.screenshot({path:root+'/build/omotenashi_qa/07_quiz_result.png',fullPage:true});
  await page.reload();
- assert.equal(await page.locator('article.review').count(),30);
+ assert.equal(await page.locator('#all-review article.review').count(),30);
  assert.equal(await page.locator('[data-choice]').count(),0);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Mobile horizontal overflow');
  const notebook=await page.evaluate(()=>localStorage.getItem('toyota-omotenashi-notebook-v1'));
@@ -79,12 +79,12 @@ try{
  await page.locator('#start').click();
  // New game can reach the highest category.
  for(let i=0;i<questions.length;i++){
-  await page.locator('[data-jump="'+i+'"]').click();
+  await page.locator('#question-jump summary').click();await page.locator('[data-jump="'+i+'"]').click();
   await page.locator('[data-choice="'+questions[i].a+'"]').click();
  }
  page.once('dialog',d=>d.accept());await page.locator('#next-q').click();
  assert.ok((await page.textContent('main')).includes('30 / 30'));
- assert.ok((await page.textContent('main')).includes('Hibátlan eredmény.'));
+ assert.ok((await page.textContent('main')).includes('Hibátlan eredmény.'));assert.equal(await page.locator('#missed-review').count(),0);assert.equal(await page.locator('#all-review article.review').count(),30);
  // Offline reload of the same in-app quiz page.
  await page.evaluate(async()=>{
   await OmotSafety.mirror('quiz',JSON.stringify(game));
