@@ -46,6 +46,7 @@ input[type=text],select{display:block;width:100%;font-size:16px;min-height:47px;
 .hidden{display:none!important}
 @media(max-width:420px){main{padding:16px 13px 45px}.head{padding:13px}.brand{font-size:16px}.back{font-size:12px}h1{font-size:27px}.panel{padding:15px}.map{grid-template-columns:repeat(6,minmax(0,1fr))}.actions>*{min-width:115px}}
 @media print{header,.actions,.back,.map,.search,#toast{display:none!important}main{padding:0}.panel{border:0}}
+.jump-details summary,.all-details summary{cursor:pointer;font-weight:700;min-height:44px;padding:9px 0;line-height:1.45}.jump-details summary:focus-visible,.all-details summary:focus-visible{outline:3px solid #1765b0;outline-offset:3px}.review-list{margin-top:12px}
 </style>
 </head>
 <body>
@@ -99,7 +100,7 @@ function renderIntro(){
 function navButtons(){return '<div class="actions"><button class="secondary" id="prev-q" '+(game.current===0?'disabled':'')+'>Előző kérdés</button><button class="primary" id="next-q">'+(game.current===QUESTIONS.length-1?'Lezárás és értékelés':'Következő kérdés')+'</button></div>';}
 function renderQuestion(){
  const i=game.current,q=QUESTIONS[i],answered=count();
- $('view').innerHTML=tagLine()+'<h1>Toyota Way Challenge</h1><div class="pills"><span class="pill">'+(i+1)+' / '+QUESTIONS.length+'. kérdés</span><span class="pill">'+answered+' megválaszolva</span><span class="pill">'+esc(q[0])+'</span></div><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="30" aria-valuenow="'+answered+'" aria-label="Megválaszolt kérdések"><div style="width:'+(answered/QUESTIONS.length*100)+'%"></div></div><section class="panel"><h2>'+esc(q[1])+'</h2>'+(q[5]?'<p class="muted">Kutatós kérdés: itt szabad és érdemes utánanézni.</p><a class="search" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent(q[5])+'">Keressetek rá a Google-ben ↗</a>':'')+q[2].map((o,n)=>'<button class="option'+(game.answers[i]===n?' selected':'')+'" data-choice="'+n+'" aria-pressed="'+(game.answers[i]===n)+'"><span class="letter">'+ABC[n]+'.</span><span>'+esc(o)+'</span></button>').join('')+'<p class="muted">A választ a lezárásig bármikor módosíthatjátok. A helyes megoldást addig nem mutatjuk.</p></section>'+navButtons()+'<section class="panel"><h3>Ugrás másik kérdéshez</h3><div class="map" aria-label="Kérdésválasztó">'+QUESTIONS.map((x,n)=>'<button data-jump="'+n+'" class="'+(game.answers[n]!==null?'done ':'')+(i===n?'current':'')+'" aria-label="'+(n+1)+'. kérdés'+(game.answers[n]!==null?', megválaszolva':'')+'">'+(n+1)+'</button>').join('')+'</div><p class="small">A halványzöld mezők már megválaszolt kérdéseket jelölnek. A pontszám csak a lezárás után látható.</p></section>'+storageNote()+'<footer>Játékidő nincs. A páros megbeszélés és a Google-keresés a feladat része.</footer>';
+ $('view').innerHTML=tagLine()+'<h1>Toyota Way Challenge</h1><div class="pills"><span class="pill">'+(i+1)+' / '+QUESTIONS.length+'. kérdés</span><span class="pill">'+answered+' megválaszolva</span><span class="pill">'+esc(q[0])+'</span></div><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="30" aria-valuenow="'+answered+'" aria-label="Megválaszolt kérdések"><div style="width:'+(answered/QUESTIONS.length*100)+'%"></div></div><section class="panel"><h2>'+esc(q[1])+'</h2>'+(q[5]?'<p class="muted">Kutatós kérdés: itt szabad és érdemes utánanézni.</p><a class="search" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent(q[5])+'">Keressetek rá a Google-ben ↗</a>':'')+q[2].map((o,n)=>'<button class="option'+(game.answers[i]===n?' selected':'')+'" data-choice="'+n+'" aria-pressed="'+(game.answers[i]===n)+'"><span class="letter">'+ABC[n]+'.</span><span>'+esc(o)+'</span></button>').join('')+'<p class="muted">A választ a lezárásig bármikor módosíthatjátok. A helyes megoldást addig nem mutatjuk.</p></section>'+navButtons()+'<details class="panel jump-details" id="question-jump"><summary>Ugrás másik kérdéshez</summary><div class="map" aria-label="Kérdésválasztó">'+QUESTIONS.map((x,n)=>'<button data-jump="'+n+'" class="'+(game.answers[n]!==null?'done ':'')+(i===n?'current':'')+'" aria-label="'+(n+1)+'. kérdés'+(game.answers[n]!==null?', megválaszolva':'')+'">'+(n+1)+'</button>').join('')+'</div><p class="small">A halványzöld mezők már megválaszolt kérdéseket jelölnek. A pontszám csak a lezárás után látható.</p></details>'+storageNote()+'<footer>Játékidő nincs. A páros megbeszélés és a Google-keresés a feladat része.</footer>';
  document.querySelectorAll('[data-choice]').forEach(el=>el.onclick=()=>{game.answers[game.current]=Number(el.dataset.choice);save();renderQuestion();});
  document.querySelectorAll('[data-jump]').forEach(el=>el.onclick=()=>{game.current=Number(el.dataset.jump);save();render();scrollUp();});
  $('prev-q').onclick=()=>{if(game.current>0){game.current--;save();render();scrollUp();}};
@@ -113,10 +114,36 @@ function finish(){
 }
 function correctCount(){return game.answers.reduce((a,x,i)=>a+(x===QUESTIONS[i][3]?1:0),0);}
 function resultsText(){const c=correctCount();return 'Toyota Way Challenge\n'+(game.team?'Játékos / csapat: '+game.team+'\n':'')+(game.mode==='solo'?'Egyéni':game.mode==='pair'?'Páros':'Kiscsoportos')+' játék\nEredmény: '+c+'/30 pont\n'+(c===30?'Hibátlan eredmény.\n':'')+'Lezárva: '+new Date(game.finishedAt).toLocaleString('hu-HU');}
+function reviewCard(q,i){
+ const right=game.answers[i]===q[3];
+ return '<article class="review"><p class="eyebrow">'+(i+1)+'. kérdés · '+esc(q[0])+'</p>'+
+ '<h3>'+esc(q[1])+'</h3><p class="'+(right?'correct':'wrong')+'">'+(right?'Helyes válasz · +1 pont':'Érdemes átnézni · 0 pont')+'</p>'+
+ '<div class="answerline"><b>A választott lehetőség:</b> '+ABC[game.answers[i]]+'. '+esc(q[2][game.answers[i]])+'</div>'+
+ (!right?'<div class="answerline"><b>Helyes megoldás:</b> '+ABC[q[3]]+'. '+esc(q[2][q[3]])+'</div>':'')+
+ '<p class="explanation">'+esc(q[4])+'</p>'+
+ (q[6]?'<a class="search" target="_blank" rel="noopener noreferrer" href="'+esc(q[6])+'">Toyota-forrás megnyitása ↗</a>':'')+
+ '</article>';
+}
 function renderResult(){
- const c=correctCount();
- $('view').innerHTML=tagLine()+'<h1>A kvíz eredménye</h1><section class="panel"><p class="eyebrow">'+esc(game.team||'Toyota Way Challenge')+'</p><div class="score">'+c+' / 30</div><p class="muted">'+c+' helyes válasz a 30-ból · '+Math.round(c/30*100)+'%</p><div class="progress"><div style="width:'+(c/30*100)+'%"></div></div><p class="intro">'+(c===30?'Hibátlan eredmény.':'A tévesztett válaszok magyarázatait érdemes átnézni.')+'</p><div class="actions"><button class="secondary" id="copy-score">Eredmény másolása</button><button class="primary" id="show-review">Megoldások és magyarázatok</button></div></section><section class="panel" id="review"><h2>Kérdésenkénti visszajelzés</h2><p class="intro">A saját választ, a helyes megoldást és a szakmai magyarázatot is látjátok. Így a tévesztésekből is lehet tanulni.</p>'+QUESTIONS.map((q,i)=>{const right=game.answers[i]===q[3];return '<article class="review"><p class="eyebrow">'+(i+1)+'. kérdés · '+esc(q[0])+'</p><h3>'+esc(q[1])+'</h3><p class="'+(right?'correct':'wrong')+'">'+(right?'Helyes válasz · +1 pont':'Ezt most másképp érdemes értelmezni · 0 pont')+'</p><div class="answerline"><b>A választott lehetőség:</b> '+ABC[game.answers[i]]+'. '+esc(q[2][game.answers[i]])+'</div>'+(!right?'<div class="answerline"><b>Helyes megoldás:</b> '+ABC[q[3]]+'. '+esc(q[2][q[3]])+'</div>':'')+'<p class="explanation">'+esc(q[4])+'</p>'+(q[6]?'<a class="search" target="_blank" rel="noopener noreferrer" href="'+esc(q[6])+'">Toyota-forrás megnyitása ↗</a>':'')+'</article>';}).join('')+'</section><div class="actions"><a href="./" class="secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Vissza a tanulási naplóhoz</a><button id="restart" class="light">Új játék indítása</button></div>'+storageNote()+'<footer>A játék lezárt eredménye ebben a böngészőben marad. Az új játék törli a korábbi kvízeredményt, de a tanulási naplót nem érinti.</footer>';
- $('show-review').onclick=()=>$('review').scrollIntoView({behavior:'smooth'});
+ const c=correctCount(),missed=QUESTIONS.map((q,i)=>({q,i})).filter(({q,i})=>game.answers[i]!==q[3]);
+ $('view').innerHTML=tagLine()+'<h1>A kvíz eredménye</h1>'+
+ '<section class="panel"><p class="eyebrow">'+esc(game.team||'Toyota Way Challenge')+'</p>'+
+ '<div class="score">'+c+' / 30</div><p class="muted">'+c+' helyes válasz a 30-ból · '+Math.round(c/30*100)+'%</p>'+
+ '<div class="progress"><div style="width:'+(c/30*100)+'%"></div></div>'+
+ '<p class="intro">'+(c===30?'Hibátlan eredmény. A magyarázatokat is áttekinthetitek.':
+ 'Először a tévesztett válaszokat érdemes áttekinteni. Minden kérdés magyarázata megmaradt.')+'</p>'+
+ '<div class="actions"><button class="secondary" id="copy-score">Eredmény másolása</button>'+
+ '<button class="primary" id="show-review">Magyarázatok megtekintése</button></div></section>'+
+ '<section class="panel" id="review"><h2>'+ (missed.length?'Tévesztett kérdések ('+missed.length+')':'Kérdések és magyarázatok')+'</h2>'+
+ (missed.length?'<p class="intro">A saját válaszod, a helyes megoldás és a rövid szakmai magyarázat.</p>'+
+ '<div id="missed-review" class="review-list">'+missed.map(({q,i})=>reviewCard(q,i)).join('')+'</div>':
+ '<p class="intro">Mind a harminc kérdésre helyes választ adtatok. Az összes magyarázatot alább megnyithatjátok.</p>')+
+ '<details class="all-details" id="all-review"><summary>Az összes kérdés és magyarázat (30)</summary>'+
+ '<div class="review-list">'+QUESTIONS.map((q,i)=>reviewCard(q,i)).join('')+'</div></details></section>'+
+ '<div class="actions"><a href="./" class="secondary" style="display:flex;align-items:center;justify-content:center;text-decoration:none">Vissza a tanulási naplóhoz</a>'+
+ '<button id="restart" class="light">Új játék indítása</button></div>'+storageNote()+
+ '<footer>A lezárt eredmény ebben a böngészőben marad. Az új játék csak a kvízt állítja alaphelyzetbe.</footer>';
+ $('show-review').onclick=()=>{$('review').scrollIntoView({behavior:'smooth'});if(!missed.length)$('all-review').open=true;};
  $('copy-score').onclick=async()=>{try{await navigator.clipboard.writeText(resultsText());notify('Az eredményt a vágólapra másoltuk.');}catch{notify('Ezen a böngészőn a másolás nem sikerült.');}};
  $('restart').onclick=()=>{if(!confirm('Új játékot kezdesz? A korábbi pontszám és az összes kvízválasz törlődik. A naplód érintetlen marad.'))return;const mode=game.mode,team=game.team;game=fresh();game.mode=mode;game.team=team;save();render();scrollUp();};
 }
