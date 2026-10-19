@@ -13,7 +13,7 @@ let ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--n
 let page=await ctx.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const stage=async i=>page.selectOption('#stage',String(i));
 const field=p=>page.locator(`[data-field="${p}"]`);
-await page.goto(url);await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>navigator.serviceWorker.controller);
+await page.goto(url);assert.equal(await page.getByText('Progrész kiválasztása').count(),0);assert.equal(await page.locator('#stage[aria-label="Navigáció a programban"]').count(),1);await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>navigator.serviceWorker.controller);
 await field('road.expectation').fill('Szeretném megkönnyíteni a kollégáim munkáját.');
 await page.locator('[data-focus="2"]').check();await field('road.other').fill('Kiszámítható átadási folyamat.');
 await page.screenshot({path:root+'/build/omotenashi_qa/01_road.png',fullPage:true});
