@@ -29,6 +29,7 @@ try{
  assert.equal(await page.locator('a[href="./kviz.html"]').count(),1);
  await page.locator('a[href="./kviz.html"]').click();
  assert.equal(new URL(page.url()).pathname,'/omotenashi/kviz.html');
+ await page.locator('#start').waitFor({state:'visible'}); // External offline-safe storage helper may load just after navigation.
  const diagnostic=await page.evaluate(()=>({url:location.href,title:document.title,scriptSrc:[...document.scripts].map(x=>({src:x.src,length:x.textContent.length})),header:document.querySelector('main')?.textContent.slice(0,130),questions:typeof QUESTIONS,html:document.documentElement.outerHTML.slice(0,110)}));
  if(diagnostic.questions!=='object')throw Error('Quiz app was not initialized: '+JSON.stringify(diagnostic)+'; page errors: '+errors.join('; '));
  const questions=await page.evaluate(()=>QUESTIONS.map(q=>({a:q[3],options:q[2].length,why:q[4],term:q[0]})));
