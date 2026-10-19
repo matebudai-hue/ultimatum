@@ -7,7 +7,7 @@ Mobilon használható, bejelentkezést nem kérő résztvevői webapp. A jegyzet
 1. Mit szeretnél hazavinni ebből a két napból? Szabad jegyzet, választható tanulási fókuszok és saját fókusz.
 2. Toyota Way Challenge – beépített, saját tempóban játszható 30 kérdéses kvíz. Egyénileg, párban vagy kiscsoportban is kitölthető. 16 kiemelt fogalom, 1 pont/helyes válasz, nincs időbónusz. A helyes megoldásokat és a kérdésenkénti magyarázatokat csak a végleges lezárás után mutatja.
 3. Páros beszélgetések párcserékkel. Három konkrét kérdéshez külön jegyzet, további forduló is felvehető. A párcserét a tréner vezeti, biztonságos megállásnál.
-4. Felkészülés a gyárlátogatásra. Tíz konkrét megfigyelési szempontból 2–3 saját fókusz választható. A résztvevő átírhatja, törölheti és bővítheti a saját listáját.
+4. Felkészülés a gyárlátogatásra. A tíz megfigyelési szempontból a buszon egyetlen koppintással kiválasztható 2–3 saját fókusz. Itt nem kell jegyzetelni; a kiválasztott kérdések a következő „Mit láttunk?” oldalon automatikusan megjelennek. A saját szempontok hozzáadása és szerkesztése továbbra is elérhető.
 
 ## Beépített Toyota Way Challenge
 
@@ -22,11 +22,11 @@ A Toyota on the Road képernyőről a **Kvíz indítása vagy folytatása** hiva
 
 ## Gyárban és a gyárlátogatás után
 
-A Gyári megfigyelések részben minden szemponthoz külön rögzíthető a forrás (láttam / a kísérőtől hallottam / nem volt megfigyelhető), a konkrét megfigyelés és a kereskedési kapcsolat.
+A **Gyári megfigyelések** oldalon a buszon csak a megfigyelési fókuszokat jelölik ki. A következő **Mit láttunk?** oldal automatikusan megmutatja ezek címét és kérdését, és külön forrásjelölőt (láttam / a kísérőtől hallottam / nem volt megfigyelhető), valamint egy jegyzetmezőt ad mindegyikhez. A forrás és a jegyzet az eredeti megfigyelési adatokba mentődik, ezért megmarad a riportban, exportban és biztonsági másolatban. A régi, de most nem kijelölt szempontokhoz tartozó feljegyzések az oldalon külön lenyitható blokkban megtalálhatók.
 
 A feldolgozás lépései:
 
-- Mit láttunk? Konkrét megfigyelés, értelmezés, visszatérés az induló várakozáshoz.
+- Mit láttunk? A buszon kijelölt kérdésekhez rövid, konkrét jegyzetek rögzítése; az egykori összegző kérdések külön lenyitható blokkban továbbra is kitölthetők.
 - Kaizen a kereskedésben. Négy egyszerű kérdés: miből indulok, hol van hasonló helyzet nálunk, mit próbálok ki, miből látom a javulást?
 - Személyes vezetői terv. Az elfogadott hét kérdés, a teljes képzésből választott egyetlen alkalmazással.
 - Páros transzfer. Négy segítő kérdés és az első lépés/időpont pontosítása, 4–4 perces munkához.
