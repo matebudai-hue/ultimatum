@@ -45,7 +45,8 @@ assert.equal(await page.locator('section.panel').count(),5);
 assert.ok((await page.locator('#jelentes').textContent()).includes('Jidoka'));
 assert.ok((await page.locator('#mukodes').textContent()).includes('Jelzés.'));
 assert.ok((await page.locator('#pelda').textContent()).includes('Tíz perc múlva érkezik az ügyfél'));
-assert.ok((await page.locator('#vezeto').textContent()).includes('sztenderdizálást'));
+assert.ok((await page.locator('#vezeto').textContent()).includes('Milyen eltérést'));
+assert.ok(!(await page.locator('body').textContent()).includes('A workshopon a vezető és a munkatárs röviden eljátssza a jelzést és az első reakciót.'));
 {const overflow=await page.evaluate(()=>({window:innerWidth,scroll:document.documentElement.scrollWidth,x:scrollX,details:[...document.querySelectorAll('*')].map(el=>{let r=el.getBoundingClientRect();return {tag:el.tagName,cls:String(el.className).slice(0,35),id:el.id,text:el.textContent?.slice(0,36),right:Math.round(r.right+scrollX),left:Math.round(r.left+scrollX),client:el.clientWidth,scroll:el.scrollWidth,css:getComputedStyle(el).width};}).sort((a,b)=>b.right-a.right).slice(0,17)})); assert.ok(overflow.scroll<=overflow.window+1,'Andon mobile overflow: '+JSON.stringify(overflow));}
 await page.screenshot({path:root+'/build/omotenashi_qa/09_andon_mobile.png',fullPage:true});
 await page.locator('.back').click();
