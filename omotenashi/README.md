@@ -76,3 +76,12 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - Korábbi mentésekben a három, automatikusan létrejött, teljesen üres kérdéskártya egyetlen lapra egyszerűsödik. Bármely ténylegesen kitöltött korábbi beszélgetési jegyzet megmarad, az eredeti hozzá tartozó kérdés külön jelezve marad.
 - A meglévő `pairs[].question / partner / note` adatmezők, a JSON és a TXT export, valamint a helyi automatikus mentés változatlan adatszerkezettel működik.
 - Visszatérési pont: `backup/omotenashi-pares-beszelgetesek-elott-20261020` a `ec6e2b195ff2d29d04a3ec800bddbd36904bef92` commiton.
+
+## Ichigo Ichie – olvasnivaló és öt teljes történet (2026-10-20)
+
+- Külön statikus `ichigo-ichie.html` oldal a résztvevőknek: jelentés és történeti eredet, öt teljes történet feldolgozókérdésekkel, `dokuza kannen` történeti kiegészítés, Omotenashi–Ichigo Ichie összehasonlítás; eredeti szöveggel, hivatalos forráslinkekkel.
+- A tanulási napló valamennyi programrészének tetején megjelenik az „Ichigo Ichie – elmélet és öt történet” hivatkozás. Az anyag külön is megnyitható, a „Vissza a tanulási naplóhoz” megőrzi az aktuális programrészt.
+- A statikus olvasnivaló nem olvas és nem ír résztvevői adatot. A napló és a kvíz adattárolása, képernyői és sémái változatlanok.
+- A service worker verziózott offline csomagjába az olvasnivaló külön cache-bejegyzésként került, külön útvonalkezeléssel: offline a történetek nyílnak meg, nem véletlenül a napló kezdőlapja.
+- Regressziós teszt: mind az öt történet, a négy tartalmi fejezet, mobilos tördelés, visszalépés, jegyzetmegőrzés és offline újranyitás.
+- Visszaállítási pont: `backup/omotenashi-ichigo-tananyag-elott-20261020`, eredeti kód: `92fb0be4a310349399325f9c239a72c61ee0dc75`.
