@@ -11,19 +11,27 @@
 .compact-answer{min-height:64px;height:64px;overflow-y:hidden}.round-meta{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}.summary-action{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.summary-action>*{flex:1}.management{margin-top:18px}.management summary{font-size:14px;color:#3d4550}.focus-choice{scroll-margin-top:12px}
 .pair-questions{display:grid;gap:10px;margin:7px 0 16px}.pair-question{display:flex;align-items:flex-start;gap:9px;margin:0;font-size:15px;line-height:1.5}.pair-number{font-weight:800;color:var(--red);min-width:20px}.pair-card{scroll-margin-top:16px}
 .reading-link{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:50px;padding:10px 13px;margin:12px 0 4px;border:1px solid #d3d8dd;border-left:4px solid var(--red);border-radius:8px;background:#fff;color:#2b3137;text-decoration:none;font-weight:700;font-size:14px;line-height:1.35}.reading-link:focus-visible{outline:3px solid #1864ab;outline-offset:3px}.reading-link-title{flex:1}
+.reading-hub{background:#fff;border:1px solid #d3d8dd;border-left:4px solid var(--red);border-radius:8px;padding:11px 12px;margin:12px 0 4px}.reading-hub-caption{font-size:12px;line-height:1.45;color:#565e67;font-weight:700;margin-bottom:9px}.reading-hub-links{display:flex;gap:7px;flex-wrap:wrap}.reading-hub-links a{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;font-size:13px;font-weight:700;line-height:1.25;color:#202124;background:#f4f5f6;border:1px solid #dce0e4;border-radius:7px;padding:9px 10px;min-height:44px;flex:1 1 120px}.reading-hub-links a:focus-visible{outline:3px solid #1864ab;outline-offset:2px}
 </style>
 </head>
 <body>
 <header><div class="head"><div class="brand">Toyota Omotenashi Manager<small>Kétnapos tanulási napló</small></div><button class="small-button" id="summary-button">Jegyzeteim</button></div></header>
 <div id="update-banner" class="banner hidden" role="status"></div>
 <div id="storage-warning" class="banner hidden" role="alert"></div>
-<main><select id="stage" aria-label="Navigáció a programban"></select><a class="reading-link" id="ichigo-link" href="./ichigo-ichie.html"><span class="reading-link-title">Ichigo Ichie – elmélet és öt történet</span><span aria-hidden="true">→</span></a><div id="app"></div></main>
+<main><select id="stage" aria-label="Navigáció a programban"></select>
+<nav class="reading-hub" aria-label="Elméleti háttéranyagok">
+<div class="reading-hub-caption">Elméleti háttér · Megtanulod → Átadod → Megtanítod → Sztenderdizálod</div>
+<div class="reading-hub-links">
+<a id="ichigo-link" href="./ichigo-ichie.html">Ichigo Ichie <span aria-hidden="true">→</span></a>
+<a id="andon-link" href="./andon.html">Andon <span aria-hidden="true">→</span></a>
+<a id="standard-link" href="./sztenderdizalas.html">Sztenderdizálás <span aria-hidden="true">→</span></a>
+</div></nav><div id="app"></div></main>
 <div class="bottom"><div class="bottom-inner"><div class="actions"><button id="prev" class="secondary">Előző</button><button id="next" class="primary">Következő</button></div><div class="save-line"><span id="save-status" role="status" aria-live="polite"></span><span id="offline-status"></span></div></div></div>
 <div id="toast" class="toast hidden" role="status"></div><div id="print-area"></div>
 <script src="./data-safety.js"></script>
 <script>
 'use strict';
-const APP_VERSION='2026.10.20.4';
+const APP_VERSION='2026.10.20.5';
 // The storage key never includes a release number: updates must preserve participant notes.
 const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup';
 const STAGES=['Toyota on the Road','Páros beszélgetések','Gyári megfigyelések','Mit láttunk?','Kaizen a kereskedésben','Személyes vezetői terv','Páros transzfer','Jegyzeteim és mentés'];
