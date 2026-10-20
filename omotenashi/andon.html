@@ -4,6 +4,32 @@
 <style>
 :root{font-family:Arial,Helvetica,sans-serif;color:#202124;background:#f4f5f6;--red:#d9091c;--line:#dce0e4;--muted:#565e67}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0}a{color:#164d88;text-underline-offset:3px}a:focus-visible,summary:focus-visible{outline:3px solid #1864ab;outline-offset:3px}header{border-top:5px solid var(--red);background:#fff;border-bottom:1px solid var(--line)}.head{max-width:800px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px}.brand{font-size:17px;line-height:1.25;font-weight:800;color:var(--red)}.brand small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:4px}.back{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:8px;padding:8px 12px;text-decoration:none;font-size:13px;font-weight:700;color:#26282b;background:#eff1f3;border:1px solid #d2d6db;text-align:center}main{max-width:800px;margin:0 auto;padding:26px 18px 70px}.eyebrow{margin:0 0 9px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}h1{font-size:clamp(30px,6.5vw,43px);line-height:1.12;letter-spacing:-.8px;margin:0 0 15px}h2{font-size:23px;line-height:1.25;margin:0 0 13px}h3{font-size:19px;line-height:1.35;margin:0 0 12px}p,li{line-height:1.64;font-size:16px}p{margin:0 0 14px}.lead{font-size:17px}.panel{background:#fff;border:1px solid var(--line);border-radius:11px;padding:clamp(16px,3.4vw,26px);margin-top:20px}.section-head{margin-top:33px;margin-bottom:10px}.section-head h2{margin:0}.jp{border-left:4px solid var(--red);background:#f8f8f9;padding:13px 16px;margin:19px 0;display:flex;gap:17px;align-items:center}.jp > strong{font-size:28px;letter-spacing:4px;white-space:nowrap}.jp p{margin:0}.toc{display:flex;gap:7px;flex-wrap:wrap;margin:19px 0 24px}.toc a{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:10px 13px;min-height:43px;color:#252a31;background:#fff;font-size:13px;font-weight:700}.story{border-left:4px solid #d9091c}.story .kind{font-size:11px;letter-spacing:1px;font-weight:800;text-transform:uppercase;color:#666;margin-bottom:9px}.focus{padding:12px 14px;background:#f6f7f9;border-radius:6px;margin-top:17px}.focus p{margin:0}.reflection-lead{font-size:19px;line-height:1.5;font-weight:700;border-left:4px solid var(--red);padding:11px 15px;background:#f7f8f9;margin:14px 0 19px}.reflection-list{margin:0;padding-left:27px;display:grid;gap:13px}.reflection-list li{padding-left:4px;line-height:1.55}.highlight{font-weight:700}.faint{color:var(--muted);font-size:14px}.comparison{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5;margin:14px 0}.comparison th,.comparison td{border-bottom:1px solid #e0e3e7;text-align:left;padding:11px 8px;vertical-align:top}.comparison th{font-size:14px}.comparison th:first-child,.comparison td:first-child{width:26%;font-weight:700}.sources li{margin-bottom:7px;font-size:13px;overflow-wrap:anywhere}.sources a{font-size:13px}.footnav{margin:24px 0 0;padding:14px 0;border-top:1px solid #dce0e4;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}.footnav a{font-weight:700}section[id],article[id]{scroll-margin-top:15px}@media(max-width:440px){.head{padding:13px 14px}.brand{font-size:15px}.brand small{font-size:11px}.back{font-size:12px;max-width:140px;padding:8px}.jp{display:block}.jp > strong{display:block;margin-bottom:8px}.comparison th,.comparison td{padding:9px 5px;font-size:12px}}@media print{body{background:#fff}header,.toc,.footnav{display:none}.panel{border:1px solid #ddd;break-inside:avoid}main{max-width:none;padding:0}.story{break-inside:auto}}
 .steps{margin:12px 0 0;padding-left:25px;display:grid;gap:10px}.steps li{padding-left:3px}.practice{border-left:4px solid var(--red);background:#f7f8f9;padding:13px 16px;border-radius:4px;margin:15px 0}.practice p:last-child{margin-bottom:0}.lesson-flow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 22px}.lesson-flow span{background:#fff;color:#31363b;border:1px solid #dce0e4;padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.25;font-weight:700}.lesson-flow span.current{background:#fff3f4;border-color:#dfb0b6;color:#8d1121}.reading-related{margin-top:19px;display:flex;gap:9px;flex-wrap:wrap}.reading-related a{display:inline-flex;align-items:center;padding:10px 13px;min-height:44px;border:1px solid #d7dce1;background:#fff;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;color:#35393f}.jp > strong.long{font-size:22px;letter-spacing:1px}.compact-notes{font-size:14px;color:#4e555d;line-height:1.5}
+
+/* Workshop cards: separate accessible mobile reading and answer modal. */
+.workshop-case-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 10px}
+.workshop-case-button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;justify-content:space-between;gap:7px;min-height:94px;border:1px solid #d6dbe0;border-left:4px solid var(--red);border-radius:9px;background:#fafbfc;color:#202124;padding:13px;cursor:pointer;font:inherit}
+.workshop-case-button strong{font-size:15px;line-height:1.3}.workshop-case-button small{font-size:12px;line-height:1.4;color:#515962}.workshop-case-button:focus-visible,.workshop-case-share:focus-visible,.workshop-case-close:focus-visible,.case-answer:focus-visible{outline:3px solid #1864ab;outline-offset:3px}
+.workshop-case-button:hover{background:#f6f7fa}
+.workshop-case-dialog{width:min(720px,calc(100% - 20px));max-width:720px;max-height:90vh;max-height:90dvh;border:0;border-radius:12px;padding:0;color:#202124;background:#fff;box-shadow:0 15px 55px #0004;overflow-y:auto}
+.workshop-case-dialog::backdrop{background:rgba(17,23,32,.70)}
+.workshop-case-dialog .case-window{padding:0 17px 20px}
+.workshop-case-dialog .case-top{position:sticky;top:0;z-index:2;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:13px;padding:16px 0 10px;border-bottom:1px solid #dce0e4}
+.workshop-case-dialog .case-code{font-size:12px;font-weight:800;letter-spacing:.9px;color:var(--red);text-transform:uppercase}
+.workshop-case-dialog h2{margin:14px 0 12px;font-size:24px}
+.workshop-case-dialog .case-story{white-space:pre-wrap;font-size:16px;line-height:1.62;margin-bottom:17px}
+.workshop-case-dialog .case-question{padding:11px 13px;border-left:3px solid var(--red);background:#f5f6f8;font-weight:700;line-height:1.5}
+.workshop-case-dialog .case-answer-label{display:block;font-weight:700;font-size:15px;line-height:1.4;margin-top:19px}
+.workshop-case-dialog .case-answer{display:block;margin-top:8px;width:100%;min-height:100px;padding:12px;font-size:16px;font-family:inherit;line-height:1.48;border:1px solid #aeb6bf;border-radius:8px;resize:vertical;color:#202124;background:#fff}
+.workshop-case-dialog .case-status{font-size:12px;line-height:1.45;color:#56616d;min-height:20px;margin:15px 0}
+.workshop-case-dialog .case-status.warning{color:#a01221;font-weight:700}
+.workshop-case-dialog .case-actions{display:flex;gap:9px;flex-wrap:wrap;margin:17px 0 0}
+.workshop-case-dialog .case-actions button{min-height:44px;border-radius:8px;padding:10px 13px;font:inherit;font-weight:700;cursor:pointer;flex:1}
+.workshop-case-dialog .case-close{border:1px solid #ced3d9;background:#f4f5f6;color:#202124}
+.workshop-case-dialog .case-share{border:0;background:var(--red);color:#fff}
+.workshop-case-dialog .case-x{min-height:42px;border:1px solid #c9cfd6;border-radius:8px;padding:7px 12px;background:#fff;color:#202124;font:inherit;cursor:pointer}
+@media(max-width:420px){.workshop-case-grid{grid-template-columns:1fr}.workshop-case-button{min-height:66px}.workshop-case-dialog .case-window{padding:0 14px 17px}.workshop-case-dialog h2{font-size:21px}}
+@media print{.workshop-case-dialog{display:none!important}}
+
 </style>
 </head><body>
 <header><div class="head"><div class="brand">Toyota Omotenashi Manager<small>Eltérésjelzés és vezetői reakció</small></div><a class="back" href="./">← Vissza a tanulási naplóhoz</a></div></header>
@@ -39,6 +65,14 @@
 <div class="practice"><p><strong>Lehetséges első vezetői mondat:</strong> „Köszönöm, hogy szóltál. Az átadásnak ezt a részét egyelőre ne zárjuk le. Először tisztázzuk az autó állapotát, és megbeszéljük, hogyan tájékoztatjuk az ügyfelet.”</p></div>
 <p>A vezető a tények alapján intézkedik, és kijelöli a továbblépés feltételeit. A kolléga így azt tapasztalja, hogy a jelzése segítséget és közös megoldást indít.</p>
 <p class="faint">Fiktív tréninghelyzet. A tényleges döntésnél a kereskedés műszaki, minőségügyi és jogosultsági előírásai érvényesek.</p>
+<div id="andon-helyzetek">
+<h3>Válasszatok egy Andon-esetet!</h3>
+<p>Nyissátok meg a választott helyzetet, beszéljétek meg a vezetői döntést, és írjátok be a megoldást a telefonon. A megoldás ezen a készüléken marad, és megosztható.</p>
+<div class="workshop-case-grid"><button class="workshop-case-button" type="button" data-workshop-case="A1"><strong>A1 · Sérülés az átadás előtt</strong><small>Eset megnyitása →</small></button>
+<button class="workshop-case-button" type="button" data-workshop-case="A2"><strong>A2 · Hiányzó ellenőrzés</strong><small>Eset megnyitása →</small></button>
+<button class="workshop-case-button" type="button" data-workshop-case="A3"><strong>A3 · Az ajánlat küldés előtt</strong><small>Eset megnyitása →</small></button>
+<button class="workshop-case-button" type="button" data-workshop-case="A4"><strong>A4 · Eltűnt külön kérés</strong><small>Eset megnyitása →</small></button></div>
+</div>
 </section>
 <section class="panel" id="vezeto">
 <h2>4. Hogyan tanítod meg és tartod működésben?</h2>
@@ -60,4 +94,20 @@
 </section>
 <nav class="reading-related" aria-label="Kapcsolódó tananyagok"><a href="./ichigo-ichie.html">Ichigo Ichie →</a><a href="./sztenderdizalas.html">Sztenderdizálás →</a></nav>
 <nav class="footnav" aria-label="További navigáció"><a href="#eleje">↑ Vissza az elejére</a><a href="./">← Tanulási napló</a></nav>
-</main></body></html>
+</main><dialog class="workshop-case-dialog" id="workshop-case-dialog" aria-labelledby="workshop-case-title">
+<div class="case-window">
+<div class="case-top"><span class="case-code" id="workshop-case-code"></span><button type="button" class="case-x" id="workshop-case-close" aria-label="Eset bezárása">Bezárás ×</button></div>
+<h2 id="workshop-case-title"></h2>
+<p class="case-story" id="workshop-case-story"></p>
+<div class="case-question" id="workshop-case-question-box"><span id="workshop-case-question"></span></div>
+<label class="case-answer-label" for="workshop-answer-one" id="workshop-answer-one-label"></label>
+<textarea class="case-answer" id="workshop-answer-one" placeholder="Írjátok le a választ…"></textarea>
+<label class="case-answer-label" for="workshop-answer-two" id="workshop-answer-two-label"></label>
+<textarea class="case-answer" id="workshop-answer-two" placeholder="Írjátok le a választ…"></textarea>
+<p class="case-status" id="workshop-case-save-status" aria-live="polite"></p>
+<div class="case-actions"><button type="button" class="case-share" id="workshop-case-share">Megoldás megosztása</button><button type="button" class="case-close" onclick="document.getElementById('workshop-case-close').click()">Bezárás</button></div>
+</div>
+</dialog>
+<script type="application/json" id="workshop-case-data">[{"id":"A1","title":"Sérülés az átadás előtt","text":"Tíz perc múlva érkezik az ügyfél az új autójáért. A kolléga a hátsó lökhárítón egy frissnek tűnő karcolást vesz észre. A korábbi állapotfotón ez a rész nem látszik jól. Szól a vezetőjének. Egy másik kolléga közben azt mondja: „Most már ne borítsuk fel az átadást, később is rendezhetjük.”","question":"Te vagy a vezető. Mi történik most az átadással, és mit mondasz először a jelző kollégának?","label1":"Mi a vezetői döntésetek?","label2":"Mi az első vezetői mondat, és mit közöltök az ügyféllel?"},{"id":"A2","title":"Hiányzó ellenőrzés","text":"A javítás után az autó az átadási helyen vár. A munkalapon egy szükséges ellenőrzés visszaigazolása hiányzik. Lehet, hogy csak a rögzítés maradt el, de ezt senki nem tudja biztosan. Az ellenőrzést végző kolléga már hazament. Az ügyfél azt írja, öt perc múlva itt van. A munkatárs segítséget kér tőled.","question":"Te vagy a vezető. Melyik lépés várhat, és kivel tisztázod, teljesült-e az ellenőrzés?","label1":"Mi a vezetői döntésetek?","label2":"Mi az első vezetői mondat, és mit közöltök az ügyféllel?"},{"id":"A3","title":"Az ajánlat küldés előtt","text":"Egy értékesítő észreveszi, hogy az elküldésre előkészített ajánlatban a tartozékcsomag ára nem egyezik a jóváhagyott összesítéssel. Nem tudja, melyik adat az aktuális. Az ügyfél ma délután összehasonlítja a kapott ajánlatokat. A kolléga azt kérdezi: „Elküldjem most, és majd pontosítjuk, ha visszajelez?”","question":"Te vagy a vezető. Hogyan fogadod a jelzést, és ki tisztázza az adatot a küldés előtt?","label1":"Mi a vezetői döntésetek?","label2":"Mi az első vezetői mondat, és mit közöltök az ügyféllel?"},{"id":"A4","title":"Eltűnt külön kérés","text":"Az átadó kolléga az ügyféltől hallja először, hogy az autóba a mai átadásra gyermekülés-beszerelési bemutatót ígértek. A kérés az átadási adatokból kimaradt. A megfelelő bemutatásra felkészült munkatárs most máshol dolgozik. Az ügyfél a gyermekével együtt érkezett, és az autóval szeretne hazamenni. A kolléga még az átadás lezárása előtt jelez.","question":"Te vagy a vezető. Milyen segítséget szervezel, és miben állapodtok meg az ügyféllel?","label1":"Mi a vezetői döntésetek?","label2":"Mi az első vezetői mondat, és mit közöltök az ügyféllel?"}]</script>
+<script src="./workshop-cards.js" defer></script>
+</body></html>
