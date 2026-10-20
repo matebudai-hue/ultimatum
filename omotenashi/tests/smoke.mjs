@@ -84,12 +84,33 @@ await page.screenshot({path:root+'/build/omotenashi_qa/09_andon_mobile.png',full
 await page.locator('.back').click();
 await page.locator('#standard-link').click();
 assert.equal(new URL(page.url()).pathname,'/omotenashi/sztenderdizalas.html');
-assert.equal(await page.locator('section.panel').count(),5);
+assert.equal(await page.locator('section.panel').count(),6);
 assert.ok((await page.locator('#jelentes').textContent()).includes('taktidő'));
+assert.equal(await page.locator('[data-workshop-case^="S"]').count(),3);
 assert.ok((await page.locator('#elemek').textContent()).includes('megfigyelhető viselkedést'));
 assert.ok((await page.locator('#pelda').textContent()).includes('biztonságos kipróbálásukra'));
 assert.ok((await page.locator('#bevezetes').textContent()).includes('Megtanítod'));
 assert.ok((await page.locator('#bevezetes').textContent()).includes('Kaizen'));
+
+assert.ok((await page.locator('#sztenderd-helyzetek').textContent()).includes('PDCA'));
+for(const [id,keyword] of [['S1','Ajánlat elküldve'],['S2','Mindjárt jön'],['S3','heti Kaizen-megbeszélésen']]){
+ await page.locator('[data-workshop-case="'+id+'"]').click();
+ assert.equal(await page.locator('#workshop-case-code').textContent(),id);
+ assert.ok(await page.locator('#workshop-case-dialog').evaluate(el=>el.open));
+ assert.ok((await page.locator('#workshop-case-story').textContent()).includes(keyword),'case text missing: '+id);
+ assert.ok((await page.locator('#workshop-case-question').textContent()).includes('PDCA')||(await page.locator('#workshop-case-question').textContent()).includes('Kaizen'));
+ await page.locator('#workshop-case-close').click();
+}
+await page.locator('[data-workshop-case="S2"]').click();
+await page.locator('#workshop-answer-one').fill('A várakozás közbeni ügyfélélmény megfigyelése és közös gyakorlás.');
+await page.locator('#workshop-answer-two').fill('PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+await page.locator('#workshop-case-close').click();
+await page.reload();
+await page.locator('[data-workshop-case="S2"]').click();
+assert.equal(await page.locator('#workshop-answer-one').inputValue(),'A várakozás közbeni ügyfélélmény megfigyelése és közös gyakorlás.');
+assert.equal(await page.locator('#workshop-answer-two').inputValue(),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+await page.locator('#workshop-case-close').click();
+
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Standard mobile overflow');
 await page.screenshot({path:root+'/build/omotenashi_qa/10_sztenderd_mobile.png',fullPage:true});
 await page.locator('.back').click();
@@ -192,6 +213,9 @@ assert.ok((await page.locator('#jelentes').textContent()).includes('Jidoka'));
 await page.locator('.back').click();
 await page.locator('#standard-link').click();
 assert.ok((await page.locator('#elemek').textContent()).includes('Mikor?'));
+await page.locator('[data-workshop-case="S2"]').click();
+assert.equal(await page.locator('#workshop-answer-two').inputValue(),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+await page.locator('#workshop-case-close').click();
 await page.locator('.back').click();
 
 assert.equal(await page.locator('#stage').inputValue(),'7'); // Return to the existing program stage.
@@ -204,7 +228,7 @@ await ctx.close();
 ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--no-sandbox'],viewport:{width:390,height:844},acceptDownloads:true});await ctx.setOffline(true);page=await ctx.newPage();await page.goto(url);assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');await ctx.setOffline(false);
 // An updated app shell must retain edited, deleted and custom observation points.
 const htmlPath=APP_DIR+'/index.html',original=await fs.readFile(htmlPath,'utf8');
-try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.7'","APP_VERSION='2026.10.20.8'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.8');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
+try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.8'","APP_VERSION='2026.10.20.9'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.9');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
 await stage(7);await page.setInputFiles('#import-file',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});await page.waitForFunction(()=>document.getElementById('import-message').textContent.length>0);assert.ok((await page.textContent('#import-message')).includes('nem érvényes'));assert.ok((await page.textContent('#report-preview')).includes('Offline is megmaradó próba'));
 await page.evaluate(()=>localStorage.removeItem('toyota-omotenashi-quiz-v1'));page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
 const second=await ctx.newPage();await second.goto(url);await stage(0);await field('road.expectation').fill('Az első lap legfrissebb jegyzete.');await second.locator('#storage-warning').waitFor({state:'visible'});await second.close();await page.reload();assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
