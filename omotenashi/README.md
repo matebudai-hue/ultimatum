@@ -120,3 +120,11 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - A közös `workshop-cards.js` offline cache-elve van; a napló `2026.10.20.7` és a service-worker cache `20261020-7` frissült.
 - E2E: tíz kártya megnyitása, szöveg/jelzés, lokális válaszmentés, újratöltés, offline megnyitás, más progrészek jegyzeteinek megőrzése.
 - Visszaállítási pont: `backup/omotenashi-ws-kartyak-elott-20261020` (`32690dec59d25e652bac1500d24455c31614617c`).
+
+## Sztenderdizálás – három mobilos eset (2026-10-20)
+
+- A `sztenderdizalas.html#sztenderd-helyzetek` részben három új, fiktív kereskedési helyzet érhető el: S1 értékesítés (eltűnt ügyféligény és információátadás), S2 recepció (bizonytalan várakozás és felelős tájékoztatás), S3 szerviz (ígért visszahívás és bizonytalan elkészülési idő).
+- Mindegyik eset a korábbi A1–A4 és M1–M6 kártyákkal azonos, külön felugró mobilos esetablakot használja. Két válaszmező segíti a „Látod → Érted → Tanítod → Sztenderdizálod” ívet és a PDCA/Kaizen-próba kidolgozását.
+- A meglévő `workshop-cards.js` kezeli a három új S-kártyát is. A kártyánkénti válaszok a böngésző külön workshop-helyi kulcsában maradnak (`toyota-omotenashi-workshop-cases-v1`); nem kerülnek a trénerhez, és nem érintik a naplót vagy a kvízt. Az új változat offline is elérhető a frissített cache mellett.
+- Regressziós teszt: mindhárom kártya, teljes történet és feldolgozó feladat, megoldás megőrzése újratöltés után és offline, valamint a régi anyagok zavartalan működése.
+- Visszaállítási pont: `backup/omotenashi-sztenderd-esetek-elott-20261020`, commit `ac46ad6dfce607b767cd959e3376968d6da7a7d8`.
