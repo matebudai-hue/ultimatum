@@ -117,6 +117,41 @@ await ctx.close();
 // Fresh desktop and quota error path.
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const isolated=await browser.newContext({viewport:{width:1280,height:900}});const desktop=await isolated.newPage();await desktop.goto(url);await desktop.selectOption('#stage','2');await desktop.screenshot({path:root+'/build/omotenashi_qa/05_desktop.png',fullPage:true});
 await desktop.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota','QuotaExceededError');};});await desktop.selectOption('#stage','0');await desktop.locator('[data-field="road.expectation"]').fill('Ez mentési hiba mellett is exportálható.');assert.ok((await desktop.textContent('#storage-warning')).includes('elsődleges helyi mentés sikertelen'));await desktop.selectOption('#stage','7');assert.ok((await desktop.textContent('#report-preview')).includes('Ez mentési hiba mellett is exportálható.'));await browser.close();
+// Reopen previous releases: three pre-created blank cards become one, but authored notes survive.
+{
+ const lc=await browser.newContext({viewport:{width:390,height:844}});
+ const lp=await lc.newPage();await lp.goto(url);
+ await lp.evaluate(()=>{
+  const old=fresh();
+  const oldQuestions=[PAIR_QUESTIONS[0],'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',PAIR_QUESTIONS[3]];
+  old.pairs=oldQuestions.map(question=>({id:uid(),question,partner:'',note:''}));
+  localStorage.setItem(KEY,JSON.stringify(old));
+ });
+ await lp.reload();await lp.selectOption('#stage','1');
+ assert.equal(await lp.locator('.pair-card').count(),1);
+ assert.equal(await lp.locator('.pair-question').count(),4);
+ await lp.locator('[data-field="pairs.0.note"]').fill('A régi mentésből folytatott jegyzet.');
+ await lp.reload();assert.equal(await lp.locator('[data-field="pairs.0.note"]').inputValue(),'A régi mentésből folytatott jegyzet.');
+ await lc.close();
+}
+{
+ const lc=await browser.newContext({viewport:{width:390,height:844}});
+ const lp=await lc.newPage();await lp.goto(url);
+ await lp.evaluate(()=>{
+  const old=fresh();
+  const oldQuestions=[PAIR_QUESTIONS[0],'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',PAIR_QUESTIONS[3]];
+  old.pairs=oldQuestions.map((question,i)=>({id:uid(),question,partner:i===1?'Páros kolléga':'',note:i===1?'Már korábban leírt fontos gondolat.':''}));
+  localStorage.setItem(KEY,JSON.stringify(old));
+ });
+ await lp.reload();await lp.selectOption('#stage','1');
+ assert.equal(await lp.locator('.pair-card').count(),1);
+ assert.ok((await lp.locator('.pair-card').first().textContent()).includes('Korábbi jegyzet ehhez a kérdéshez'));
+ assert.equal(await lp.locator('[data-field="pairs.0.note"]').inputValue(),'Már korábban leírt fontos gondolat.');
+ await lp.locator('summary').last().click();
+ assert.equal(await lp.locator('[data-field="pairs.0.partner"]').inputValue(),'Páros kolléga');
+ await lc.close();
+}
+
 if(errors.length)throw Error(errors.join('\n'));
 let safari='not available';try{const b=await webkit.launch({headless:true});const c=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const pg=await c.newPage();await pg.goto(url);await pg.locator('[data-field="road.expectation"]').fill('Safari megmaradó jegyzet');await pg.reload();assert.equal(await pg.locator('[data-field="road.expectation"]').inputValue(),'Safari megmaradó jegyzet');await pg.selectOption('#stage','2');await pg.locator('[data-point-focus="0"]').check();await pg.selectOption('#stage','3');await pg.locator('[data-observation-source="0"][data-source-value="2"]').click();await pg.reload();assert.equal(await pg.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')).observations[0].source),2);await b.close();safari='passed';}catch(error){if(!error.message.includes('Executable doesn\'t exist'))throw error;}
 console.log(JSON.stringify({status:'pass',checks:['all 8 modules','compact auto-growing plan fields','coaching questions above collapsed plan','simple export actions','four prompts per discussion and added second partner','bus selection transfers to factory notes','editable/addable/deletable observations','all plan and coaching fields','automatic local save','offline page reopen','IndexedDB rescue on missing primary save','full browser restart','app update preserves notes and custom/deleted points','JSON roundtrip and invalid import protection','TXT export','long email fallback','print report','mobile no overflow','HTML escaping','storage failure visible'],webkit:safari}));
