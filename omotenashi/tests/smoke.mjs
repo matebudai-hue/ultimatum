@@ -20,6 +20,25 @@ assert.equal(await page.locator('#ichigo-link').count(),1);
 await page.locator('#ichigo-link').click();
 assert.equal(new URL(page.url()).pathname,'/omotenashi/ichigo-ichie.html');
 assert.equal(await page.locator('article.story').count(),5);
+
+assert.equal(await page.locator('[data-workshop-case^="M"]').count(),6);
+for(const id of ['M1','M2','M3','M4','M5','M6']){
+ await page.locator('[data-workshop-case="'+id+'"]').click();
+ assert.equal(await page.locator('#workshop-case-code').textContent(),id);
+ assert.ok(await page.locator('#workshop-case-dialog').evaluate(el=>el.open),'M case modal not open: '+id);
+ assert.ok((await page.locator('#workshop-case-story').textContent()).length>70);
+ await page.locator('#workshop-case-close').click();
+}
+await page.locator('[data-workshop-case="M1"]').click();
+await page.locator('#workshop-answer-one').fill('Először az ügyfél egyedi helyzetére kérdezünk rá.');
+await page.locator('#workshop-answer-two').fill('A tanuló kolléga kipróbálja, utána visszajelzünk.');
+assert.ok((await page.locator('#workshop-case-save-status').textContent()).includes('Mentve'));
+await page.locator('#workshop-case-close').click();
+await page.reload();
+await page.locator('[data-workshop-case="M1"]').click();
+assert.equal(await page.locator('#workshop-answer-one').inputValue(),'Először az ügyfél egyedi helyzetére kérdezünk rá.');
+assert.equal(await page.locator('#workshop-answer-two').inputValue(),'A tanuló kolléga kipróbálja, utána visszajelzünk.');
+await page.locator('#workshop-case-close').click();
 assert.ok((await page.locator('#jelentes').textContent()).includes('egy élet, egy találkozás'));
 assert.ok((await page.locator('#tortenet-2').textContent()).includes('Az értékesítő mindent tudott a korábbi vásárlóról.'));
 assert.ok((await page.locator('#tortenet-3').textContent()).includes('Két ügyfél ugyanazt a Toyota Corollát veszi át.'));
@@ -47,6 +66,19 @@ assert.ok((await page.locator('#mukodes').textContent()).includes('Jelzés.'));
 assert.ok((await page.locator('#pelda').textContent()).includes('Tíz perc múlva érkezik az ügyfél'));
 assert.ok((await page.locator('#vezeto').textContent()).includes('Milyen eltérést'));
 assert.ok(!(await page.locator('body').textContent()).includes('A workshopon a vezető és a munkatárs röviden eljátssza a jelzést és az első reakciót.'));
+
+assert.equal(await page.locator('[data-workshop-case^="A"]').count(),4);
+for(const id of ['A1','A2','A3','A4']){
+ await page.locator('[data-workshop-case="'+id+'"]').click();
+ assert.equal(await page.locator('#workshop-case-code').textContent(),id);
+ assert.ok((await page.locator('#workshop-case-question').textContent()).startsWith('Te vagy a vezető.'));
+ await page.locator('#workshop-case-close').click();
+}
+await page.locator('[data-workshop-case="A2"]').click();
+await page.locator('#workshop-answer-one').fill('Az átadás előtt ellenőrizni kell a visszaigazolás tényét.');
+await page.locator('#workshop-answer-two').fill('Köszönöm, hogy jelezted. Egyeztetek a felelőssel.');
+await page.locator('#workshop-case-close').click();
+assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1')).A2.one),'Az átadás előtt ellenőrizni kell a visszaigazolás tényét.');
 {const overflow=await page.evaluate(()=>({window:innerWidth,scroll:document.documentElement.scrollWidth,x:scrollX,details:[...document.querySelectorAll('*')].map(el=>{let r=el.getBoundingClientRect();return {tag:el.tagName,cls:String(el.className).slice(0,35),id:el.id,text:el.textContent?.slice(0,36),right:Math.round(r.right+scrollX),left:Math.round(r.left+scrollX),client:el.clientWidth,scroll:el.scrollWidth,css:getComputedStyle(el).width};}).sort((a,b)=>b.right-a.right).slice(0,17)})); assert.ok(overflow.scroll<=overflow.window+1,'Andon mobile overflow: '+JSON.stringify(overflow));}
 await page.screenshot({path:root+'/build/omotenashi_qa/09_andon_mobile.png',fullPage:true});
 await page.locator('.back').click();
@@ -149,6 +181,9 @@ for(let i=0;i<8;i++){await stage(i);assert.ok(await page.evaluate(()=>document.d
 await page.close();await ctx.setOffline(true);page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')).road.expectation),'Szeretném megkönnyíteni a kollégáim munkáját.');
 await page.locator('#ichigo-link').click();
 assert.equal(await page.locator('article.story').count(),5);
+await page.locator('[data-workshop-case="M1"]').click();
+assert.equal(await page.locator('#workshop-answer-one').inputValue(),'Először az ügyfél egyedi helyzetére kérdezünk rá.');
+await page.locator('#workshop-case-close').click();
 assert.ok((await page.locator('#torteneti').textContent()).includes('Ii Naosuke'));
 await page.locator('.back').click();
 assert.ok((await page.locator('a[href="./andon.html"]').count())>=1);
@@ -169,7 +204,7 @@ await ctx.close();
 ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--no-sandbox'],viewport:{width:390,height:844},acceptDownloads:true});await ctx.setOffline(true);page=await ctx.newPage();await page.goto(url);assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');await ctx.setOffline(false);
 // An updated app shell must retain edited, deleted and custom observation points.
 const htmlPath=APP_DIR+'/index.html',original=await fs.readFile(htmlPath,'utf8');
-try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.6'","APP_VERSION='2026.10.20.7'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.7');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
+try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.7'","APP_VERSION='2026.10.20.8'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.8');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
 await stage(7);await page.setInputFiles('#import-file',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});await page.waitForFunction(()=>document.getElementById('import-message').textContent.length>0);assert.ok((await page.textContent('#import-message')).includes('nem érvényes'));assert.ok((await page.textContent('#report-preview')).includes('Offline is megmaradó próba'));
 await page.evaluate(()=>localStorage.removeItem('toyota-omotenashi-quiz-v1'));page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
 const second=await ctx.newPage();await second.goto(url);await stage(0);await field('road.expectation').fill('Az első lap legfrissebb jegyzete.');await second.locator('#storage-warning').waitFor({state:'visible'});await second.close();await page.reload();assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
