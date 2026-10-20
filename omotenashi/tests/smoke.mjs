@@ -192,6 +192,9 @@ await page.evaluate(q=>localStorage.setItem('toyota-omotenashi-quiz-v1',JSON.str
 
 let [dl]=await Promise.all([page.waitForEvent('download'),page.click('#backup')]);await dl.saveAs(root+'/build/omotenashi_qa/backup.json');
 const exported=JSON.parse(await fs.readFile(root+'/build/omotenashi_qa/backup.json','utf8'));assert.equal(exported.state.observations.length,10);assert.equal(exported.state.pairs.length,2);assert.equal(exported.state.plan[6],'Hétfőn 9-kor két kollégával kipróbálom.');assert.equal(exported.quiz.answers[0],1);
+assert.equal(exported.workshop.M1.one,'Először az ügyfél egyedi helyzetére kérdezünk rá.');
+assert.equal(exported.workshop.A2.one,'Az átadás előtt ellenőrizni kell a visszaigazolás tényét.');
+assert.equal(exported.workshop.S2.two,'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
 await page.getByText('További megosztási lehetőségek',{exact:true}).click();let [txt]=await Promise.all([page.waitForEvent('download'),page.click('#download-txt')]);await txt.saveAs(root+'/build/omotenashi_qa/report.txt');
 const report=await fs.readFile(root+'/build/omotenashi_qa/report.txt','utf8');assert.ok(report.includes(evidence));assert.ok(report.includes('Második párcsere.'));assert.ok(report.includes('Hétfőn 9-kor'));assert.ok(report.includes('Szeretném megkönnyíteni'));
 await page.click('#email');assert.ok(await page.locator('#email-help').isVisible()); // full long note is never silently truncated
@@ -228,9 +231,11 @@ await ctx.close();
 ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--no-sandbox'],viewport:{width:390,height:844},acceptDownloads:true});await ctx.setOffline(true);page=await ctx.newPage();await page.goto(url);assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');await ctx.setOffline(false);
 // An updated app shell must retain edited, deleted and custom observation points.
 const htmlPath=APP_DIR+'/index.html',original=await fs.readFile(htmlPath,'utf8');
-try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.8'","APP_VERSION='2026.10.20.9'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.9');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
+try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.9'","APP_VERSION='2026.10.20.10'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.10');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
 await stage(7);await page.setInputFiles('#import-file',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});await page.waitForFunction(()=>document.getElementById('import-message').textContent.length>0);assert.ok((await page.textContent('#import-message')).includes('nem érvényes'));assert.ok((await page.textContent('#report-preview')).includes('Offline is megmaradó próba'));
-await page.evaluate(()=>localStorage.removeItem('toyota-omotenashi-quiz-v1'));page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
+await page.evaluate(()=>{localStorage.removeItem('toyota-omotenashi-quiz-v1');localStorage.removeItem('toyota-omotenashi-workshop-cases-v1');});page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
+assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1')).S2.two),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1')).M1.one),'Először az ügyfél egyedi helyzetére kérdezünk rá.');
 const second=await ctx.newPage();await second.goto(url);await stage(0);await field('road.expectation').fill('Az első lap legfrissebb jegyzete.');await second.locator('#storage-warning').waitFor({state:'visible'});await second.close();await page.reload();assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
 await page.evaluate(async()=>{await OmotSafety.mirror('notebook',JSON.stringify(state));localStorage.removeItem('toyota-omotenashi-notebook-v1');});
 await page.reload();
@@ -238,7 +243,45 @@ await page.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('toyo
 await stage(0);assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
 await ctx.close();
 // Fresh desktop and quota error path.
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const isolated=await browser.newContext({viewport:{width:1280,height:900}});const desktop=await isolated.newPage();await desktop.goto(url);await desktop.selectOption('#stage','2');await desktop.screenshot({path:root+'/build/omotenashi_qa/05_desktop.png',fullPage:true});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+
+// Cross-device restore: a genuinely fresh browser context receives all 3 data groups.
+{
+ const bc=await browser.newContext({viewport:{width:390,height:844}});
+ const bp=await bc.newPage();await bp.goto(url);
+ assert.equal(await bp.evaluate(()=>localStorage.getItem('toyota-omotenashi-workshop-cases-v1')),null);
+ await bp.selectOption('#stage','7');
+ bp.once('dialog',d=>d.accept());
+ await bp.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');
+ await bp.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));
+ const backedUp=await bp.evaluate(()=>({
+  notebook:JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')),
+  quiz:JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')),
+  workshop:JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1'))
+ }));
+ assert.equal(backedUp.notebook.plan[6],'Hétfőn 9-kor két kollégával kipróbálom.');
+ assert.equal(backedUp.quiz.answers[0],1);
+ assert.equal(backedUp.workshop.A2.one,'Az átadás előtt ellenőrizni kell a visszaigazolás tényét.');
+ assert.equal(backedUp.workshop.S2.two,'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+ await bp.locator('#standard-link').click();
+ await bp.locator('[data-workshop-case="S2"]').click();
+ assert.equal(await bp.locator('#workshop-answer-two').inputValue(),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+ await bp.locator('#workshop-case-close').click();await bp.locator('.back').click();
+ // An older valid backup has no workshop section: do not erase newer local workshop notes.
+ const older={format:'toyota-omotenashi-notebook',exportedAt:exported.exportedAt,state:exported.state,quiz:exported.quiz};
+ bp.once('dialog',d=>d.accept());
+ await bp.setInputFiles('#import-file',{name:'old-notebook.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(older))});
+ await bp.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));
+ assert.equal(await bp.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1')).S2.two),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+ // Corrupt workshop data must be rejected before overwriting any of the three datasets.
+ const damaged={...older,workshop:{S2:{one:8,two:'malformed'}}};
+ await bp.setInputFiles('#import-file',{name:'invalid-workshop.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(damaged))});
+ await bp.waitForFunction(()=>document.getElementById('import-message').textContent.includes('workshopkártyák mentése érvénytelen'));
+ assert.equal(await bp.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-workshop-cases-v1')).S2.two),'PDCA: egy műszak próba, ügyfél-visszajelzés és heti Kaizen-egyeztetés.');
+ assert.equal(await bp.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')).plan[6]),'Hétfőn 9-kor két kollégával kipróbálom.');
+ await bc.close();
+}
+const isolated=await browser.newContext({viewport:{width:1280,height:900}});const desktop=await isolated.newPage();await desktop.goto(url);await desktop.selectOption('#stage','2');await desktop.screenshot({path:root+'/build/omotenashi_qa/05_desktop.png',fullPage:true});
 await desktop.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota','QuotaExceededError');};});await desktop.selectOption('#stage','0');await desktop.locator('[data-field="road.expectation"]').fill('Ez mentési hiba mellett is exportálható.');assert.ok((await desktop.textContent('#storage-warning')).includes('elsődleges helyi mentés sikertelen'));await desktop.selectOption('#stage','7');assert.ok((await desktop.textContent('#report-preview')).includes('Ez mentési hiba mellett is exportálható.'));
 // Reopen previous releases: three pre-created blank cards become one, but authored notes survive.
 {

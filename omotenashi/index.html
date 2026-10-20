@@ -31,9 +31,9 @@
 <script src="./data-safety.js"></script>
 <script>
 'use strict';
-const APP_VERSION='2026.10.20.8';
+const APP_VERSION='2026.10.20.9';
 // The storage key never includes a release number: updates must preserve participant notes.
-const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup';
+const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup',WORKSHOP_KEY='toyota-omotenashi-workshop-cases-v1';
 const STAGES=['Toyota on the Road','Páros beszélgetések','Gyári megfigyelések','Mit láttunk?','Kaizen a kereskedésben','Személyes vezetői terv','Páros transzfer','Jegyzeteim és mentés'];
 const FOCUS=['Ügyfélre figyelés','Munkatársak tanítása','Kaizen a napi működésben','Sztenderdek kialakítása','Problémák jelzése és kezelése','Saját vezetői működésem'];
 const PAIR_QUESTIONS=[
@@ -147,6 +147,23 @@ function validQuizBackup(q){
   typeof q.team==='string'&&q.team.length<=120&&
   ['solo','pair','group'].includes(q.mode)&&typeof q.finishedAt==='string'&&q.finishedAt.length<60);
 }
+function validWorkshopBackup(cards){
+ if(!cards||typeof cards!=='object'||Array.isArray(cards))return false;
+ const keys=Object.keys(cards);
+ return keys.length<=100&&keys.every(id=>{
+  const item=cards[id];
+  return /^[AMS][0-9]{1,3}$/.test(id)&&item&&typeof item==='object'&&!Array.isArray(item)&&
+    typeof item.one==='string'&&item.one.length<=200000&&
+    typeof item.two==='string'&&item.two.length<=200000;
+ });
+}
+function workshopBackup(){
+ let raw;
+ try{raw=localStorage.getItem(WORKSHOP_KEY);}catch{throw Error('A workshopkártyák helyi mentését nem sikerült kiolvasni.');}
+ if(raw===null)return {};
+ try{const cards=JSON.parse(raw);if(validWorkshopBackup(cards))return cards;}catch{}
+ throw Error('A workshopmegoldások helyi mentése sérült. A teljes biztonsági másolat előtt ellenőrizd a workshopkártyákon a válaszokat.');
+}
 function quizBackup(){
  try{
   const q=JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1'));
@@ -255,7 +272,7 @@ function summary(){
  '<div class="button-row"><button class="small-button" id="copy">Szöveg másolása</button><button class="small-button" id="email">Küldés e-mailben</button></div>'+
  '<div id="email-help" class="note hidden"></div></details></section>'+
  '<section class="panel"><h2>Biztonsági másolat</h2>'+
- '<p class="muted">A teljes szerkeszthető naplót és a kvízállást JSON-fájlba menti. Őrizd meg biztonságos helyen.</p>'+
+ '<p class="muted">A teljes szerkeszthető naplót, a kvízállást és az A/M/S workshopkártyák megoldásait egy JSON-fájlba menti. Őrizd meg biztonságos helyen.</p>'+
  '<button class="primary" id="backup">Biztonsági másolat letöltése</button>'+
  '<details class="management"><summary class="simple">Visszatöltés és haladó beállítások</summary>'+
  '<div class="button-row"><button class="secondary" id="restore">Másolat visszatöltése</button>'+
@@ -321,17 +338,49 @@ function bind(){
   field?.scrollIntoView({block:'center'});field?.focus({preventScroll:true});
  };
  if($('download-txt'))$('download-txt').onclick=()=>{save();download('\ufeff'+report(),'Toyota_Omotenashi_jegyzeteim_'+stamp()+'.txt','text/plain;charset=utf-8');};
- if($('backup'))$('backup').onclick=()=>{save();download(JSON.stringify({format:'toyota-omotenashi-notebook',exportedAt:new Date().toISOString(),state,quiz:quizBackup()},null,2),'Toyota_Omotenashi_biztonsagi_masolat_'+stamp()+'.json','application/json');};
+ if($('backup'))$('backup').onclick=()=>{save();try{
+  const workshop=workshopBackup();
+  const payload=JSON.stringify({format:'toyota-omotenashi-notebook',exportedAt:new Date().toISOString(),state,quiz:quizBackup(),workshop},null,2);
+  if(new Blob([payload]).size>2000000)throw Error('A teljes mentés nagyobb 2 MB-nál; a fájl ebben a méretben nem tölthető vissza. Rövidítsd a túl hosszú jegyzeteket, vagy mentsd külön a megoldásaidat.');
+  download(payload,'Toyota_Omotenashi_biztonsagi_masolat_'+stamp()+'.json','application/json');
+ }catch(e){toast('Biztonsági másolat nem készült: '+e.message);}
+};
  if($('raw-backup'))$('raw-backup').onclick=()=>{try{download(localStorage.getItem(KEY+'-unreadable')||localStorage.getItem(KEY)||JSON.stringify(state),'Toyota_Omotenashi_helyi_mentes_'+stamp()+'.json','application/json');}catch{toast('A böngésző nem ad hozzáférést a helyi mentéshez. A Másolat letöltése gombot használd.');}};
- if($('restore'))$('restore').onclick=()=>$('import-file').click();if($('import-file'))$('import-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>2000000)throw Error('A fájl túl nagy. Legfeljebb 2 MB tölthető vissza.');const data=JSON.parse(await f.text());const incoming=data.format==='toyota-omotenashi-notebook'?data.state:data;if(!valid(incoming))throw Error('Ez nem érvényes Omotenashi-napló mentés. A jelenlegi jegyzeteid megmaradtak.');if(!confirm('A betöltés lecseréli a jelenlegi naplódat. Készítettél róla másolatot?'))return;state=incoming;compactLegacyPairs(state);state.stage=7;save();
- const quiz=data.format==='toyota-omotenashi-notebook'?data.quiz:null;
- let quizNote='';
- if(quiz&&validQuizBackup(quiz)){
-  try{const rawQuiz=JSON.stringify(quiz);localStorage.setItem('toyota-omotenashi-quiz-v1',rawQuiz);
-   window.OmotSafety?.mirror('quiz',rawQuiz).catch(()=>{});quizNote=' A kvízállás is visszatöltve.';
-  }catch{quizNote=' A kvíz külön mentése nem sikerült.';}
- }
- render();toast(storageOK?'A jegyzeteket visszatöltöttük.'+quizNote:'A mentés megnyílt, de a helyi tárolás sikertelen. Tölts le biztonsági másolatot!');}catch(error){$('import-message').textContent=error.message;$('import-message').classList.add('error');}finally{if($('import-file'))$('import-file').value='';}};
+ if($('restore'))$('restore').onclick=()=>$('import-file').click();
+ if($('import-file'))$('import-file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+   if(f.size>2000000)throw Error('A fájl túl nagy. Legfeljebb 2 MB tölthető vissza.');
+   const data=JSON.parse(await f.text());
+   const isBackup=data&&data.format==='toyota-omotenashi-notebook';
+   const incoming=isBackup?data.state:data;
+   if(!valid(incoming))throw Error('Ez nem érvényes Omotenashi-napló mentés. A jelenlegi jegyzeteid megmaradtak.');
+   const hasWorkshop=isBackup&&Object.prototype.hasOwnProperty.call(data,'workshop');
+   if(hasWorkshop&&!validWorkshopBackup(data.workshop))throw Error('A workshopkártyák mentése érvénytelen. A jelenlegi jegyzetek és workshopmegoldások megmaradtak.');
+   if(!confirm(hasWorkshop?
+      'A betöltés lecseréli a jelenlegi naplódat és az A/M/S workshopkártyák megoldásait. Készítettél róluk másolatot?':
+      'A betöltés lecseréli a jelenlegi naplódat. Ez a régebbi mentés nem tartalmaz workshopmegoldásokat, az ezen az eszközön meglévők megmaradnak. Készítettél másolatot?'))return;
+   state=incoming;compactLegacyPairs(state);state.stage=7;save();
+   const quiz=isBackup?data.quiz:null;
+   let quizNote='';
+   if(quiz&&validQuizBackup(quiz)){
+    try{
+     const rawQuiz=JSON.stringify(quiz);localStorage.setItem('toyota-omotenashi-quiz-v1',rawQuiz);
+     window.OmotSafety?.mirror('quiz',rawQuiz).catch(()=>{});
+     quizNote=' A kvízállás is visszatöltve.';
+    }catch{quizNote=' A kvíz külön mentése nem sikerült.';}
+   }
+   let workshopNote='';
+   if(hasWorkshop){
+    try{
+     localStorage.setItem(WORKSHOP_KEY,JSON.stringify(data.workshop));
+     workshopNote=' A workshopkártyák megoldásait is visszatöltöttük.';
+    }catch{workshopNote=' FIGYELEM: a workshopmegoldások visszatöltése sikertelen; a jelenlegi helyi válaszokat nem írtuk felül.';}
+   }else{workshopNote=' A régebbi mentés nem tartalmaz workshopmegoldásokat; a készülék meglévő válaszait meghagytuk.';}
+   render();toast(storageOK?'A jegyzeteket visszatöltöttük.'+quizNote+workshopNote:'A napló mentése nem sikerült. Ellenőrizd a helyi adatokat és tölts le biztonsági másolatot!'+quizNote+workshopNote);
+  }catch(error){$('import-message').textContent=error.message;$('import-message').classList.add('error');}
+  finally{if($('import-file'))$('import-file').value='';}
+ };
  if($('print'))$('print').onclick=()=>{$('print-area').innerHTML='<h1>Toyota Omotenashi Manager</h1><div class="print-report"></div>';$('print-area').lastChild.textContent=report();window.print();};
  if($('copy'))$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(report());toast('A jegyzetet a vágólapra másoltuk.');}catch{const el=$('report-preview');const range=document.createRange();range.selectNodeContents(el);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);toast('Kijelöltük a teljes jegyzetet. A böngésző Másolás parancsával másolhatod.');}};
  if($('email'))$('email').onclick=()=>{const subject='Toyota Omotenashi – '+(state.name||'saját jegyzeteim')+' – '+stamp();const mail='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(report());if(mail.length>7500){const el=$('email-help');el.classList.remove('hidden');el.innerHTML='A teljes jegyzet hosszú a levelezőnek átadott szöveghez. Töltsd le a jegyzetet, és csatold a leveledhez. <div class="button-row"><button class="small-button" id="email-open">Levelező megnyitása</button></div>';$('email-open').onclick=()=>{location.href='mailto:?subject='+encodeURIComponent(subject);};return;}location.href=mail;};

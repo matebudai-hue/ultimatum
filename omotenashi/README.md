@@ -128,3 +128,12 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - A meglévő `workshop-cards.js` kezeli a három új S-kártyát is. A kártyánkénti válaszok a böngésző külön workshop-helyi kulcsában maradnak (`toyota-omotenashi-workshop-cases-v1`); nem kerülnek a trénerhez, és nem érintik a naplót vagy a kvízt. Az új változat offline is elérhető a frissített cache mellett.
 - Regressziós teszt: mindhárom kártya, teljes történet és feldolgozó feladat, megoldás megőrzése újratöltés után és offline, valamint a régi anyagok zavartalan működése.
 - Visszaállítási pont: `backup/omotenashi-sztenderd-esetek-elott-20261020`, commit `ac46ad6dfce607b767cd959e3376968d6da7a7d8`.
+
+## Workshopválaszok a teljes biztonsági mentésben (2026-10-20)
+
+- Codex P2 észrevétel (#15): a helyi `toyota-omotenashi-workshop-cases-v1` válaszok nem kerültek bele a korábbi JSON backupba. A `Jegyzeteim és mentés → Biztonsági másolat letöltése` most már tartalmazza a `workshop` objektumot a napló (`state`) és kvíz (`quiz`) mellett.
+- Visszatöltéskor az összes kártyaválasz A1–A4, M1–M6, S1–S3 alatt az eredeti helyi workshop kulcsra kerül vissza, így a kártyánál látható. Az import előbb ellenőrzi a formátumot; a hibás workshop adat nem írja felül a meglévő naplót.
+- Régi mentések (`workshop` mező nélkül) továbbra is megnyithatók, az eszközön meglévő kártyaválaszokat érintetlenül hagyjuk, és erről visszajelzést adunk. A `workshop` mezőt tartalmazó új mentés visszaállításakor előre figyelmeztetünk, hogy a meglévő kártyaválaszokat lecseréli.
+- A workshopkártyák külön helyi, azonnali mentése változatlan. A teljes backupra méretellenőrzés kerül, hogy letölthető, de nem visszatölthető túlméretes mentést ne készítsünk.
+- A regressziós teszt teljes workshop exportot, külön eszközkörnyezetbe visszaállítást, régi formátum megőrző importját és hibás workshop payload elutasítását is ellenőrzi.
+- Mentés előtti visszaállítási pont: `backup/omotenashi-workshop-backup-elott-20261020` (`f70230db29374873c913640466baf69ccaddb6aa`).
