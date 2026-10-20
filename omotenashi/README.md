@@ -92,3 +92,10 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - Az eredetileg megadott alapgondolat és mind a hét kérdés teljes, módosítatlan szöveggel olvasható. A már meglévő öt történet és a négy fejezet tartalma érintetlen.
 - A napló helyi jegyzeteinek, a 30 kérdéses kvíznek és a mentési rendszernek nincs új állapota vagy adatmódosítása. Az offline cache verziója frissült.
 - Visszaállítás: `backup/omotenashi-ichigo-kerdesek-elott-20261020` az `69b92b3dd9579659eebc99fa29fae6854534888e` commiton.
+
+## Ichigo Ichie – 3 kérdésre egyszerűsített zárás (2026-10-20)
+
+- A korábbi hét, több helyen ismétlődő összegző kérdés helyén három, eltérő funkciójú kérdés található: a rutin felismerése; egy elmaradt kérdezés következményének felidézése; konkrét következő vezetői beszélgetés kijelölése.
+- Az öt történet és a hozzájuk tartozó eredeti feldolgozó kérdések megmaradtak, a négy tananyagfejezet változatlan. A „Gondolatébresztő kérdések” hivatkozás ugyanarra a `#kerdesek` szakaszra mutat.
+- A résztvevői mentés és a 30 kérdéses kvíz adatszerkezetét nem módosítottuk; csak az offline shell cache verziója frissült.
+- Előző éles változat visszaállítási pontja: `backup/omotenashi-ichigo-7kerdes-elott-20261020` (`08d5f95377b4369554f3c3293b8605f13b6c3060`).
