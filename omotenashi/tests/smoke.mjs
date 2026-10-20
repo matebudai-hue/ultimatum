@@ -55,7 +55,7 @@ assert.equal(await page.locator('section.panel').count(),5);
 assert.ok((await page.locator('#jelentes').textContent()).includes('taktidő'));
 assert.ok((await page.locator('#elemek').textContent()).includes('megfigyelhető viselkedést'));
 assert.ok((await page.locator('#pelda').textContent()).includes('biztonságos kipróbálásukra'));
-assert.ok((await page.locator('#bevezetes').textContent()).includes('Megt anítod'.replace(' ','')));
+assert.ok((await page.locator('#bevezetes').textContent()).includes('Megtanítod'));
 assert.ok((await page.locator('#bevezetes').textContent()).includes('Kaizen'));
 assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Standard mobile overflow');
 await page.screenshot({path:root+'/build/omotenashi_qa/10_sztenderd_mobile.png',fullPage:true});
