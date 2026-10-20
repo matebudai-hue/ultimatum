@@ -68,3 +68,11 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - Alsó navigáció: a következő programrész megnevezése látható, nincs külön ismételt tovább gomb a gyári megfigyelések között.
 
 **Git-visszaállítási pont:** `backup/omotenashi-ux-elotti-20261019` (`26fc052159f7520594954d1814ca025cd067f81d`). Az app adatsémája és tárolási kulcsai változatlanok; a visszatérési pont a kódot rögzíti, nem a résztvevők egyéni böngészőadatait.
+
+## Páros beszélgetések – 2026-10-20
+
+- Egy beszélgetési lap mutatja mind a négy kérdést, és egy közös jegyzetmezőt biztosít. A partner neve opcionálisan rögzíthető.
+- Egyetlen beszélgetési lap jelenik meg új naplónál; „+ Új beszélgetés másik párral” gombbal lehet másodikat, harmadikat stb. felvenni.
+- Korábbi mentésekben a három, automatikusan létrejött, teljesen üres kérdéskártya egyetlen lapra egyszerűsödik. Bármely ténylegesen kitöltött korábbi beszélgetési jegyzet megmarad, az eredeti hozzá tartozó kérdés külön jelezve marad.
+- A meglévő `pairs[].question / partner / note` adatmezők, a JSON és a TXT export, valamint a helyi automatikus mentés változatlan adatszerkezettel működik.
+- Visszatérési pont: `backup/omotenashi-pares-beszelgetesek-elott-20261020` a `ec6e2b195ff2d29d04a3ec800bddbd36904bef92` commiton.
