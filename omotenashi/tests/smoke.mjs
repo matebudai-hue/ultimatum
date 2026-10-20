@@ -120,6 +120,8 @@ await page.locator('#ichigo-link').click();
 assert.equal(await page.locator('article.story').count(),5);
 assert.ok((await page.locator('#torteneti').textContent()).includes('Ii Naosuke'));
 await page.locator('.back').click();
+assert.equal(await page.locator('#stage').inputValue(),'7'); // Return to the existing program stage.
+await stage(0);
 assert.equal(await field('road.expectation').inputValue(),'Szeretném megkönnyíteni a kollégáim munkáját.');
 
 await stage(4);await field('kaizen.trial').fill('Offline is megmaradó próba');await page.reload();assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');
