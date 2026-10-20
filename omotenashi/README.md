@@ -99,3 +99,13 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - Az öt történet és a hozzájuk tartozó eredeti feldolgozó kérdések megmaradtak, a négy tananyagfejezet változatlan. A „Gondolatébresztő kérdések” hivatkozás ugyanarra a `#kerdesek` szakaszra mutat.
 - A résztvevői mentés és a 30 kérdéses kvíz adatszerkezetét nem módosítottuk; csak az offline shell cache verziója frissült.
 - Előző éles változat visszaállítási pontja: `backup/omotenashi-ichigo-7kerdes-elott-20261020` (`08d5f95377b4369554f3c3293b8605f13b6c3060`).
+
+## Andon és sztenderdizálás – résztvevői olvasnivalók (2026-10-20)
+
+- Két önálló, mobilra optimalizált, négyfejezetes tananyag készült az Ichigo Ichie-oldal tipográfiájával és szerkezetével: `andon.html` és `sztenderdizalas.html`.
+- Mindkettő a képzés négy lépésére épül: „Megtanulod → Átadod → Megtanítod → Sztenderdizálsz”. A technikai Toyota fogalmakat és a kereskedési tréningpéldát következetesen elkülönítik; az Andonhoz vezetői jelzés/reakció, a sztenderdhez rögzítendő viselkedés, tanítás és Kaizen kapcsolódik.
+- A programválasztó alatt egyetlen kompakt „Elméleti háttér” navigáció tartalmazza az Ichigo Ichie, Andon és Sztenderdizálás linkjeit, minden progrésznél elérhetően. Az Ichigo oldalon keresztlinkek vannak; az öt történet és az eredeti három összegző kérdés szövege változatlan.
+- Az offline service worker külön cache-célponttal rendelkezik mindhárom olvasnivalóhoz; offline navigáció esetén nem véletlenül a napló nyílik meg. A fájlok teljes HTML-ként, külső JavaScript és font nélkül is olvashatók.
+- Jegyzetek, 30 kérdéses kvíz, jelentések, JSON-mentések, importadat-szerkezet és minden felhasználói adat érintetlen; kizárólag a shell/appverzió és a statikus tartalom módosult.
+- Teszt: mindkét új oldal négy szakmai része, kulcsmondatok és teljes mobilos oldalszélesség; offline újranyitás; megőrzött meglévő jegyzetek; előző modulok és kvíz teljes regressziója.
+- Visszaállítás: `backup/omotenashi-andon-sztenderd-elott-20261020` a `1e640c9919e84b2d020af3263831fdcded89c75e` commiton.

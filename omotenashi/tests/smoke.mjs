@@ -37,6 +37,31 @@ await page.screenshot({path:root+'/build/omotenashi_qa/08_ichigo_mobile.png',ful
 await page.locator('.back').click();
 assert.equal(await field('road.expectation').inputValue(),'Szeretném megkönnyíteni a kollégáim munkáját.');
 assert.equal(await field('road.other').inputValue(),'Kiszámítható átadási folyamat.');
+assert.equal(await page.locator('#andon-link').count(),1);
+assert.equal(await page.locator('#standard-link').count(),1);
+await page.locator('#andon-link').click();
+assert.equal(new URL(page.url()).pathname,'/omotenashi/andon.html');
+assert.equal(await page.locator('section.panel').count(),5);
+assert.ok((await page.locator('#jelentes').textContent()).includes('Jidoka'));
+assert.ok((await page.locator('#mukodes').textContent()).includes('Jelzés.'));
+assert.ok((await page.locator('#pelda').textContent()).includes('Tíz perc múlva érkezik az ügyfél'));
+assert.ok((await page.locator('#vezeto').textContent()).includes('sztenderdizálást'));
+{const overflow=await page.evaluate(()=>({window:innerWidth,scroll:document.documentElement.scrollWidth,x:scrollX,details:[...document.querySelectorAll('*')].map(el=>{let r=el.getBoundingClientRect();return {tag:el.tagName,cls:String(el.className).slice(0,35),id:el.id,text:el.textContent?.slice(0,36),right:Math.round(r.right+scrollX),left:Math.round(r.left+scrollX),client:el.clientWidth,scroll:el.scrollWidth,css:getComputedStyle(el).width};}).sort((a,b)=>b.right-a.right).slice(0,17)})); assert.ok(overflow.scroll<=overflow.window+1,'Andon mobile overflow: '+JSON.stringify(overflow));}
+await page.screenshot({path:root+'/build/omotenashi_qa/09_andon_mobile.png',fullPage:true});
+await page.locator('.back').click();
+await page.locator('#standard-link').click();
+assert.equal(new URL(page.url()).pathname,'/omotenashi/sztenderdizalas.html');
+assert.equal(await page.locator('section.panel').count(),5);
+assert.ok((await page.locator('#jelentes').textContent()).includes('taktidő'));
+assert.ok((await page.locator('#elemek').textContent()).includes('megfigyelhető viselkedést'));
+assert.ok((await page.locator('#pelda').textContent()).includes('biztonságos kipróbálásukra'));
+assert.ok((await page.locator('#bevezetes').textContent()).includes('Megtanítod'));
+assert.ok((await page.locator('#bevezetes').textContent()).includes('Kaizen'));
+assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Standard mobile overflow');
+await page.screenshot({path:root+'/build/omotenashi_qa/10_sztenderd_mobile.png',fullPage:true});
+await page.locator('.back').click();
+assert.equal(await field('road.expectation').inputValue(),'Szeretném megkönnyíteni a kollégáim munkáját.');
+
 
 await page.screenshot({path:root+'/build/omotenashi_qa/01_road.png',fullPage:true});
 await stage(1);
@@ -125,6 +150,14 @@ await page.locator('#ichigo-link').click();
 assert.equal(await page.locator('article.story').count(),5);
 assert.ok((await page.locator('#torteneti').textContent()).includes('Ii Naosuke'));
 await page.locator('.back').click();
+assert.ok((await page.locator('a[href="./andon.html"]').count())>=1);
+await page.locator('a[href="./andon.html"]').last().click();
+assert.ok((await page.locator('#jelentes').textContent()).includes('Jidoka'));
+await page.locator('.back').click();
+await page.locator('#standard-link').click();
+assert.ok((await page.locator('#elemek').textContent()).includes('Mikor?'));
+await page.locator('.back').click();
+
 assert.equal(await page.locator('#stage').inputValue(),'7'); // Return to the existing program stage.
 await stage(0);
 assert.equal(await field('road.expectation').inputValue(),'Szeretném megkönnyíteni a kollégáim munkáját.');
@@ -135,7 +168,7 @@ await ctx.close();
 ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--no-sandbox'],viewport:{width:390,height:844},acceptDownloads:true});await ctx.setOffline(true);page=await ctx.newPage();await page.goto(url);assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');await ctx.setOffline(false);
 // An updated app shell must retain edited, deleted and custom observation points.
 const htmlPath=APP_DIR+'/index.html',original=await fs.readFile(htmlPath,'utf8');
-try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.4'","APP_VERSION='2026.10.20.5'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.5');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
+try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.5'","APP_VERSION='2026.10.20.6'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.6');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
 await stage(7);await page.setInputFiles('#import-file',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});await page.waitForFunction(()=>document.getElementById('import-message').textContent.length>0);assert.ok((await page.textContent('#import-message')).includes('nem érvényes'));assert.ok((await page.textContent('#report-preview')).includes('Offline is megmaradó próba'));
 await page.evaluate(()=>localStorage.removeItem('toyota-omotenashi-quiz-v1'));page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
 const second=await ctx.newPage();await second.goto(url);await stage(0);await field('road.expectation').fill('Az első lap legfrissebb jegyzete.');await second.locator('#storage-warning').waitFor({state:'visible'});await second.close();await page.reload();assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
@@ -185,5 +218,5 @@ await desktop.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMEx
 await browser.close();
 if(errors.length)throw Error(errors.join('\n'));
 let safari='not available';try{const b=await webkit.launch({headless:true});const c=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const pg=await c.newPage();await pg.goto(url);await pg.locator('[data-field="road.expectation"]').fill('Safari megmaradó jegyzet');await pg.reload();assert.equal(await pg.locator('[data-field="road.expectation"]').inputValue(),'Safari megmaradó jegyzet');await pg.selectOption('#stage','2');await pg.locator('[data-point-focus="0"]').check();await pg.selectOption('#stage','3');await pg.locator('[data-observation-source="0"][data-source-value="2"]').click();await pg.reload();assert.equal(await pg.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')).observations[0].source),2);await b.close();safari='passed';}catch(error){if(!error.message.includes('Executable doesn\'t exist'))throw error;}
-console.log(JSON.stringify({status:'pass',checks:['all 8 modules','compact auto-growing plan fields','coaching questions above collapsed plan','simple export actions','four prompts per discussion and added second partner','Ichigo theory and five stories online and offline','reading does not overwrite notes','bus selection transfers to factory notes','editable/addable/deletable observations','all plan and coaching fields','automatic local save','offline page reopen','IndexedDB rescue on missing primary save','full browser restart','app update preserves notes and custom/deleted points','JSON roundtrip and invalid import protection','TXT export','long email fallback','print report','mobile no overflow','HTML escaping','storage failure visible'],webkit:safari}));
+console.log(JSON.stringify({status:'pass',checks:['all 8 modules','compact auto-growing plan fields','coaching questions above collapsed plan','simple export actions','four prompts per discussion and added second partner','Ichigo theory and five stories online and offline','reading does not overwrite notes','Andon and standardized-work learning online and offline','bus selection transfers to factory notes','editable/addable/deletable observations','all plan and coaching fields','automatic local save','offline page reopen','IndexedDB rescue on missing primary save','full browser restart','app update preserves notes and custom/deleted points','JSON roundtrip and invalid import protection','TXT export','long email fallback','print report','mobile no overflow','HTML escaping','storage failure visible'],webkit:safari}));
 server.close();
