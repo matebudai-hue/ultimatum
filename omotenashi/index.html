@@ -9,6 +9,7 @@
 
 .focus-list{display:grid;gap:9px;margin:17px 0}.focus-choice{display:flex;align-items:flex-start;gap:12px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:14px;min-height:68px;cursor:pointer}.focus-choice.chosen{border-color:var(--red);background:#fff6f6}.focus-choice input{margin:3px 0 0;flex:none;width:22px;height:22px}.focus-choice-main{flex:1;min-width:0}.focus-choice strong{font-size:16px;line-height:1.35;display:block;overflow-wrap:anywhere}.focus-choice .hint{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:5px;overflow-wrap:anywhere}.focus-choice .tick{font-size:12px;color:#a30d1a;font-weight:bold;display:none}.focus-choice.chosen .tick{display:block}.focus-count{font-weight:700;color:#263039;margin:11px 0}.observation-entry{scroll-margin-top:20px}.observation-entry h2{font-size:18px;margin:0 0 8px}.observation-entry .prompt{font-size:14px;line-height:1.5;color:#505860;margin:0 0 15px}.source-buttons{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px}.source-button{border:1px solid #b7bec6;background:#fff;color:#30363d;border-radius:7px;min-height:44px;padding:9px 10px;font-weight:600;font-size:13px;flex:1 1 90px}.source-button.active{border-color:var(--red);background:#fff2f3;color:#981020}.obs-status{font-size:12px;color:var(--muted);margin:-2px 0 9px}.manage-entry{padding:13px 0;border-bottom:1px solid var(--line)}.manage-entry:last-child{border-bottom:0}.manage-entry .small-button{margin-top:6px}@media(max-width:420px){.focus-choice{padding:12px}.source-button{flex-basis:105px}}
 .compact-answer{min-height:64px;height:64px;overflow-y:hidden}.round-meta{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}.summary-action{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.summary-action>*{flex:1}.management{margin-top:18px}.management summary{font-size:14px;color:#3d4550}.focus-choice{scroll-margin-top:12px}
+.pair-questions{display:grid;gap:10px;margin:7px 0 16px}.pair-question{display:flex;align-items:flex-start;gap:9px;margin:0;font-size:15px;line-height:1.5}.pair-number{font-weight:800;color:var(--red);min-width:20px}.pair-card{scroll-margin-top:16px}
 </style>
 </head>
 <body>
@@ -21,16 +22,34 @@
 <script src="./data-safety.js"></script>
 <script>
 'use strict';
-const APP_VERSION='2026.10.19.11';
+const APP_VERSION='2026.10.20.1';
 // The storage key never includes a release number: updates must preserve participant notes.
 const KEY='toyota-omotenashi-notebook-v1',BACKUP=KEY+'-backup';
 const STAGES=['Toyota on the Road','Páros beszélgetések','Gyári megfigyelések','Mit láttunk?','Kaizen a kereskedésben','Személyes vezetői terv','Páros transzfer','Jegyzeteim és mentés'];
 const FOCUS=['Ügyfélre figyelés','Munkatársak tanítása','Kaizen a napi működésben','Sztenderdek kialakítása','Problémák jelzése és kezelése','Saját vezetői működésem'];
 const PAIR_QUESTIONS=[
  'Mi az, amit a kereskedésedben a legnehezebb következetesen jól csinálni? Hozz egy konkrét esetet.',
- 'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',
+ 'Mi ebben a te vezetői szereped?',
+ 'Mit próbáltál már, és mi történt?',
  'Milyen kérdésre keresnél választ a gyárlátogatáson, ami segítene ebben a helyzetben?'
 ];
+const LEGACY_PAIR_QUESTIONS=[
+ PAIR_QUESTIONS[0],
+ 'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',
+ PAIR_QUESTIONS[3]
+];
+const PAIR_BUNDLE='A négy beszélgetési kérdés';
+function newPair(){return {id:uid(),question:PAIR_BUNDLE,partner:'',note:''};}
+function compactLegacyPairs(data){
+ // Remove only untouched, automatically-created placeholder cards from the old three-card layout.
+ // Keep every card containing a name or note, and retain one starter card if all are blank.
+ if(!Array.isArray(data.pairs))return;
+ const all=data.pairs,kept=all.filter((x,i)=>
+  !(LEGACY_PAIR_QUESTIONS.includes(x.question)&&!x.partner.trim()&&!x.note.trim()&&
+    (i>0||all.some(y=>y.partner.trim()||y.note.trim()))));
+ if(kept.length)data.pairs=kept;
+ else data.pairs=[newPair()];
+}
 const TEMPLATES=[
  ['work','Mi könnyíti meg a munkát?','Milyen megoldás csökkenti a keresést, várakozást, felesleges mozdulatot vagy újramunkát?','Muda, Gemba'],
  ['visual','Mit mond el a munkakörnyezet?','Honnan látszik, mi hol van, hol tart a munka, és mi a következő lépés?','Vizuális menedzsment'],
@@ -50,7 +69,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function point(t){return {id:uid(),template:t?.[0]||'',title:t?.[1]||'Saját megfigyelési szempont',question:t?.[2]||'',topic:t?.[3]||'Saját szempont',focus:false,source:0,evidence:'',connection:''};}
-function fresh(){return {schema:1,stage:0,createdAt:new Date().toISOString(),updatedAt:'',name:'',road:{expectation:'',focus:[],other:''},pairs:PAIR_QUESTIONS.map((q,i)=>({id:uid(),question:q,partner:'',note:''})),observations:TEMPLATES.map(point),deletedTemplates:[],reflection:{fact:'',meaning:'',expectation:''},kaizen:{idea:'',where:'',trial:'',signal:''},plan:Array(7).fill(''),coaching:{partner:'',answers:Array(4).fill('')}};}
+function fresh(){return {schema:1,stage:0,createdAt:new Date().toISOString(),updatedAt:'',name:'',road:{expectation:'',focus:[],other:''},pairs:[newPair()],observations:TEMPLATES.map(point),deletedTemplates:[],reflection:{fact:'',meaning:'',expectation:''},kaizen:{idea:'',where:'',trial:'',signal:''},plan:Array(7).fill(''),coaching:{partner:'',answers:Array(4).fill('')}};}
 const isText=v=>typeof v==='string'&&v.length<=50000;
 function valid(s){
  if(!s||s.schema!==1||!Number.isInteger(s.stage)||s.stage<0||s.stage>7||!isText(s.name)||!isText(s.createdAt)||!isText(s.updatedAt))return false;
@@ -64,7 +83,7 @@ function valid(s){
  return !!s.coaching&&isText(s.coaching.partner)&&Array.isArray(s.coaching.answers)&&s.coaching.answers.length===4&&s.coaching.answers.every(isText);
 }
 let state=fresh(),storageOK=true,loadWarning='',tabConflict=false,editing=new Set(),openPoints=new Set(),manageOpen=false,lastSaved='',waitingWorker=null,primaryLoaded=false,editRevision=0,mirrorOK=false;
-try{const raw=localStorage.getItem(KEY);if(raw){const loaded=JSON.parse(raw);if(!valid(loaded))throw Error('Érvénytelen mentés');state=loaded;primaryLoaded=true;}}
+try{const raw=localStorage.getItem(KEY);if(raw){const loaded=JSON.parse(raw);if(!valid(loaded))throw Error('Érvénytelen mentés');state=loaded;compactLegacyPairs(state);primaryLoaded=true;}}
 catch(e){try{const old=JSON.parse(localStorage.getItem(BACKUP));if(valid(old)){state=old;loadWarning='Egy korábbi biztonsági mentést nyitottunk meg. Ellenőrizd a jegyzeteidet.';}else throw Error();}catch{storageOK=false;loadWarning='A korábbi mentést most nem tudtuk megnyitni. A meglévő adatot megőrizzük; a Jegyzeteim résznél letöltheted a helyi mentést.';}}
 function toast(message){$('toast').textContent=message;$('toast').classList.remove('hidden');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.add('hidden'),4000);}
 function status(){
@@ -106,7 +125,7 @@ async function recoverSecondCopy(){
   if(!valid(candidate))return;
   const backupTime=Date.parse(candidate.updatedAt)||0,localTime=Date.parse(state.updatedAt)||0;
   if(!primaryLoaded||backupTime>localTime){
-   state=candidate;save();render();
+   state=candidate;compactLegacyPairs(state);save();render();
    toast('A korábban mentett jegyzeteket helyreállítottuk.');
   }
  }catch{/* localStorage and downloaded files remain available */}
@@ -139,13 +158,19 @@ function render(){
  const renderers=[road,pairs,observations,reflection,kaizen,plan,coaching,summary];$('app').innerHTML=renderers[state.stage]();bind();status();updateOffline();
 }
 function road(){return `<h1>Toyota on the Road</h1><p class="intro">A saját jegyzeteid végig veled maradnak a két nap során.</p><div class="panel">${area('road.expectation','Mit szeretnél hazavinni ebből a két napból?',state.road.expectation,'Egy saját helyzet, kérdés vagy dolog, amiben szeretnék előrelépni.',true)}</div><div class="panel"><h2>Mi legyen a saját tanulási fókuszom?</h2><p class="muted">Jelöld, ami most neked fontos. Többet is választhatsz.</p>${FOCUS.map((x,i)=>`<label class="check"><input type="checkbox" data-focus="${i}" ${state.road.focus.includes(x)?'checked':''}>${esc(x)}</label>`).join('')}${area('road.other','Más, ami nekem fontos',state.road.other,'Ide saját fókuszt is írhatsz.')}</div><section class="panel"><h2>Toyota Way Challenge – 30 kérdés</h2><p class="intro">A 16 kiemelt Toyota-fogalmat önálló, páros vagy kiscsoportos játékban ismerhetitek meg. Szabad beszélgetni és utánanézni. A helyes válaszok és magyarázatok csak a lezárás után láthatók.</p><a class="primary" href="./kviz.html" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Kvíz indítása vagy folytatása</a><p class="muted">A pontozás és az eredmény ugyanebben az alkalmazásban marad, a jegyzeteidtől külön mentve.</p></section><p class="privacy">A jegyzeteid ezen az eszközön, ebben a böngészőben maradnak. A „Jegyzeteim” gombnál másolatot is készíthetsz róluk.</p>`;}
-function pairs(){return '<div class="eyebrow">Toyota on the Road</div><h1>Páros beszélgetések</h1><p class="intro">Minden kártya egy párcserét jelöl, saját kérdéssel. A beszélgetés után elég a számodra fontos gondolatot feljegyezni.</p>'+
-state.pairs.map((x,i)=>'<section class="panel"><p class="round-meta">'+(i+1)+'. párcsere</p><h2>'+esc(x.question)+'</h2>'+
-area('pairs.'+i+'.note','Amit ebből magamnak felírok',x.note,'Elég egy mondat vagy egy konkrét ötlet.')+
-'<details class="management"><summary class="simple">Beszélgetőtárs és további lehetőségek</summary>'+
-input('pairs.'+i+'.partner','Beszélgetőtársam (nem kötelező)',x.partner)+
-'<button class="small-button" data-delete-pair="'+i+'">Beszélgetés törlése</button></details></section>').join('')+
-'<button class="secondary" id="add-pair">Új párcsere, új jegyzet</button>';
+function pairs(){
+ return '<div class="eyebrow">Toyota on the Road</div><h1>Páros beszélgetések</h1>'+
+ '<p class="intro">Beszéljétek át a négy kérdést a pároddal, és írd le, ami fontos számodra. Ha új párod lesz, adj hozzá egy új beszélgetést.</p>'+
+ state.pairs.map((x,i)=>'<section class="panel pair-card" data-pair="'+i+'">'+
+ '<p class="round-meta">'+(i+1)+'. beszélgetés</p>'+
+ '<div class="pair-questions">'+PAIR_QUESTIONS.map((q,n)=>'<p class="pair-question"><span class="pair-number">'+(n+1)+'.</span><span>'+esc(q)+'</span></p>').join('')+'</div>'+
+ (x.question!==PAIR_BUNDLE&&x.note.trim()?'<p class="muted">Korábbi jegyzet ehhez a kérdéshez: '+esc(x.question)+'</p>':'')+
+ area('pairs.'+i+'.note','Jegyzeteim erről a beszélgetésről',x.note,'A lényeg, a felmerült gondolatok vagy a gyárban keresett válasz.')+
+ '<details class="management"><summary class="simple">Beszélgetőtárs'+(x.partner.trim()?' · '+esc(x.partner):'')+'</summary>'+
+ input('pairs.'+i+'.partner','A párom neve (nem kötelező)',x.partner)+
+ (state.pairs.length>1?'<button class="small-button" data-delete-pair="'+i+'">Beszélgetés törlése</button>':'')+
+ '</details></section>').join('')+
+ '<button class="secondary" id="add-pair">+ Új beszélgetés másik párral</button>';
 }
 function observations(){
  const count=state.observations.filter(x=>x.focus).length;
@@ -204,7 +229,7 @@ shortArea('plan.6','Az első konkrét lépésem és időpontja, pontosítva',sta
 }
 function report(){
  const lines=['TOYOTA OMOTENASHI MANAGER','Kétnapos tanulási napló',state.name?'Név: '+state.name:'',`Utoljára mentve: ${state.updatedAt?new Date(state.updatedAt).toLocaleString('hu-HU'):'–'}`,'','1. TOYOTA ON THE ROAD','Mit szeretnék hazavinni?\n'+(state.road.expectation||'–'),'Tanulási fókuszaim: '+([...state.road.focus,state.road.other].filter(Boolean).join('; ')||'–'),'','2. PÁROS BESZÉLGETÉSEK'];
- state.pairs.forEach((x,i)=>lines.push(`${i+1}. beszélgetés`,x.question,x.partner?'Beszélgetőtárs: '+x.partner:'','Jegyzet: '+(x.note||'–'),''));
+ state.pairs.forEach((x,i)=>lines.push(`${i+1}. beszélgetés`,...PAIR_QUESTIONS.map((q,n)=>(n+1)+'. '+q),x.partner?'Beszélgetőtárs: '+x.partner:'',x.question!==PAIR_BUNDLE&&x.note.trim()?'Korábbi jegyzethez tartozó kérdés: '+x.question:'','Jegyzet: '+(x.note||'–'),''));
  lines.push('3. GYÁRI MEGFIGYELÉSEK');state.observations.forEach(x=>lines.push(x.title+(x.focus?' [saját fókusz]':''),x.question,'Forrás: '+SOURCES[x.source],'Konkrét megfigyelés: '+(x.evidence||'–'),'Kapcsolódás a kereskedésemhez: '+(x.connection||'–'),''));
  lines.push('4. MIT LÁTTUNK?','Legfontosabb megfigyelésem: '+(state.reflection.fact||'–'),'Mi lepett meg, miért lehet hasznos: '+(state.reflection.meaning||'–'),'Válasz az induló várakozásomra / nyitott kérdés: '+(state.reflection.expectation||'–'),'','5. KAIZEN A KERESKEDÉSBEN');
  ['Miből indulok?','Hol alkalmazom?','Milyen kis próbát teszek?','Miből látom, hogy jobb lett?'].forEach((q,i)=>lines.push(q+'\n'+(state.kaizen[['idea','where','trial','signal'][i]]||'–')));
@@ -278,7 +303,7 @@ function bind(){
   state.observations.splice(i,1);save();manageOpen=true;renderKeepingScroll();
  });
  document.querySelectorAll('[data-delete-pair]').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.deletePair);if(!confirm('Törlöd ezt a beszélgetést és a jegyzetét?'))return;state.pairs.splice(i,1);save();renderKeepingScroll();});
- if($('add-pair'))$('add-pair').onclick=()=>{if(state.pairs.length>=40)return toast('Legfeljebb 40 beszélgetési jegyzetet hozhatsz létre.');state.pairs.push({id:uid(),question:PAIR_QUESTIONS[state.pairs.length%3],partner:'',note:''});save();render();document.querySelectorAll('.panel')[state.pairs.length-1]?.scrollIntoView({block:'start'});};
+ if($('add-pair'))$('add-pair').onclick=()=>{if(state.pairs.length>=40)return toast('Legfeljebb 40 beszélgetési jegyzetet hozhatsz létre.');state.pairs.push(newPair());save();render();document.querySelector('.pair-card:last-of-type')?.scrollIntoView({block:'start'});};
  if($('add-point'))$('add-point').onclick=()=>{
   if(state.observations.length>=100)return toast('Legfeljebb 100 megfigyelési szempontot hozhatsz létre.');
   const x=point();x.focus=true;state.observations.push(x);editing.add(x.id);
@@ -289,7 +314,7 @@ function bind(){
  if($('download-txt'))$('download-txt').onclick=()=>{save();download('\ufeff'+report(),'Toyota_Omotenashi_jegyzeteim_'+stamp()+'.txt','text/plain;charset=utf-8');};
  if($('backup'))$('backup').onclick=()=>{save();download(JSON.stringify({format:'toyota-omotenashi-notebook',exportedAt:new Date().toISOString(),state,quiz:quizBackup()},null,2),'Toyota_Omotenashi_biztonsagi_masolat_'+stamp()+'.json','application/json');};
  if($('raw-backup'))$('raw-backup').onclick=()=>{try{download(localStorage.getItem(KEY+'-unreadable')||localStorage.getItem(KEY)||JSON.stringify(state),'Toyota_Omotenashi_helyi_mentes_'+stamp()+'.json','application/json');}catch{toast('A böngésző nem ad hozzáférést a helyi mentéshez. A Másolat letöltése gombot használd.');}};
- if($('restore'))$('restore').onclick=()=>$('import-file').click();if($('import-file'))$('import-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>2000000)throw Error('A fájl túl nagy. Legfeljebb 2 MB tölthető vissza.');const data=JSON.parse(await f.text());const incoming=data.format==='toyota-omotenashi-notebook'?data.state:data;if(!valid(incoming))throw Error('Ez nem érvényes Omotenashi-napló mentés. A jelenlegi jegyzeteid megmaradtak.');if(!confirm('A betöltés lecseréli a jelenlegi naplódat. Készítettél róla másolatot?'))return;state=incoming;state.stage=7;save();
+ if($('restore'))$('restore').onclick=()=>$('import-file').click();if($('import-file'))$('import-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>2000000)throw Error('A fájl túl nagy. Legfeljebb 2 MB tölthető vissza.');const data=JSON.parse(await f.text());const incoming=data.format==='toyota-omotenashi-notebook'?data.state:data;if(!valid(incoming))throw Error('Ez nem érvényes Omotenashi-napló mentés. A jelenlegi jegyzeteid megmaradtak.');if(!confirm('A betöltés lecseréli a jelenlegi naplódat. Készítettél róla másolatot?'))return;state=incoming;compactLegacyPairs(state);state.stage=7;save();
  const quiz=data.format==='toyota-omotenashi-notebook'?data.quiz:null;
  let quizNote='';
  if(quiz&&validQuizBackup(quiz)){
