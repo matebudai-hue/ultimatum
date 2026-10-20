@@ -98,7 +98,7 @@ for(const [id,keyword] of [['S1','Ajánlat elküldve'],['S2','Mindjárt jön'],[
  assert.equal(await page.locator('#workshop-case-code').textContent(),id);
  assert.ok(await page.locator('#workshop-case-dialog').evaluate(el=>el.open));
  assert.ok((await page.locator('#workshop-case-story').textContent()).includes(keyword),'case text missing: '+id);
- assert.ok((await page.locator('#workshop-case-question').textContent()).includes('sztenderd')||(await page.locator('#workshop-case-question').textContent()).includes('működés'));
+ assert.ok((await page.locator('#workshop-case-question').textContent()).includes('PDCA')||(await page.locator('#workshop-case-question').textContent()).includes('Kaizen'));
  await page.locator('#workshop-case-close').click();
 }
 await page.locator('[data-workshop-case="S2"]').click();
