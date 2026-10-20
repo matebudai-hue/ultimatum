@@ -109,3 +109,14 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - Jegyzetek, 30 kérdéses kvíz, jelentések, JSON-mentések, importadat-szerkezet és minden felhasználói adat érintetlen; kizárólag a shell/appverzió és a statikus tartalom módosult.
 - Teszt: mindkét új oldal négy szakmai része, kulcsmondatok és teljes mobilos oldalszélesség; offline újranyitás; megőrzött meglévő jegyzetek; előző modulok és kvíz teljes regressziója.
 - Visszaállítás: `backup/omotenashi-andon-sztenderd-elott-20261020` a `1e640c9919e84b2d020af3263831fdcded89c75e` commiton.
+
+## Workshop-kártyák mobilon (2026-10-20)
+
+- A 40 fős nyomtatási csomag (`Toyota_Nyomtatasi_Csomag_40fo_v2.1.pdf`, Drive ID `104Yt8Pnf7s8U7xZLcihaVTHO6YVf1Fmz`) A1–A4 és M1–M6 esetei kerültek be változatlan megfogalmazásban, a PDF sortöréseit mobileszközre normalizálva.
+- Az `andon.html` 3. fejezetében négy A-kártya nyitható külön mobilmodális ablakban, a helyzet és az eredeti vezetői döntési kérdés teljes szövegével.
+- Az `ichigo-ichie.html` végén, a forrásjegyzék előtt hat M-kártya van, az eredeti munkaköri helyzetekkel. Kattintásra teljes kártya és két tanítási tervmező nyílik.
+- Kártyánként két szöveges válaszmező tölthető ki; minden változtatás azonnal a böngésző `toyota-omotenashi-workshop-cases-v1` helyi kulcsába mentődik. A mezők újranyitáskor visszatöltődnek, válasz nincs központilag beküldve. A `Megoldás megosztása` gomb mobilos megosztást, ha nem támogatott, vágólapra másolást próbál.
+- A független adatkör nem ír a meglévő tanulási naplóba és a Toyota Way Challenge kvízbe, és az eredeti dokumentumokat sem módosítja.
+- A közös `workshop-cards.js` offline cache-elve van; a napló `2026.10.20.7` és a service-worker cache `20261020-7` frissült.
+- E2E: tíz kártya megnyitása, szöveg/jelzés, lokális válaszmentés, újratöltés, offline megnyitás, más progrészek jegyzeteinek megőrzése.
+- Visszaállítási pont: `backup/omotenashi-ws-kartyak-elott-20261020` (`32690dec59d25e652bac1500d24455c31614617c`).
