@@ -17,9 +17,19 @@ await page.goto(url);assert.equal(await page.getByText('Progrész kiválasztása
 await field('road.expectation').fill('Szeretném megkönnyíteni a kollégáim munkáját.');
 await page.locator('[data-focus="2"]').check();await field('road.other').fill('Kiszámítható átadási folyamat.');
 await page.screenshot({path:root+'/build/omotenashi_qa/01_road.png',fullPage:true});
-await stage(1);assert.ok((await page.locator('section.panel').first().textContent()).includes('1. párcsere'));await page.locator('section.panel').first().locator('summary').click();await field('pairs.0.partner').fill('Teszt Anna');await field('pairs.0.note').fill('Kulcsokat keresünk az átadás előtt.');
-await field('pairs.1.note').fill('Egy egyértelmű közös hely kell.');await field('pairs.2.note').fill('Honnan látszik a munka állapota?');
-await page.click('#add-pair');await field('pairs.3.note').fill('Negyedik párcsere.');
+await stage(1);
+assert.equal(await page.locator('.pair-card').count(),1);
+assert.equal(await page.locator('.pair-card').first().locator('.pair-question').count(),4);
+assert.ok((await page.locator('.pair-card').first().textContent()).includes('Mi ebben a te vezetői szereped?'));
+assert.ok((await page.locator('.pair-card').first().textContent()).includes('Mit próbáltál már, és mi történt?'));
+assert.ok((await page.locator('.pair-card').first().textContent()).includes('Milyen kérdésre keresnél választ a gyárlátogatáson'));
+await page.locator('.pair-card').first().locator('summary').click();
+await field('pairs.0.partner').fill('Teszt Anna');
+await field('pairs.0.note').fill('Kulcsokat keresünk az átadás előtt.');
+await page.click('#add-pair');
+assert.equal(await page.locator('.pair-card').count(),2);
+assert.equal(await page.locator('.pair-card').last().locator('.pair-question').count(),4);
+await field('pairs.1.note').fill('Második párcsere.');
 await page.reload();assert.ok(await page.locator('#storage-warning').isHidden());await stage(2);
 assert.equal(await page.locator('.focus-choice').count(),10);
 assert.equal(await page.locator('[data-field="observations.4.evidence"]').count(),0); // Bus: selection only
@@ -80,9 +90,9 @@ const quizFixture={version:1,started:true,finished:false,current:2,mode:'pair',t
 await page.evaluate(q=>localStorage.setItem('toyota-omotenashi-quiz-v1',JSON.stringify(q)),quizFixture);
 
 let [dl]=await Promise.all([page.waitForEvent('download'),page.click('#backup')]);await dl.saveAs(root+'/build/omotenashi_qa/backup.json');
-const exported=JSON.parse(await fs.readFile(root+'/build/omotenashi_qa/backup.json','utf8'));assert.equal(exported.state.observations.length,10);assert.equal(exported.state.pairs.length,4);assert.equal(exported.state.plan[6],'Hétfőn 9-kor két kollégával kipróbálom.');assert.equal(exported.quiz.answers[0],1);
+const exported=JSON.parse(await fs.readFile(root+'/build/omotenashi_qa/backup.json','utf8'));assert.equal(exported.state.observations.length,10);assert.equal(exported.state.pairs.length,2);assert.equal(exported.state.plan[6],'Hétfőn 9-kor két kollégával kipróbálom.');assert.equal(exported.quiz.answers[0],1);
 await page.getByText('További megosztási lehetőségek',{exact:true}).click();let [txt]=await Promise.all([page.waitForEvent('download'),page.click('#download-txt')]);await txt.saveAs(root+'/build/omotenashi_qa/report.txt');
-const report=await fs.readFile(root+'/build/omotenashi_qa/report.txt','utf8');assert.ok(report.includes(evidence));assert.ok(report.includes('Negyedik párcsere.'));assert.ok(report.includes('Hétfőn 9-kor'));assert.ok(report.includes('Szeretném megkönnyíteni'));
+const report=await fs.readFile(root+'/build/omotenashi_qa/report.txt','utf8');assert.ok(report.includes(evidence));assert.ok(report.includes('Második párcsere.'));assert.ok(report.includes('Hétfőn 9-kor'));assert.ok(report.includes('Szeretném megkönnyíteni'));
 await page.click('#email');assert.ok(await page.locator('#email-help').isVisible()); // full long note is never silently truncated
 await page.evaluate(()=>{window.print=()=>{window.didPrint=true;};});await page.click('#print');assert.equal(await page.evaluate(()=>window.didPrint),true);assert.ok((await page.textContent('#print-area')).includes(evidence));
 assert.equal(await page.evaluate(()=>window.bad),undefined);
@@ -95,7 +105,7 @@ await ctx.close();
 ctx=await chromium.launchPersistentContext(profile,{headless:true,args:['--no-sandbox'],viewport:{width:390,height:844},acceptDownloads:true});await ctx.setOffline(true);page=await ctx.newPage();await page.goto(url);assert.equal(await field('kaizen.trial').inputValue(),'Offline is megmaradó próba');await ctx.setOffline(false);
 // An updated app shell must retain edited, deleted and custom observation points.
 const htmlPath=APP_DIR+'/index.html',original=await fs.readFile(htmlPath,'utf8');
-try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.19.11'","APP_VERSION='2026.10.19.12'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.19.12');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
+try{await fs.writeFile(htmlPath,original.replace("APP_VERSION='2026.10.20.1'","APP_VERSION='2026.10.20.2'"));await page.reload();assert.equal(await page.evaluate(()=>APP_VERSION),'2026.10.20.2');const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')));assert.ok(!saved.observations.some(x=>x.template==='work'));assert.ok(saved.observations.some(x=>x.title==='Saját Andon-fókusz'));assert.ok(saved.observations.some(x=>x.question==='Minden adat odaér?'));assert.equal(saved.coaching.answers[0],'Pontosítás 1');}finally{await fs.writeFile(htmlPath,original);}
 await stage(7);await page.setInputFiles('#import-file',{name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"invalid":true}')});await page.waitForFunction(()=>document.getElementById('import-message').textContent.length>0);assert.ok((await page.textContent('#import-message')).includes('nem érvényes'));assert.ok((await page.textContent('#report-preview')).includes('Offline is megmaradó próba'));
 await page.evaluate(()=>localStorage.removeItem('toyota-omotenashi-quiz-v1'));page.once('dialog',d=>d.accept());await page.setInputFiles('#import-file',root+'/build/omotenashi_qa/backup.json');await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('visszatöltöttük'));assert.ok((await page.textContent('#report-preview')).includes('Egy műszakban közös átadási lap'));assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-quiz-v1')).answers[0]),1);
 const second=await ctx.newPage();await second.goto(url);await stage(0);await field('road.expectation').fill('Az első lap legfrissebb jegyzete.');await second.locator('#storage-warning').waitFor({state:'visible'});await second.close();await page.reload();assert.equal(await field('road.expectation').inputValue(),'Az első lap legfrissebb jegyzete.');
@@ -106,8 +116,44 @@ await stage(0);assert.equal(await field('road.expectation').inputValue(),'Az els
 await ctx.close();
 // Fresh desktop and quota error path.
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const isolated=await browser.newContext({viewport:{width:1280,height:900}});const desktop=await isolated.newPage();await desktop.goto(url);await desktop.selectOption('#stage','2');await desktop.screenshot({path:root+'/build/omotenashi_qa/05_desktop.png',fullPage:true});
-await desktop.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota','QuotaExceededError');};});await desktop.selectOption('#stage','0');await desktop.locator('[data-field="road.expectation"]').fill('Ez mentési hiba mellett is exportálható.');assert.ok((await desktop.textContent('#storage-warning')).includes('elsődleges helyi mentés sikertelen'));await desktop.selectOption('#stage','7');assert.ok((await desktop.textContent('#report-preview')).includes('Ez mentési hiba mellett is exportálható.'));await browser.close();
+await desktop.evaluate(()=>{Storage.prototype.setItem=function(){throw new DOMException('Quota','QuotaExceededError');};});await desktop.selectOption('#stage','0');await desktop.locator('[data-field="road.expectation"]').fill('Ez mentési hiba mellett is exportálható.');assert.ok((await desktop.textContent('#storage-warning')).includes('elsődleges helyi mentés sikertelen'));await desktop.selectOption('#stage','7');assert.ok((await desktop.textContent('#report-preview')).includes('Ez mentési hiba mellett is exportálható.'));
+// Reopen previous releases: three pre-created blank cards become one, but authored notes survive.
+{
+ const lc=await browser.newContext({viewport:{width:390,height:844}});
+ const lp=await lc.newPage();await lp.goto(url);
+ await lp.evaluate(()=>{
+  const old=fresh();
+  const oldQuestions=[PAIR_QUESTIONS[0],'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',PAIR_QUESTIONS[3]];
+  old.pairs=oldQuestions.map(question=>({id:uid(),question,partner:'',note:''}));
+  localStorage.setItem(KEY,JSON.stringify(old));
+ });
+ await lp.reload();await lp.selectOption('#stage','1');
+ assert.equal(await lp.locator('.pair-card').count(),1);
+ assert.equal(await lp.locator('.pair-question').count(),4);
+ await lp.locator('[data-field="pairs.0.note"]').fill('A régi mentésből folytatott jegyzet.');
+ await lp.reload();assert.equal(await lp.locator('[data-field="pairs.0.note"]').inputValue(),'A régi mentésből folytatott jegyzet.');
+ await lc.close();
+}
+{
+ const lc=await browser.newContext({viewport:{width:390,height:844}});
+ const lp=await lc.newPage();await lp.goto(url);
+ await lp.evaluate(()=>{
+  const old=fresh();
+  const oldQuestions=[PAIR_QUESTIONS[0],'Mi ebben a te vezetői szereped? Mit próbáltál már, és mi történt?',PAIR_QUESTIONS[3]];
+  old.pairs=oldQuestions.map((question,i)=>({id:uid(),question,partner:i===1?'Páros kolléga':'',note:i===1?'Már korábban leírt fontos gondolat.':''}));
+  localStorage.setItem(KEY,JSON.stringify(old));
+ });
+ await lp.reload();await lp.selectOption('#stage','1');
+ assert.equal(await lp.locator('.pair-card').count(),1);
+ assert.ok((await lp.locator('.pair-card').first().textContent()).includes('Korábbi jegyzet ehhez a kérdéshez'));
+ assert.equal(await lp.locator('[data-field="pairs.0.note"]').inputValue(),'Már korábban leírt fontos gondolat.');
+ await lp.locator('summary').last().click();
+ assert.equal(await lp.locator('[data-field="pairs.0.partner"]').inputValue(),'Páros kolléga');
+ await lc.close();
+}
+
+await browser.close();
 if(errors.length)throw Error(errors.join('\n'));
 let safari='not available';try{const b=await webkit.launch({headless:true});const c=await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const pg=await c.newPage();await pg.goto(url);await pg.locator('[data-field="road.expectation"]').fill('Safari megmaradó jegyzet');await pg.reload();assert.equal(await pg.locator('[data-field="road.expectation"]').inputValue(),'Safari megmaradó jegyzet');await pg.selectOption('#stage','2');await pg.locator('[data-point-focus="0"]').check();await pg.selectOption('#stage','3');await pg.locator('[data-observation-source="0"][data-source-value="2"]').click();await pg.reload();assert.equal(await pg.evaluate(()=>JSON.parse(localStorage.getItem('toyota-omotenashi-notebook-v1')).observations[0].source),2);await b.close();safari='passed';}catch(error){if(!error.message.includes('Executable doesn\'t exist'))throw error;}
-console.log(JSON.stringify({status:'pass',checks:['all 8 modules','compact auto-growing plan fields','coaching questions above collapsed plan','simple export actions','3 pair questions and added round','bus selection transfers to factory notes','editable/addable/deletable observations','all plan and coaching fields','automatic local save','offline page reopen','IndexedDB rescue on missing primary save','full browser restart','app update preserves notes and custom/deleted points','JSON roundtrip and invalid import protection','TXT export','long email fallback','print report','mobile no overflow','HTML escaping','storage failure visible'],webkit:safari}));
+console.log(JSON.stringify({status:'pass',checks:['all 8 modules','compact auto-growing plan fields','coaching questions above collapsed plan','simple export actions','four prompts per discussion and added second partner','bus selection transfers to factory notes','editable/addable/deletable observations','all plan and coaching fields','automatic local save','offline page reopen','IndexedDB rescue on missing primary save','full browser restart','app update preserves notes and custom/deleted points','JSON roundtrip and invalid import protection','TXT export','long email fallback','print report','mobile no overflow','HTML escaping','storage failure visible'],webkit:safari}));
 server.close();
