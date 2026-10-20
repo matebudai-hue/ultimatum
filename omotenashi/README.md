@@ -85,3 +85,10 @@ A `tests/smoke.mjs` Playwright-alapú ellenőrzés lefedi a két független hely
 - A service worker verziózott offline csomagjába az olvasnivaló külön cache-bejegyzésként került, külön útvonalkezeléssel: offline a történetek nyílnak meg, nem véletlenül a napló kezdőlapja.
 - Regressziós teszt: mind az öt történet, a négy tartalmi fejezet, mobilos tördelés, visszalépés, jegyzetmegőrzés és offline újranyitás.
 - Visszaállítási pont: `backup/omotenashi-ichigo-tananyag-elott-20261020`, eredeti kód: `92fb0be4a310349399325f9c239a72c61ee0dc75`.
+
+## Ichigo Ichie – hét gondolatébresztő kérdés (2026-10-20)
+
+- A meglévő Ichigo Ichie tananyaghoz a négy fejezet után, a források elé bekerült a „Gondolatébresztő kérdések” rész.
+- Az eredetileg megadott alapgondolat és mind a hét kérdés teljes, módosítatlan szöveggel olvasható. A már meglévő öt történet és a négy fejezet tartalma érintetlen.
+- A napló helyi jegyzeteinek, a 30 kérdéses kvíznek és a mentési rendszernek nincs új állapota vagy adatmódosítása. Az offline cache verziója frissült.
+- Visszaállítás: `backup/omotenashi-ichigo-kerdesek-elott-20261020` az `69b92b3dd9579659eebc99fa29fae6854534888e` commiton.
