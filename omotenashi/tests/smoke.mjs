@@ -46,7 +46,7 @@ assert.ok((await page.locator('#jelentes').textContent()).includes('Jidoka'));
 assert.ok((await page.locator('#mukodes').textContent()).includes('Jelzés.'));
 assert.ok((await page.locator('#pelda').textContent()).includes('Tíz perc múlva érkezik az ügyfél'));
 assert.ok((await page.locator('#vezeto').textContent()).includes('sztenderdizálást'));
-assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Andon mobile overflow');
+{const overflow=await page.evaluate(()=>({window:innerWidth,scroll:document.documentElement.scrollWidth,overs:[...document.querySelectorAll('*')].filter(el=>el.getBoundingClientRect().right>innerWidth+1).slice(0,15).map(el=>({tag:el.tagName,cls:el.className,id:el.id,text:el.textContent?.slice(0,70),x:el.getBoundingClientRect().right}))})); assert.ok(overflow.scroll<=overflow.window+1,'Andon mobile overflow: '+JSON.stringify(overflow));}
 await page.screenshot({path:root+'/build/omotenashi_qa/09_andon_mobile.png',fullPage:true});
 await page.locator('.back').click();
 await page.locator('#standard-link').click();
