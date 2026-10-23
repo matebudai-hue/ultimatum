@@ -1,5 +1,5 @@
-import{product,themes,walls,floors,toneColor}from'./room-catalog.mjs?v=12';
-import{position,visible}from'./room-engine.mjs?v=12';
+import{product,themes,walls,floors,toneColor}from'./room-catalog.mjs?v=13';
+import{position,visible}from'./room-engine.mjs?v=13';
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const R=(x,y,w,h,fill,rx=5,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}" ${extra}/>`;
 const C=(x,y,r,fill,extra='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" ${extra}/>`;

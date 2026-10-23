@@ -1,5 +1,5 @@
 export const uid=()=>globalThis.crypto?.randomUUID?.()??Array.from(globalThis.crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16)).join("-");
-import{products,buy,migrateRoom}from'./room-engine.mjs?v=12';
+import{products,buy,migrateRoom}from'./room-engine.mjs?v=13';
 export{products,buy};
 export const empty=()=>migrateRoom({version:1,name:'',answers:{},earned:0,spent:0,items:[],roomName:'Az én tréningtermem'});
 export function instruction(q){if(q.type==='match')return 'Minden állításhoz válassz egy módszert. Mindegyik módszert egyszer használd.';if(q.type==='classify')return 'Minden állításnál jelöld a megfelelő kategóriát.';if(q.type==='multi')return `Pontosan ${q.choose??q.correct.length} választ jelölj. A téves jelölés csökkenti a feladat pontját.`;return 'Egy választ jelölj.';}

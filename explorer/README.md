@@ -70,3 +70,8 @@ A részletek ugyanazt a színes kérdéstérképet és megoldáskártyát haszn�
 - 12 új típus: dobálható plüssmackó/róka/polip, cserepes virág, asztali virágváza, szobafa, pálma, fali futónövény, falra szerelt whiteboard, falióra, nagy szőnyeg és dekorszobor. A mobil írótábla és a fali whiteboard külön termék.
 - A meglévő puha szőnyeg 35 pont marad; a 4 × 4 m-es nagy változat 90 pont. A nagy szőnyeg 8 × 8 belső rácsegység, a névben szereplő méterhez 2 rácsegység tartozik. Nincs egész termet egyben lefedő szőnyeg. Mindkét szőnyegből több darab vehető, egymás mellé és egymást részben átfedve rakhatók. A padló rajzolási rétege a terem belső széléhez van vágva, így a szélek is lefedhetők anélkül, hogy a falra lógna a grafika. Vásárláskor először teljesen bent elférő szabad helyet keres; a kézi elhelyezés a szélek fedését is engedi. Bútorok a szőnyegek fölött vannak, egymást továbbra sem fedhetik.
 - 24 előre megadott tárgyszín mellett natív színválasztóban tetszőleges `#rrggbb` szín állítható. A kiválasztott szín ténylegesen megjelenik az SVG-ben, megmarad mentés/visszatöltés után és ingyenesen visszavonható. A régi színazonosítók és tárgyak változatlanul megmaradnak.
+
+
+## Bolt kategóriái
+
+Nyolc funkció szerinti csoport: Ülőhelyek; Asztalok; Táblák és eszközök; Növények és virágok; Szőnyegek és textilek; Terem és kényelem; Dekoráció és saját tárgyak; Játékok és hangszerek. A növények saját csoportot kaptak, a két szőnyeg együtt jelenik meg, a labda és sakk a plüssök/hangszerek mellé került. A teljes kínálat is kategóriafejlécekkel, ebben a sorrendben jelenik meg; a kategóriaválasztó a találatok darabszámát mutatja. A besorolás a vásárlást, árat, birtoklást és elhelyezési réteget nem módosítja.

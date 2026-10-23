@@ -1,4 +1,4 @@
-import{products,product,tones,themes,walls,floors,views,defaultSettings,validTone}from'./room-catalog.mjs?v=12';
+import{products,product,tones,themes,walls,floors,views,defaultSettings,validTone}from'./room-catalog.mjs?v=13';
 export{products,product,tones,themes,walls,floors,views};
 export const uid=()=>globalThis.crypto?.randomUUID?.()??Array.from(globalThis.crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16)).join('-');
 export const ROOM={w:24,h:18};
