@@ -1,6 +1,9 @@
 // All prices, variants and placement rules live here; existing product ids stay stable.
-export const categories=[['seat','Ülőhelyek'],['surface','Asztalok'],['tools','Tréneri eszközök'],['comfort','Kényelem'],['mood','Hangulat'],['personal','Saját részletek']];
+export const categories=[['seat','Ülőhelyek'],['surface','Asztalok'],['tools','Tréneri eszközök'],['comfort','Kényelem'],['mood','Hangulat'],['personal','Saját részletek'],['play','Plüssök és játékok']];
 export const tones={theme:{name:'A terem színe',value:null},teal:{name:'Türkiz',value:'#32959a'},navy:{name:'Éjkék',value:'#355b78'},mustard:{name:'Mustár',value:'#d6a344'},terracotta:{name:'Terrakotta',value:'#bd7560'},sage:{name:'Zsálya',value:'#8caa8b'},cream:{name:'Krém',value:'#e7ddc7'},graphite:{name:'Grafit',value:'#555f68'},rose:{name:'Mályva',value:'#b78e9f'}};
+Object.assign(tones,{white:{name:'Fehér',value:'#f5f5f0'},black:{name:'Fekete',value:'#24282d'},red:{name:'Piros',value:'#c94b4b'},coral:{name:'Korall',value:'#ed8878'},orange:{name:'Narancs',value:'#e79c43'},yellow:{name:'Napsárga',value:'#f0cd50'},lime:{name:'Lime',value:'#b1c85c'},emerald:{name:'Smaragd',value:'#31816a'},forest:{name:'Erdőzöld',value:'#345b43'},mint:{name:'Menta',value:'#a4d8c2'},cyan:{name:'Élénk türkiz',value:'#28b9c6'},sky:{name:'Égkék',value:'#8ebee3'},cobalt:{name:'Királykék',value:'#3d5bb5'},purple:{name:'Lila',value:'#8063a6'},lavender:{name:'Levendula',value:'#b6a5d3'},pink:{name:'Rózsaszín',value:'#e8a3bd'}});
+export const validTone=t=>Object.hasOwn(tones,t)||typeof t==='string'&&/^#[0-9a-f]{6}$/i.test(t);
+export const toneColor=(tone,fallback='#32959a')=>tones[tone]?.value||(/^#[0-9a-f]{6}$/i.test(tone)?tone:fallback);
 export const themes={ice:{name:'Jégtörő',accent:'#32959a',wall:'#c4e0e3',floor:'oak'},workshop:{name:'Műhely',accent:'#d6a344',wall:'#cbd2d5',floor:'concrete'},living:{name:'Nappali',accent:'#bd7560',wall:'#e4d4bf',floor:'walnut'},minimal:{name:'Letisztult',accent:'#555f68',wall:'#e8e9e5',floor:'light'}};
 export const walls={ice:{name:'Jégkék',value:'#c4e0e3'},sand:{name:'Homok',value:'#e4d4bf'},white:{name:'Törtfehér',value:'#e8e9e5'},sage:{name:'Zsálya',value:'#c6d3c1'},slate:{name:'Palaszürke',value:'#b8c4cb'}};
 export const floors={oak:{name:'Világos tölgy',value:'#dbc5a2'},walnut:{name:'Dió',value:'#a98569'},light:{name:'Világos padló',value:'#ece8dd'},concrete:{name:'Beton',value:'#cdd2d1'}};
@@ -41,8 +44,20 @@ const data=[
 ['ship','Jégtörő hajómodell','personal',30,1,1.5,0.8,'tabletop','ship',['Hajómodell','Részletes modell','Gyűjtői darab'],[30,50]],
 ['guitar','Hangszer','personal',35,1,1.3,2,'furniture','guitar',['Akusztikus','Díszes','Mesterdarab'],[30,50]],
 ['chess','Sakk-készlet','personal',25,1,1.4,1.4,'tabletop','chess',['Fa készlet','Faragott','Gyűjtői'],[25,40]],
-['ball','Saját labda','personal',15,2,1.2,1.2,'furniture','ball',['Labda','Klubszínek','Dísztalppal'],[20,35]]
+['ball','Saját labda','personal',15,2,1.2,1.2,'furniture','ball',['Labda','Klubszínek','Dísztalppal'],[20,35]],
+['plush-bear','Dobálható plüssmackó','play',15,0,1.1,1.1,'furniture','bear',['Puha mackó','Sálas mackó','Nagy ölelés'],[15,25]],
+['plush-fox','Dobálható plüssróka','play',15,0,1.1,1.1,'furniture','fox',['Puha róka','Bolyhos róka','Nagy fülek'],[15,25]],
+['plush-octopus','Dobálható plüsspolip','play',15,0,1.2,1.2,'furniture','octopus',['Kis polip','Színes polip','Óriás mosoly'],[15,25]],
+['flowers-pot','Cserepes virág','mood',15,0,1.2,1.2,'furniture','flowers',['Kis virág','Virágzó csokor','Dús virágkompozíció'],[20,30]],
+['flowers-vase','Virágváza az asztalra','mood',15,0,.8,.8,'tabletop','vase',['Egy szál virág','Csokor','Díszváza'],[15,25]],
+['tree-ficus','Szobafa','mood',40,0,2.4,2.4,'furniture','tree',['Kis fikusz','Lombos fa','Nagy szobafa'],[35,55]],
+['tree-palm','Pálma','mood',45,0,2.8,2.8,'furniture','palm',['Kis pálma','Dús pálma','Trópusi sarok'],[35,60]],
+['hanging-plant','Fali futónövény','mood',25,0,1.6,1,'wall','hanging',['Fali kaspó','Futónövény','Zöld falrészlet'],[20,40]],
+['wall-whiteboard','Falra szerelt whiteboard','tools',40,0,4,1,'wall','wallboard',['Írótábla','Mágneses tábla','Nagy ötletfal'],[35,60]],
+['wall-clock','Falióra','mood',20,0,1.2,1,'wall','clock',['Klasszikus','Letisztult','Díszes'],[20,35]],
+['rug-large','Nagy szőnyeg · 4 × 4 m','mood',90,0,8,8,'floor','rug',['Puha','Mintás','Prémium szövött'],[45,70]],
+['decor-sculpture','Dekorszobor','personal',25,0,1.2,1.2,'furniture','sculpture',['Absztrakt forma','Kompozíció','Galériadarab'],[25,40]]
 ];
-export const products=data.map(([id,name,category,price,max,w,h,layer,art,levels,upgrades])=>({id,name,category,price,max,w,h,layer,art,levels,upgrades,surface:['table','modular','standing','side','cart','coffee'].includes(id)}));
+export const products=data.map(([id,name,category,price,max,w,h,layer,art,levels,upgrades])=>({id,name,category,price,max:null,w,h,layer,art,levels,upgrades,surface:['table','modular','standing','side','cart','coffee'].includes(id)}));
 export const product=id=>products.find(p=>p.id===id);
 export const defaultSettings=()=>({theme:'ice',wall:'ice',floor:'oak',view:'water',motto:'Itt lehet újrapróbálni.'});

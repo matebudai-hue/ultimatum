@@ -28,17 +28,17 @@ A korábbi kérdések a `questionArchives` alatt maradnak; az új kérdések azo
 
 ## Személyre szabható tréningterem (roomVersion 2)
 
-- 36 tárgytípus, mindegyik 3 szinttel (108 állapot), 8 egyéni színnel és a terem színét követő változattal. Az eredeti 8 típus azonosítói és alapárai megmaradnak.
-- Külön katalógus: `room-catalog.mjs`. Tartalmazza az árakat, felárakat, kategóriákat, méreteket, darabkorlátokat, elhelyezési rétegeket és szintneveket. Egy-egy teljesen fejlesztett tárgy minden típusból összesen 4380 pont; a darabkorlátokig bővítve 10630 pont költhető el. A terem nem ad új pontokat: a képzési feladatok egyenlegét használja.
+- 48 tárgytípus, mindegyik 3 szinttel (144 állapot), 24 előre megadott színnel, egyéni színkeverővel és a terem színét követő változattal. Az eredeti 8 típus azonosítói és alapárai megmaradnak.
+- Külön katalógus: `room-catalog.mjs`. Tartalmazza az árakat, felárakat, kategóriákat, méreteket és elhelyezési rétegeket és szintneveket. Nincs termékenkénti darabszámkorlát; minden új példány és fizetős fejlesztés a közös egyenlegből vásárolható. A terem nem ad új pontokat: a képzési feladatok egyenlegét használja.
 - Szabad színváltás, 4 keverhető kiinduló stílus, 5 falszín, 4 padló, 4 kilátás, saját teremnév és legfeljebb 100 karakteres felirat. A kilátás az ablakon/teraszajtón, a felirat a terem alatt és a megvett trénertáblán látszik.
 - A rajzolt SVG tárgyak állandó, 24×18 egységes alaprajzon vannak; a terem és a tárgyak együtt skálázódnak. Az elhelyezés fél egységhez igazodik. Fal, padló, bútor és asztali tárgy külön réteg; a szőnyeg alatt lehet szék, két bútor azonban nem helyezhető egymásba. Az asztali eszközök asztalra, kocsira vagy kávépultra kerülnek, és követik annak mozgását.
 - Kijelölés, mobilos elhelyezési előnézet és jóváhagyás; egérrel húzás, billentyűzetes mozgatás, forgatás, ingyenes raktár és visszahelyezés. Nagyobb, oldalon belüli rendezőnézet, 100–300% nagyítás, teljes nézet. A rendezőnézetben kétujjas nagyítás/eltolás is kezelhető; a normál teremnézet függőlegesen görgethető marad.
 - Legfeljebb 25 elrendezési/szín/stílusváltozás visszavonható a nyitott munkamenetben. Vásárlás és fizetős fejlesztés után a visszavonási sor újraindul, mert az nem pénzvisszatérítés. Az undo-sor nincs az exportban.
-- A boltnak kategóriái, keresője, külön fejlesztési és raktári nézete van. Nincs szabad hely? A megvett tárgy raktárba kerül. A darabkorlát az összes birtokolt darabra vonatkozik.
+- A boltnak kategóriái, keresője, külön fejlesztési és raktári nézete van. Nincs szabad hely? A megvett tárgy raktárba kerül. Ha a terem megtelik, a további tárgyak megvásárolhatók és a raktárban maradnak.
 - `migrateRoom` átveszi a régi százalékos helyeket, megőrzi az azonosítókat, az egyenleget, a vásárlásokat, a kérdésválaszokat és esetjegyzeteket. Ahol egy régi tárgy nem fér el, szabad helyet keres; ha nincs megfelelő hely vagy asztal, megőrzi a raktárban. Újra lefuttatva nem von le pontot és nem mozgatja újra a termet.
 - A `ledger` csak a vásárlásokat és fizetős fejlesztéseket naplózza. A régi költések egy nyitó összesítő bejegyzést kapnak. A mentés/visszatöltés tartalmazza a szinteket, színeket, forgatást, raktári állapotot, asztali kapcsolódásokat, terem-beállításokat és naplót.
 
-Teszt: `node --test explorer/tests/*.mjs`. A terem tesztjei a régi adatok átvételét, a visszatöltést, a pontlevonásokat, a darabkorlátokat, az ütközést, az asztali tárgyak mozgatását, a forgatást, raktárt és visszavonást is ellenőrzik.
+Teszt: `node --test explorer/tests/*.mjs`. A terem tesztjei a régi adatok átvételét, a visszatöltést, a pontlevonásokat, az ismételt vásárlásokat, az ütközést, az asztali tárgyak mozgatását, a forgatást, raktárt és visszavonást is ellenőrzik.
 
 
 ## Teljes tesztkörök és gyakorlás (testing.version 1)
@@ -62,3 +62,11 @@ Kitöltés közben csak az elmentett válaszok száma és semleges jelölése l�
 A résztvevői Eredmények fület a `results-dashboard.mjs` kezeli. A nyitóképernyőn a megszerzett, elköltött és elkölthető pontok, majd tesztenként az első/legutóbbi/legjobb lezárt eredmény és egy megnyitó gomb jelenik meg. A félkész kitöltéshez csak a mentett válaszok száma és folytatásgomb tartozik; a félkész kör nem eredmény.
 
 A részletek ugyanazt a színes kérdéstérképet és megoldáskártyát használják, mint a tesztlezárás. A korábbi körök egyetlen választóval válthatók; minden esetben a kiválasztott kör saját pillanatképe, pontja és jutalma jelenik meg. A történeti nézet nem ír jóvá pontot és nem mutat újrakezdésgombot. A teljes kitöltési előzmény, eredeti válaszok, gyakorlás és első eredmények megmaradnak. Esetjegyzetek, a régi kérdéssorok válaszai és a mentés/visszatöltés külön zárt részbe kerülnek. A tréneri import részletes riportja változatlan.
+
+
+## Bővített, szabadon gyűjthető berendezés
+
+- Minden termék `max: null`; a vásárlási folyamat és a bolt nem állít mennyiségi plafont. Az import korábbi 500 tárgyas küszöbe megszűnt. A pontlevonás és az egyedi tárgyazonosítók megmaradnak, a többlet a raktárban biztonságosan megőrizhető.
+- 12 új típus: dobálható plüssmackó/róka/polip, cserepes virág, asztali virágváza, szobafa, pálma, fali futónövény, falra szerelt whiteboard, falióra, nagy szőnyeg és dekorszobor. A mobil írótábla és a fali whiteboard külön termék.
+- A meglévő puha szőnyeg 35 pont marad; a 4 × 4 m-es nagy változat 90 pont. A nagy szőnyeg 8 × 8 belső rácsegység, a névben szereplő méterhez 2 rácsegység tartozik. Nincs egész termet egyben lefedő szőnyeg. Mindkét szőnyegből több darab vehető, egymás mellé és egymást részben átfedve rakhatók. A padló rajzolási rétege a terem belső széléhez van vágva, így a szélek is lefedhetők anélkül, hogy a falra lógna a grafika. Vásárláskor először teljesen bent elférő szabad helyet keres; a kézi elhelyezés a szélek fedését is engedi. Bútorok a szőnyegek fölött vannak, egymást továbbra sem fedhetik.
+- 24 előre megadott tárgyszín mellett natív színválasztóban tetszőleges `#rrggbb` szín állítható. A kiválasztott szín ténylegesen megjelenik az SVG-ben, megmarad mentés/visszatöltés után és ingyenesen visszavonható. A régi színazonosítók és tárgyak változatlanul megmaradnak.
