@@ -1,6 +1,7 @@
 export const uid=()=>globalThis.crypto?.randomUUID?.()??Array.from(globalThis.crypto.getRandomValues(new Uint32Array(4)),n=>n.toString(16)).join("-");
-export const products=[{id:'chair',name:'Tréningszék',price:15,icon:'🪑',max:12},{id:'table',name:'Kerek asztal',price:30,icon:'◉',max:4},{id:'flipchart',name:'Flipchart',price:25,icon:'▤',max:3},{id:'markers',name:'Filckészlet',price:10,icon:'🖍️',max:3},{id:'rug',name:'Puha szőnyeg',price:35,icon:'▧',max:2},{id:'plant',name:'Zöld sarok',price:15,icon:'🪴',max:5},{id:'window',name:'Panorámaablak',price:40,icon:'▥',max:2},{id:'ac',name:'Klíma',price:40,icon:'❄',max:1}];
-export const empty=()=>({version:1,name:'',answers:{},earned:0,spent:0,items:[],roomName:'Az én tréningtermem'});
+import{products,buy,migrateRoom}from'./room-engine.mjs?v=6';
+export{products,buy};
+export const empty=()=>migrateRoom({version:1,name:'',answers:{},earned:0,spent:0,items:[],roomName:'Az én tréningtermem'});
 export function instruction(q){if(q.type==='match')return 'Minden állításhoz válassz egy módszert. Mindegyik módszert egyszer használd.';if(q.type==='classify')return 'Minden állításnál jelöld a megfelelő kategóriát.';if(q.type==='multi')return `Pontosan ${q.choose??q.correct.length} választ jelölj. A téves jelölés csökkenti a feladat pontját.`;return 'Egy választ jelölj.';}
 export function describeAnswer(q,a){return q.rows?q.rows.map((row,i)=>`${row} → ${q.options[a[i]]??'Nincs válasz'}`):a.map(v=>q.options[v]??'Nincs válasz');}
 export function score(q,a){
@@ -12,4 +13,3 @@ export function score(q,a){
 // A rewritten quiz shares the day's reward budget with its older versions.
 export function dayCredit(s,day){const totals={};for(const [key,a]of Object.entries(s.answers)){if(!key.startsWith(day+'/'))continue;const rev=a.revision??'v1';totals[rev]=(totals[rev]||0)+a.best;}return Math.max(0,...Object.values(totals));}
 export function answer(s,day,q,a){const key=day+'/'+q.id,n=score(q,a),old=s.answers[key],before=dayCredit(s,day),best=Math.max(old?.best||0,n);s.answers[key]={first:old?.first??{value:[...a],score:n},current:{value:[...a],score:n},best,attempts:(old?.attempts||0)+1,revision:q.revision??old?.revision??'v1'};const delta=Math.max(0,dayCredit(s,day)-before);s.earned+=delta;return delta;}
-export function buy(s,id){const p=products.find(p=>p.id===id);if(!p||s.items.filter(i=>i.product===id).length>=p.max)throw Error('Ebből most nem vehetsz többet.');if(s.earned-s.spent<p.price)throw Error('Ehhez még gyűjts pontokat.');const itemId=uid();s.spent+=p.price;s.items.push({id:itemId,product:id,x:20+(s.items.length*17)%65,y:25+(s.items.length*13)%55});}
