@@ -2,13 +2,13 @@
 
 Build nélküli, GitHub Pages-kompatibilis tanulási felület. A meglévő alkalmazásoktól függetlenül az `/explorer/` útvonalon működik.
 
-20 feladat az első nap anyagának első 16 oldalából; oldalszámos visszajelzések. Az infografikákat nem adjuk ki a résztvevői oldalon. Három eredeti esettanulmány olvasható (Ebédszünet, Tűzjelzés, Új résztvevő), két-két szabad szöveges, helyben mentett válasszal. A jegyzetek az eredményexportba és tréneri importba is bekerülnek. A teljes teszt lezárásakor jár pont; addig a válaszok átírhatók, megoldást és pontot nem mutatunk. Javítani kizárólag új, üres válaszokkal kezdődő teljes körrel lehet. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
+20 feladat az első nap anyagának első 16 oldalából; rövid megoldásmagyarázatokkal. Az infografikákat nem adjuk ki a résztvevői oldalon. Három eredeti esettanulmány olvasható (Ebédszünet, Tűzjelzés, Új résztvevő), két-két szabad szöveges, helyben mentett válasszal. A jegyzetek az eredményexportba és tréneri importba is bekerülnek. A teljes teszt lezárásakor jár pont; addig a válaszok átírhatók, megoldást és pontot nem mutatunk. Javítani kizárólag új, üres válaszokkal kezdődő teljes körrel lehet. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
 
 A terem tárgyai megvehetők, kattintással és billentyűzettel elhelyezhetők. A név, válaszok, pontok és terem localStorage-ban maradnak. Az eredmények JSON-ként menthetők, másik eszközön visszatölthetők, tréneri nézetbe csoportosan beolvashatók.
 
 ## Anyagok és új napok
 
-A `content.json` tartalmazza a napokat. Meglévő nap/kérdés azonosítót ne használj fel új feladathoz: ezekhez kötődnek a korábbi válaszok. Új naphoz új `id`, új kérdésekhez a napon belül egyedi `id` szükséges. A `type` single vagy multi, a `correct` nullától indexelt válaszlista, a `max` 10. Az `open` kapcsolja a feladatsort. Ez megjelenítési kapcsoló, nem hozzáférés-védelem: a publikus repó fájljai olvashatók.
+A `content.json` tartalmazza a napokat. Meglévő nap/kérdés azonosítót ne használj fel új feladathoz: ezekhez kötődnek a korábbi válaszok. Új naphoz új `id`, új kérdésekhez a napon belül egyedi `id` szükséges. A `type` single, multi, match vagy classify; párosításnál és besorolásnál a `rows` adja az állításokat, a `correct` nullától indexelt válaszlista, a `max` 10. Az `open` kapcsolja a feladatsort. Ez megjelenítési kapcsoló, nem hozzáférés-védelem: a publikus repó fájljai olvashatók.
 
 A tréneri műhelyben új nap és tananyaglink készíthető, majd a tartalomfájl letölthető. A közös közzétételhez az új fájlt a GitHubon az `explorer/content.json` helyére kell menteni. A tananyagok az `explorer/materials/` mappába tölthetők fel GitHub-belépéssel; a feltöltési gomb erre vezet.
 
@@ -75,3 +75,11 @@ A részletek ugyanazt a színes kérdéstérképet és megoldáskártyát haszn�
 ## Bolt kategóriái
 
 Nyolc funkció szerinti csoport: Ülőhelyek; Asztalok; Táblák és eszközök; Növények és virágok; Szőnyegek és textilek; Terem és kényelem; Dekoráció és saját tárgyak; Játékok és hangszerek. A növények saját csoportot kaptak, a két szőnyeg együtt jelenik meg, a labda és sakk a plüssök/hangszerek mellé került. A teljes kínálat is kategóriafejlécekkel, ebben a sorrendben jelenik meg; a kategóriaválasztó a találatok darabszámát mutatja. A besorolás a vásárlást, árat, birtoklást és elhelyezési réteget nem módosítja.
+
+## Csoportos próba előtti ellenőrzés – 2026-10-23
+
+49 automatikus teszt ellenőrzi a pontozást, a teljes körös javítást, az első eredmény megőrzését, a gyakorlás jutalomkeretét, a terem tranzakcióit és a mentési hibák kezelését. Böngészőben teljes 20 kérdéses kitöltés, lezárás, részleges/hibás/helyes eredmény és magyarázat, 320 px széles mobilnézet, újratöltés és két böngészőfül ütközése is ellenőrizve. Valódi iOS/Android érintőképernyős és több résztvevős terhelési próba nem történt.
+
+Javítások: hibás helyi mentés nem cserélődik le csendben üres állapotra; betöltési hiba újrapróbálható; tárhelyhiba tartós figyelmeztetést és fájlmentést ad; elavult böngészőfül nem írhatja felül a frissebb mentést. Az import ellenőrzi a jegyzetek és a feladatok szerkezetét is. Az export fájlneve nevet és időpontot tartalmaz. A párosító új válaszai minden módszert egyszer engednek; a régi lezárt eredmények olvashatók maradnak. Az önállóan raktárba tett asztali tárgy nem kerül vissza az asztal visszahelyezésével. A név gépelés közben mentődik.
+
+A próba keretei: egy eszköz és normál böngésző használata résztvevőnként; a végén Eredmények → Mentés és átvitel → Mentés letöltése. Nincs bejelentkezés, központi adatgyűjtés vagy automatikus e-mail. A rejtett tréneri műhelynek jelenleg nincs menüből elérhető belépési pontja. Az első nap 20 kérdésével legfeljebb 200 naptesztpont és további 140 gyakorlópont szerezhető; az ismétlés nem korlátlan pontforrás. A kliensoldali megoldások és a szerkeszthető helyi állapot miatt a rendszer fejlesztő visszajelzésre szolgál, nem hitelesített vizsgáztatásra.

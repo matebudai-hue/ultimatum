@@ -1,21 +1,28 @@
-import{mountRoom}from'./room-ui.mjs?v=13';
-import{migrateRoom,validateRoomState}from'./room-engine.mjs?v=13';
-import{empty,uid,describeAnswer}from'./engine.mjs?v=13';
-import{migrateTests,validateTesting}from'./attempts.mjs?v=7';
-import{mountQuiz,testStats,selectQuizMode}from'./quiz-ui.mjs?v=10';
-import{mountResults}from'./results-dashboard.mjs?v=10';
+import{createPersistence,validateState as validateSavedState,exportFilename}from'./persistence.mjs?v=1';
+import{mountRoom}from'./room-ui.mjs?v=14';
+import{migrateRoom}from'./room-engine.mjs?v=14';
+import{empty,uid,describeAnswer}from'./engine.mjs?v=14';
+import{migrateTests}from'./attempts.mjs?v=8';
+import{mountQuiz,testStats,selectQuizMode}from'./quiz-ui.mjs?v=11';
+import{mountResults}from'./results-dashboard.mjs?v=11';
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let state;try{state=JSON.parse(localStorage.getItem('explorer-state'))||empty()}catch{state=empty()}
-migrateRoom(state);
-let disposeRoom=()=>{};
-let catalog=await fetch('./content.json?v=5').then(r=>r.json()),tab='learn',dayId=catalog.days[0].id,reports=[];
-migrateTests(state,catalog);
-const save=()=>{try{localStorage.setItem('explorer-state',JSON.stringify(state))}catch{toast('A mentés nem sikerült. Tölts le biztonsági másolatot!')}$('#balance').textContent=state.earned-state.spent;};
+let state,persistence,storageBlocked=false;
+function clearNotice(){$('#storage-notice')?.remove();document.querySelectorAll('header,main').forEach(el=>el.inert=false);}
+function notice(message,actions=[],blocking=false){document.querySelectorAll('header,main').forEach(el=>el.inert=blocking);let box=$('#storage-notice');if(!box){box=document.createElement('section');box.id='storage-notice';document.body.append(box);}box.className=blocking?'recovery-overlay':'storage-warning';box.innerHTML=`<div class="card"><p role="alert">${esc(message)}</p><div class="actions"></div></div>`;for(const [label,action]of actions){const button=document.createElement('button');button.textContent=label;button.onclick=action;box.querySelector('.actions').append(button);}}
+const exportCurrent=()=>download({kind:'explorer-result',exportedAt:new Date().toISOString(),state},exportFilename(state?.name));
+const conflict=()=>{storageBlocked=true;notice('Egy másik böngészőfülön megváltozott a haladásod. Ezen a fülön megállítottuk a mentést, hogy ne írja felül az újabb adatokat. Folytasd a másik fülön, vagy töltsd be annak legutóbbi mentését.',[['Legutóbbi mentés betöltése',()=>location.reload()],['Ennek a fülnek a mentése fájlba',exportCurrent]],true);};
+async function loadCatalog(){for(;;){try{const response=await fetch('./content.json?v=6');if(!response.ok)throw Error();const data=await response.json();if(!data.days?.length)throw Error();clearNotice();return data;}catch{await new Promise(resolve=>notice('A feladatok nem töltődtek be. Ellenőrizd az internetkapcsolatot, majd próbáld újra. A korábbi mentésedet nem módosítottuk.',[['Újrapróbálom',resolve]],true));}}}
+let catalog=await loadCatalog(),tab='learn',dayId=catalog.days[0].id,reports=[],disposeRoom=()=>{};
+try{persistence=createPersistence(localStorage);state=persistence.raw===null?empty():validateSavedState(JSON.parse(persistence.raw));migrateTests(migrateRoom(state),catalog);}catch{
+ await new Promise(resolve=>notice('A böngésző mentése nem olvasható, vagy a böngésző nem engedi a helyi mentést. A korábbi adatokat nem írtuk felül. Töltsd le őket, mielőtt újrakezdesz.',[['Korábbi adatok letöltése',()=>{try{download({raw:localStorage.getItem('explorer-state')},'explorer-helyreallitas.json')}catch{toast('A böngésző nem engedi a mentés olvasását.')}}],['Újrakezdés',()=>{if(!confirm('Biztosan törlöd ezen a böngészőn az Explorer korábbi mentését?'))return;try{localStorage.removeItem('explorer-state');persistence=createPersistence(localStorage);state=migrateTests(empty(),catalog);clearNotice();resolve();}catch{toast('Engedélyezd a böngésző helyi tárhelyét, majd töltsd újra az oldalt.')}}]],true));
+}
+const save=()=>{if(storageBlocked)return false;try{persistence.save(state);clearNotice();$('#balance').textContent=state.earned-state.spent;return true;}catch(e){if(e.code==='conflict'){conflict();return false;}notice('A legutóbbi változtatások mentése nem sikerült. Ne zárd be az oldalt: próbáld újra, vagy töltsd le a haladásodat fájlba.',[['Mentés újra',()=>save()],['Biztonsági másolat letöltése',exportCurrent]]);return false;}};
+window.addEventListener('storage',e=>{if((e.key==='explorer-state'||e.key===null)&&persistence.changed())conflict();});
 function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>$('#toast').style.display='none',4500)}
 function download(data,name){const u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 function safeURL(u){try{const v=new URL(u,location.href);return ['http:','https:'].includes(v.protocol)?esc(v.href):'#'}catch{return '#'}}
 const day=()=>catalog.days.find(d=>d.id===dayId);
-$('#name').value=state.name;$('#name').addEventListener('change',e=>{state.name=e.target.value.trim();save()});
+$('#name').value=state.name;$('#name').addEventListener('input',e=>{state.name=e.target.value.trim();save()});
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});
 function render(){disposeRoom();disposeRoom=()=>{};save();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));({learn,room,results,admin}[tab])()}
 function learn(){const d=day();
@@ -26,11 +33,11 @@ function reportTable(s){return `${testStats(s,catalog)}${Object.entries(s.caseNo
 function questionTable(s,d,qs){if(!qs.length)return '';return `<div class="tablewrap"><table><thead><tr><th>Feladat</th><th>Elsőre</th><th>Most</th><th>Legjobb</th><th>Próbák</th></tr></thead><tbody>${qs.map((q,i)=>{const a=s.answers[d.id+'/'+q.id];return `<tr><td>${esc(d.title)} / ${i+1}.<br>${esc(q.title)}${a?`<div class="muted small">Első válasz:<br>${describeAnswer(q,a.first.value).map(esc).join('<br>')}<br>Most:<br>${describeAnswer(q,a.current.value).map(esc).join('<br>')}</div>`:''}</td><td>${a?a.first.score:'—'}</td><td>${a?a.current.score:'—'}</td><td>${a?a.best:'—'}</td><td>${a?a.attempts:'—'}</td></tr>`}).join('')}</tbody></table></div>`}
 
 function results(){mountResults($('#view'),state,catalog,{
-exportResult:()=>download({kind:'explorer-result',exportedAt:new Date().toISOString(),state},'explorer-eredmeny.json'),
+exportResult:exportCurrent,
 restoreResult:async file=>{try{const data=JSON.parse(await file.text());validateState(data);if(!confirm('A jelenlegi helyi haladást lecseréled erre a mentésre?'))return;state=migrateTests(migrateRoom(data.state),catalog);$('#name').value=state.name;save();results();toast('Mentés visszatöltve.')}catch{toast('Ez nem érvényes Explorer-mentés.')}},
 goToTest:(id,practice)=>{dayId=id;selectQuizMode(practice?'practice':'test',id);tab='learn';render();window.scrollTo(0,0)}
 });}
-function validateState(d){const s=d.state;if(d.kind!=='explorer-result'||!s||typeof s.name!=='string'||typeof s.roomName!=='string'||!Array.isArray(s.items)||!s.answers||![s.earned,s.spent].every(v=>Number.isFinite(v)&&v>=0)||s.spent>s.earned)throw Error();validateRoomState(s);validateTesting(s);for(const a of Object.values(s.answers))if(!a.first||!a.current||!Array.isArray(a.first.value)||!Array.isArray(a.current.value)||![a.first.score,a.current.score,a.best,a.attempts].every(Number.isFinite))throw Error();}
+function validateState(d){if(d?.kind!=='explorer-result')throw Error();validateSavedState(d.state);}
 function admin(){$('#view').innerHTML=`<div class="heading"><div><p class="kicker">JÉGTÖRŐ / TRÉNERI MŰHELY</p><h2>A következő nap innen indul.</h2></div></div><div class="card"><h3>Résztvevői eredmények áttekintése</h3><p class="muted">Töltsd be a résztvevők által átadott eredményfájlokat. Az adatok ezen a képernyőn összehasonlíthatók; nincs automatikus központi adatgyűjtés.</p><label class="btn primary">Eredményfájlok megnyitása <input id="reports" type="file" accept=".json" multiple hidden></label><div id="reportsview">${reports.map(s=>`<details><summary>${esc(s.name||'Név nélkül')} · ${s.earned} megszerzett pont</summary><div>${reportTable(s)}</div></details>`).join('')}</div></div><div class="card"><h3>Napok és tananyagok bővítése</h3><p class="muted">A közös napok a GitHubon tárolt tartalomfájlból jelennek meg mindenkinek. Itt új napot készíthetsz, anyaglinket adhatsz hozzá, és letöltheted a frissített fájlt. A közzétételhez ezt az <code>explorer/content.json</code> helyére kell feltölteni.</p><form id="newday"><label class="field">A nap neve<input name="title" required placeholder="5. nap · Eszköz nélküli gyakorlatok"></label><label class="field">Rövid leírás<input name="subtitle"></label><label class="field">Tananyag linkje (Drive vagy feltöltött fájl URL-je)<input name="url" type="url" placeholder="https://..."></label><label class="field">Anyag neve<input name="material" placeholder="A nap anyaga"></label><label><input name="open" type="checkbox"> A nap azonnal nyitva legyen</label><div class="actions"><button class="primary">Nap hozzáadása a szerkesztési példányhoz</button><button type="button" id="catalogexport">Tartalomfájl letöltése</button><a class="btn" target="_blank" rel="noopener" href="https://github.com/matebudai-hue/ultimatum/upload/main/explorer/materials">Anyag feltöltése GitHubra ↗</a></div></form><p class="small muted">A tananyag feltöltéséhez saját GitHub-belépés kell. A fenti szerkesztés még nem módosítja más résztvevők oldalát.</p></div>`;
 $('#reports').onchange=async e=>{let invalid=0;for(const f of e.target.files){try{const d=JSON.parse(await f.text());validateState(d);reports.push(migrateTests(d.state,catalog))}catch{invalid++}}admin();if(invalid)toast(`${invalid} fájl nem volt érvényes eredmény.`)};$('#newday').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);catalog.days.push({id:'day-'+uid(),title:f.get('title'),subtitle:f.get('subtitle'),open:f.has('open'),materials:f.get('url')?[{title:f.get('material')||'Tananyag',url:f.get('url')}]:[],questions:[]});toast('Új nap hozzáadva. Töltsd le a tartalomfájlt a megőrzéséhez.');e.target.reset()};$('#catalogexport').onclick=()=>download(catalog,'content.json');}
 render();

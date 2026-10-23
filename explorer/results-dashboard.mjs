@@ -1,5 +1,5 @@
 import {resultsHTML} from './quiz-results.mjs?v=10';
-import {describeAnswer} from './engine.mjs?v=7';
+import {describeAnswer} from './engine.mjs?v=14';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function resultGroups(s,catalog){
  const groups=Object.entries(s.testing.tests).map(([id,target])=>{const day=catalog.days.find(d=>id===d.id+'/'+(d.quizVersion||'v1')||id.startsWith(d.id+'/'));return {id,title:day?.title||'Korábbi teszt',dayId:day?.id,practice:false,target};});

@@ -21,3 +21,5 @@ header{gap:8px;flex-wrap:wrap;height:auto;min-height:60px;padding-top:4px;paddin
 /* Explorer Kikötő: compact participant header and discreet founding line. */
 header .brand{font-size:18px;letter-spacing:0;gap:5px;line-height:1.2}header .brand>span{font-size:inherit;font-weight:inherit}footer .founding-note{font-size:8px;line-height:1.4;color:#91a1a8;text-align:center;margin:12px 0 0;font-weight:400}
 @media(max-width:600px){header .brand{flex-direction:column;align-items:flex-start;gap:0;font-size:14px;line-height:1.15}}
+
+.storage-warning{position:fixed;left:0;right:0;bottom:0;z-index:120;background:#fff2ce;border-top:2px solid #b37500;padding:8px;font-size:14px}.storage-warning .card{margin:0;padding:8px}.recovery-overlay{position:fixed;inset:0;z-index:1000;background:#102c42cc;display:grid;place-items:center;padding:12px;overflow:auto}.recovery-overlay .card{max-width:560px;max-height:90vh;overflow:auto}.recovery-overlay .actions{flex-wrap:wrap}

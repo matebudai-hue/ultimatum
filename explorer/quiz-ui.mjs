@@ -1,6 +1,6 @@
 import {resultsHTML} from './quiz-results.mjs?v=10';
-import {instruction,describeAnswer} from './engine.mjs?v=7';
-import {getTest,startTest,startPractice,saveAnswer,isComplete,finalize,practicePool} from './attempts.mjs?v=7';
+import {instruction,describeAnswer} from './engine.mjs?v=14';
+import {getTest,startTest,startPractice,saveAnswer,isComplete,finalize,practicePool} from './attempts.mjs?v=8';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let mode='test',index=0,lastDay=null,resultSelected=-1;
 export function selectQuizMode(value,dayId){mode=value;lastDay=dayId;index=0;resultSelected=-1;}
@@ -38,8 +38,8 @@ export function mountQuiz(root,s,catalog,day,save,toast,onRoom=()=>{}){
  find('prev').onclick=()=>navigate(index-1);
  root.querySelectorAll('[data-quiz-index]').forEach(b=>b.onclick=()=>navigate(+b.dataset.quizIndex));
  const form=find('question'),read=()=>{const data=new FormData(form);return q.rows?q.rows.map((_,i)=>{const v=data.get('row-'+i);return v===null||v===''?null:Number(v)}):data.getAll('answer').map(Number);};
- const persist=()=>{const v=read();draft.scratch??={};draft.scratch[entry.key]=v;try{saveAnswer(draft,entry.key,v)}catch{delete draft.values[entry.key];}save();const count=Object.keys(draft.values).length;find('done-count').textContent=`${count} / ${entries.length} válasz mentve`;find('quiz-progress').style.width=100*count/entries.length+'%';find('finish-test').disabled=!isComplete(draft);root.querySelector(`[data-quiz-index="${index}"]`)?.classList.toggle('saved',Object.hasOwn(draft.values,entry.key));};
- form.onchange=persist;
+ const persist=()=>{const v=read();draft.scratch??={};draft.scratch[entry.key]=v;try{saveAnswer(draft,entry.key,v)}catch{delete draft.values[entry.key];}save();const count=Object.keys(draft.values).length;root.querySelector('.task-overview summary').textContent=`Feladatlista és tudnivalók · ${count}/${entries.length}`;const dot=root.querySelector(`[data-quiz-index="${index}"]`);dot?.setAttribute('aria-label',`${index+1}. feladat${Object.hasOwn(draft.values,entry.key)?', válasz mentve':''}`);find('done-count').textContent=`${count} / ${entries.length} válasz mentve`;find('quiz-progress').style.width=100*count/entries.length+'%';find('finish-test').disabled=!isComplete(draft);root.querySelector(`[data-quiz-index="${index}"]`)?.classList.toggle('saved',Object.hasOwn(draft.values,entry.key));};
+ form.onchange=()=>{persist();if(q.type==='match'){const v=read().filter(n=>n!==null);if(new Set(v).size!==v.length)toast('Ezt a módszert már kiválasztottad egy másik állításhoz. Mindegyiket egyszer használd.');}};
  form.onsubmit=e=>{e.preventDefault();try{saveAnswer(draft,entry.key,read());save();if(index<entries.length-1)navigate(index+1);else{draw();toast('A Teszt lezárása gombbal véglegesítheted a kört.')}}catch(e){toast(e.message)}};
  find('finish-test').onclick=()=>{try{finalize(s,target,practice);resultSelected=-1;save();draw();find('result-map-title')?.focus({preventScroll:true});body.scrollIntoView({block:'start'});}catch(e){toast(e.message)}};
 }

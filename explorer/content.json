@@ -351,7 +351,7 @@
             2
           ],
           "type": "single",
-          "explanation": "A saját érzések felismerése segít, hogy a tréner ne vetítse rájuk a csoport működését. A hitelességhez tudatos önszabályozás is tartozik; a reakció megosztása önmagában nem biztosítja ezt.",
+          "explanation": "A saját érzések felismerése segít, hogy a tréner ne vetítse saját érzéseit a csoportra. A hitelességhez tudatos önszabályozás is tartozik; a reakció megosztása önmagában nem biztosítja ezt.",
           "page": 13,
           "max": 10
         },
@@ -937,8 +937,7 @@
               "Élethelyzet és példa: „Amikor a pénteki adatot hétfőn kapom meg, hétvégén nem tudom lezárni a riportot, és feszültté válok.” A munkatárs válaszára visszatükrözhetjük: „Jól értem, hogy a másik részleg adataira vártál?”",
               "Tréneri használat: Kommunikációs, vezetői, ügyfélkezelési és konfliktuskezelési képzésen. Párok előbb egy hibáztató mondatot fogalmazzanak át, majd a másik válaszát tanácsadás nélkül értsék meg. A megfigyelő ellenőrizze a konkrétságot és a visszatükrözés pontosságát.",
               "Korlát: Az „én úgy érzem, hogy te önző vagy” burkolt minősítés. Az aktív hallgatás megértést ellenőriz, és nem jelent automatikus egyetértést.",
-              "Forrás: Thomas Gordon: az én-üzenet elemei; a Gordon-modell eredete",
-              "Forrás: Thomas Gordon: Origins of the Gordon Model"
+              "Forrás: Thomas Gordon: az én-üzenet elemei; a Gordon-modell eredete"
             ]
           },
           {
