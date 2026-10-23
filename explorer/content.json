@@ -1,0 +1,374 @@
+{
+  "days": [
+    {
+      "id": "day1",
+      "title": "1. nap · A tréner alapjai",
+      "subtitle": "Módszertanok, tréning, tréner",
+      "open": true,
+      "materials": [
+        {
+          "title": "Az első nap infografikái · 1–16. oldal",
+          "url": "materials/index.html"
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "title": "Öt módszer, öt cél. Melyik párosítás áll meg?",
+          "options": [
+            "Coaching → a szakértő megmondja a megoldást",
+            "Workshop → közös eredmény létrehozása",
+            "Mentorálás → kizárólag kérdésekkel dolgozunk"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A workshop a résztvevők tudásából közös eredményt, megoldást vagy tervet hoz létre.",
+          "page": 4,
+          "max": 10
+        },
+        {
+          "id": "q2",
+          "title": "Egy résztvevő sokat tud a visszajelzésről, de még nem tud jól visszajelzést adni. Mi indokol tréninget?",
+          "options": [
+            "Újabb fogalmakat kell bemagolnia",
+            "Több előadói példára van szüksége",
+            "Gyakorolnia kell, visszajelzéssel és újrapróbálással"
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A tréning a készségek, viselkedések és kompetenciák fejlődését szolgálja.",
+          "page": 4,
+          "max": 10
+        },
+        {
+          "id": "q3",
+          "title": "Ki adhat saját tapasztalatból tanácsot úgy, hogy a döntés a támogatotté marad?",
+          "options": [
+            "A mentor",
+            "Kizárólag az oktató",
+            "Egyikük sem"
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A mentor megosztja tapasztalatait és tanácsot is adhat; a döntés felelősségét nem veszi át.",
+          "page": 6,
+          "max": 10
+        },
+        {
+          "id": "q4",
+          "title": "Mitől coaching a coaching?",
+          "options": [
+            "A coach terve alapján halad az ügyfél",
+            "Az ügyfél saját céljához és megoldásához kap támogatást",
+            "A coach a legtapasztaltabb szakmai tanácsadó"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A coaching az ügyfél céljával, saját megoldásaival és felelősségével dolgozik.",
+          "page": 6,
+          "max": 10
+        },
+        {
+          "id": "q5",
+          "title": "Egy vezető coaching szemlélettel kérdez. Mi marad ettől még igaz?",
+          "options": [
+            "Megszűnik közöttük a hierarchia",
+            "A vezető már nem hozhat döntést",
+            "A vezetői szerep és felelősség megmarad"
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A kérdezés és figyelem nem szünteti meg a vezetői felelősséget és a szervezeti kereteket.",
+          "page": 5,
+          "max": 10
+        },
+        {
+          "id": "q6",
+          "title": "Kész a közös akcióterv. Melyik módszer tipikus eredményét látod?",
+          "options": [
+            "Workshop",
+            "Coaching",
+            "Oktatás"
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A közösen létrehozott konkrét eredmény a workshop jellegzetessége.",
+          "page": 4,
+          "max": 10
+        },
+        {
+          "id": "q7",
+          "title": "Mi legyen előbb, amikor gyakorlatot választasz?",
+          "options": [
+            "Legyen látványos és új",
+            "Tisztázd, milyen tanulási célt szolgál",
+            "Mindenképpen legyen kiscsoportos"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A funkcióból indulunk ki: miért van szükség az elemre? Ehhez választunk formát.",
+          "page": 1,
+          "max": 10
+        },
+        {
+          "id": "q8",
+          "title": "Melyek formák, amelyek különböző funkciókat is szolgálhatnak?",
+          "options": [
+            "Páros munka",
+            "A bizalom erősítése",
+            "Triádos munka",
+            "Szerepjáték"
+          ],
+          "correct": [
+            0,
+            2,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A páros, triádos és szerepjátékos működés forma; a bizalom erősítése cél vagy funkció.",
+          "page": 2,
+          "max": 10
+        },
+        {
+          "id": "q9",
+          "title": "Egy jó élményből mikor lesz inkább tanulás?",
+          "options": [
+            "Ha elég erős volt az élmény",
+            "Ha mindenki ugyanazt érezte",
+            "Ha feldolgozzuk, visszajelzést kapunk és újra próbálunk"
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A tapasztalat feldolgozása, az önreflexió, a visszajelzés és az újrapróbálás segíti a fejlődést.",
+          "page": 7,
+          "max": 10
+        },
+        {
+          "id": "q10",
+          "title": "„Most már értem, miért csinálom ezt!” Mi hiányozhat még az aha-élmény után?",
+          "options": [
+            "Annak kipróbálása, hogyan csinálhatja másképp",
+            "Egy újabb, még meglepőbb felismerés",
+            "A tréner végleges személyiségértékelése"
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A felismerés után a hogyan és a gyakorlás viszi tovább a tanulást.",
+          "page": 8,
+          "max": 10
+        },
+        {
+          "id": "q11",
+          "title": "Mely jelek utalnak inkább tanulásra, mint pusztán jó hangulatra?",
+          "options": [
+            "Sokat nevettünk",
+            "Új viselkedést próbáltam ki",
+            "Visszajelzésből módosítottam a következő próbát",
+            "Tudom, hol próbálom ki a hétköznapokban"
+          ],
+          "correct": [
+            1,
+            2,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A fejlődéshez gyakorlás, visszajelzés és a hétköznapi alkalmazás kapcsolódik. A jó hangulat önmagában kevés.",
+          "page": 7,
+          "max": 10
+        },
+        {
+          "id": "q12",
+          "title": "Mire valók a tréning közös szabályai?",
+          "options": [
+            "A tréner kényelmére",
+            "A biztonság és az együttműködés kereteinek megteremtésére",
+            "Arra, hogy soha ne lehessen nézeteltérés"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A keretek biztonságos, védett tanulási teret és közös felelősséget támogatnak.",
+          "page": 8,
+          "max": 10
+        },
+        {
+          "id": "q13",
+          "title": "A tréner akkor végzi jól a dolgát, ha…",
+          "options": [
+            "minden kérdésre ő adja a legjobb választ",
+            "szinte láthatatlanná válik, és semmiben nem avatkozik be",
+            "megteremti és tartja a tanulási folyamat kereteit"
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A tréner a tanulási folyamatot segíti. Nem veszi át a csoport tanulási munkáját, de felel a folyamat vezetéséért.",
+          "page": 10,
+          "max": 10
+        },
+        {
+          "id": "q14",
+          "title": "Mi tartozhat a csoport kevésbé látható működéséhez?",
+          "options": [
+            "Kimondatlan normák",
+            "A feladat szövege",
+            "Bizalom és feszültség",
+            "Informális szerepek"
+          ],
+          "correct": [
+            0,
+            2,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A feladatok felszíne mögött kapcsolatok, szerepek, bizalom, feszültségek és kimondatlan normák is alakítják a csoportot.",
+          "page": 11,
+          "max": 10
+        },
+        {
+          "id": "q15",
+          "title": "Melyik mondat illik a partneri tréneri szerephez?",
+          "options": [
+            "„Tartsuk a célt, és nézzük meg együtt, mi segíti a munkát.”",
+            "„Én tudom, nektek csak követnetek kell.”",
+            "„A keretekkel mostantól nem foglalkozom.”"
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A partneri jelenlét egyenrangú kapcsolódást és tudatos folyamatvezetést jelent egyszerre.",
+          "page": 10,
+          "max": 10
+        },
+        {
+          "id": "q16",
+          "title": "Mely képességek tartoznak a tréner eszköztárához?",
+          "options": [
+            "Aktív figyelem",
+            "Rugalmas reagálás a csoportfolyamatokra",
+            "Tévedhetetlenség",
+            "Érthető kommunikáció"
+          ],
+          "correct": [
+            0,
+            1,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A kommunikáció, figyelem, facilitáció és rugalmasság fontos tréneri képesség; a tévedhetetlenség nem elvárás.",
+          "page": 12,
+          "max": 10
+        },
+        {
+          "id": "q17",
+          "title": "„Erős véleményem van erről.” Mit kíván a tréneri attitűd?",
+          "options": [
+            "Mondjam el addig, amíg mindenki elfogadja",
+            "Tudjak a saját véleményemtől függetlenül a csoport tanulására figyelni",
+            "Tegyem úgy, mintha soha nem lenne véleményem"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A saját véleményhez való ragaszkodás helyett a csoport tanulása kerül előtérbe.",
+          "page": 13,
+          "max": 10
+        },
+        {
+          "id": "q18",
+          "title": "Melyik állítás fér össze a tréner hitelességével?",
+          "options": [
+            "Hiteles tréner soha nem bizonytalan",
+            "Hitelességből minden személyes érzést meg kell osztani",
+            "Emberként hibázhat, reflektálhat rá és korrigálhat"
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A hitelességhez önreflexió és önszabályozás tartozik, nem a tökéletesség látszata.",
+          "page": 13,
+          "max": 10
+        },
+        {
+          "id": "q19",
+          "title": "Miért jó, ha a tréner többet tud, mint amennyit éppen elmond?",
+          "options": [
+            "Hogy biztonsággal válassza ki, mire van szüksége a csoportnak",
+            "Hogy mindenáron megmutassa a teljes tudását",
+            "Hogy ne kelljen a csoport kérdéseire figyelnie"
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A háttértudás a releváns tartalom kiválasztását és a rugalmas reagálást szolgálja.",
+          "page": 14,
+          "max": 10
+        },
+        {
+          "id": "q20",
+          "title": "„Hallani a nem hallottat” – mire hívja fel a tréner figyelmét?",
+          "options": [
+            "Biztosan tudhatjuk, mit gondol a hallgatag résztvevő",
+            "A kimondott szavakon túl a jelzésekre és a ki nem mondott szükségletekre is figyeljünk",
+            "A csendet mindig azonnal meg kell törni"
+          ],
+          "correct": [
+            1
+          ],
+          "type": "single",
+          "explanation": "A figyelem a ki nem mondott jelzésekre is kiterjed. Ez érzékeny odafigyelés, nem gondolatolvasás.",
+          "page": 16,
+          "max": 10
+        }
+      ]
+    },
+    {
+      "id": "day2",
+      "title": "2. nap · Tapasztalatból tanulás",
+      "subtitle": "Tapasztalati tanulás • tréningelemek • felkészülés a 3. napra",
+      "open": false,
+      "materials": [],
+      "questions": []
+    },
+    {
+      "id": "day3",
+      "title": "3. nap · Tiétek a tér",
+      "subtitle": "Elméletek tanítása prezentáció nélkül",
+      "open": false,
+      "materials": [],
+      "questions": []
+    },
+    {
+      "id": "day4",
+      "title": "4. nap · Következő állomás",
+      "subtitle": "Később nyílik meg",
+      "open": false,
+      "materials": [],
+      "questions": []
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+import{test}from'node:test';import assert from'node:assert/strict';import{empty,answer,buy,score}from'../engine.mjs';import{readFileSync}from'node:fs';
+const q={id:'q',options:['a','b','c'],correct:[0,1],max:10};
+test('corrections award only improvement; first answer preserved',()=>{const s=empty();assert.equal(answer(s,'d',q,[0]),5);assert.equal(answer(s,'d',q,[0,1]),5);assert.equal(answer(s,'d',q,[0,1]),0);assert.equal(answer(s,'d',q,[2]),0);assert.equal(answer(s,'d',q,[0,1]),0);assert.equal(s.earned,10);assert.equal(s.answers['d/q'].first.score,5)});
+test('selecting everything is penalized and duplicates do not score twice',()=>{assert.equal(score(q,[0,1,2]),5);assert.equal(score(q,[0,0]),5);assert.throws(()=>score(q,[99]))});
+test('purchases cannot overspend',()=>{const s=empty();assert.throws(()=>buy(s,'chair'));s.earned=25;buy(s,'chair');buy(s,'markers');assert.equal(s.spent,25);assert.equal(s.items.length,2);assert.throws(()=>buy(s,'plant'));assert.equal(s.earned,25)});
+test('days share wallet but have independent answers',()=>{const s=empty();answer(s,'one',q,[0,1]);answer(s,'two',q,[0,1]);assert.equal(s.earned,20);assert.equal(Object.keys(s.answers).length,2)});
+test('content has 20 valid unique questions',()=>{const c=JSON.parse(readFileSync(new URL('../content.json',import.meta.url)));const qs=c.days[0].questions;assert.equal(qs.length,20);assert.equal(new Set(qs.map(q=>q.id)).size,20);for(const q of qs){assert.equal(score(q,q.correct),10);assert.ok(q.page>=1&&q.page<=16)}});
