@@ -2,7 +2,7 @@
 
 Build nélküli, GitHub Pages-kompatibilis tanulási felület. A meglévő alkalmazásoktól függetlenül az `/explorer/` útvonalon működik.
 
-20 feladat az első nap infografikus anyagának első 16 oldalából; oldalszámos visszajelzések. Az első teljes kitöltés után javítható. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
+20 feladat az első nap anyagának első 16 oldalából; oldalszámos visszajelzések. Az infografikákat nem adjuk ki a résztvevői oldalon. Három eredeti esettanulmány olvasható (Ebédszünet, Tűzjelzés, Új résztvevő), két-két szabad szöveges, helyben mentett válasszal. A jegyzetek az eredményexportba és tréneri importba is bekerülnek. Az első teljes kitöltés után javítható. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
 
 A terem tárgyai megvehetők, kattintással és billentyűzettel elhelyezhetők. A név, válaszok, pontok és terem localStorage-ban maradnak. Az eredmények JSON-ként menthetők, másik eszközön visszatölthetők, tréneri nézetbe csoportosan beolvashatók.
 

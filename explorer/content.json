@@ -5,12 +5,7 @@
       "title": "1. nap · A tréner alapjai",
       "subtitle": "Módszertanok, tréning, tréner",
       "open": true,
-      "materials": [
-        {
-          "title": "Az első nap infografikái · 1–16. oldal",
-          "url": "materials/index.html"
-        }
-      ],
+      "materials": [],
       "questions": [
         {
           "id": "q1",
@@ -344,6 +339,23 @@
           "page": 16,
           "max": 10
         }
+      ],
+      "cases": [
+        {
+          "id": "ebedszunet",
+          "title": "Ebédszünet",
+          "text": "Céges tréning, a résztvevők kollégák, téma a tárgyalástechnika. Második napon ebédszünetben ülünk a szálloda éttermében, várjuk az első fogást. Az asztalnál ül egy harminc körüli hölgy, vele szemben negyven feletti férfi. Együtt dolgoznak. A szomszéd asztalnál idegenek, anya, apa, kisbaba etetőszékben, a baba felsikít, ahogy szokták. A baba sikítására a hölgy odapillant, mire a mellettem ülő negyven feletti pasi vigyorogva odaszól a kolléganőjének: ettől összehúzódott a petefészked, mi?\n\nTe mit csinálnál?"
+        },
+        {
+          "id": "tuzjelzes",
+          "title": "Tűzjelzés",
+          "text": "Eger belvárosában, egy klassz szállodában vagytok, nyolc résztvevővel vezetőfejlesztést csináltok. A második nap délelőttjén, 11 órakor, blokk közepén, amit ráadásul egy résztvevő facilitál, és nagyon benne van a csapat, megszólal a szálloda tűzjelzője, sípol, szirénázik, nagyon hangos. Az első emeleten van a tréningterem, több ajtó nyílik a kertre. Az egyik résztvevő lebetegedett reggelre (alul, felül kijön belőle minden) ő a szobájában pihen, a telefonát nem veszi fel. A szobája a második emeleten van. A terem tele van a résztvevők cuccaival, laptopok, bőröndök, kabátok, a szűk udvarban állnak a céges (de nagyon drága) autók. Odakint 12 fok, napsütés, a sziréna üvölt, a teremben kibírhatatlan a hangzavar. Te vagy a csoport vezetője, mit teszel?"
+        },
+        {
+          "id": "uj-resztvevo",
+          "title": "Új résztvevő",
+          "text": "Egy fejlesztési tréning második napját tartod felsővezetőknek három héttel az első nap után. A napot egy beszélgetős körrel indítod, ahol az első alkalommal kitűzött egyéni feladatok teljesítésére kérdezel rá. Amikor megszólítod az első résztvevőt, a tulajdonos közbeszól:\n\nBocs, van nekünk egy új vezetőnk, aki nem volt itt az első napon, mert azóta vettük fel, valamiért nem kapott meghívót a mai napra. Arra gondoltam, hogy be kellene hívnunk, várjunk már pár percet amíg a HR vezető megkeresi, itt van lent valahol a gyártásban.\n\nEz nem kérés, a HR felpattan és indul. 14 szempár szegeződik rád. Megtudod, hogy alsóbb szintű, gyártásban dolgozó operatív vezető, két hete van itt, alig ismerik egymást, a csoportban van a főnöke és a főnökének a főnöke is.\n\nMit csinálsz?"
+        }
       ]
     },
     {
@@ -370,5 +382,9 @@
       "materials": [],
       "questions": []
     }
+  ],
+  "casePrompts": [
+    "Az esettanulmány elolvasása után ösztönösen mit csinálnál?",
+    "Tanulmányozd át a tananyagot! Abból, amit a tréneri szerepről tudsz, mit tartanál helyesnek ebben a helyzetben?"
   ]
 }
