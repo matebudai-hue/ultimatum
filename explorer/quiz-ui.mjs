@@ -1,8 +1,9 @@
-import {resultsHTML} from './quiz-results.mjs?v=9';
+import {resultsHTML} from './quiz-results.mjs?v=10';
 import {instruction,describeAnswer} from './engine.mjs?v=7';
 import {getTest,startTest,startPractice,saveAnswer,isComplete,finalize,practicePool} from './attempts.mjs?v=7';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let mode='test',index=0,lastDay=null,resultSelected=-1;
+export function selectQuizMode(value,dayId){mode=value;lastDay=dayId;index=0;resultSelected=-1;}
 export function testStats(s,catalog){
  if(!s.testing)return '';
  const history=(target,practice=false)=>{const attempts=target.attempts;return `${target.draft?'<p class="small muted">Van folyamatban lévő, még le nem zárt teszt. Az eredményéért még nem járt jutalom.</p>':''}${attempts.length?`<p class="small">${practice?'':'Első eredmény: <strong>'+attempts[0].score+' / '+attempts[0].max+'</strong> · '}Legutóbbi: <strong>${attempts.at(-1).score} / ${attempts.at(-1).max}</strong> · Legjobb teljes kör: <strong>${Math.max(...attempts.map(a=>a.score))} / ${attempts[0].max}</strong> · Lezárt körök: ${attempts.filter(a=>!a.legacy).length}</p>${attempts.some(a=>a.legacy)?'<p class="small muted">A korábbi rendszerből átvett válaszokat külön jelöljük. Ezeknél nincs ismert lezárási időpont; az első összesítés a megőrzött első válaszokból készült.</p>':''}${[...attempts].reverse().map((a,n)=>`<details><summary>${a.legacy?esc(a.label):attempts.length-n+'. kör'} · ${a.score}/${a.max} · +${a.delta} új pont</summary><div><p class="small muted">${a.at?esc(new Date(a.at).toLocaleString('hu-HU')):'Korábbi válaszokból átvett eredmény'}</p><div class="tablewrap"><table><thead><tr><th>Feladat és válasz</th><th>Eredmény</th></tr></thead><tbody>${a.items.map(i=>`<tr><td>${esc(i.q.title)}<br><span class="small muted">${describeAnswer(i.q,i.value).map(esc).join('<br>')}</span></td><td>${i.score}/${i.max}</td></tr>`).join('')}</tbody></table></div></div></details>`).join('')}`:'<p class="small muted">Még nincs lezárt kör.</p>'}`;};
