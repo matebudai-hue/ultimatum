@@ -2,7 +2,7 @@
 
 Build nélküli, GitHub Pages-kompatibilis tanulási felület. A meglévő alkalmazásoktól függetlenül az `/explorer/` útvonalon működik.
 
-20 feladat az első nap anyagának első 16 oldalából; oldalszámos visszajelzések. Az infografikákat nem adjuk ki a résztvevői oldalon. Három eredeti esettanulmány olvasható (Ebédszünet, Tűzjelzés, Új résztvevő), két-két szabad szöveges, helyben mentett válasszal. A jegyzetek az eredményexportba és tréneri importba is bekerülnek. Az első teljes kitöltés után javítható. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
+20 feladat az első nap anyagának első 16 oldalából; oldalszámos visszajelzések. Az infografikákat nem adjuk ki a résztvevői oldalon. Három eredeti esettanulmány olvasható (Ebédszünet, Tűzjelzés, Új résztvevő), két-két szabad szöveges, helyben mentett válasszal. A jegyzetek az eredményexportba és tréneri importba is bekerülnek. A teljes teszt lezárásakor jár pont; addig a válaszok átírhatók, megoldást és pontot nem mutatunk. Javítani kizárólag új, üres válaszokkal kezdődő teljes körrel lehet. Feladatonként 10 pont, részpontok többválaszos kérdéseknél: helyes mínusz téves jelölések aránya, minimum nulla. Az első válasz, a legutóbbi válasz, a legjobb pont és a próbálkozások száma megmarad. Csak a korábbi legjobb eredmény feletti különbség növeli a közös egyenleget.
 
 A terem tárgyai megvehetők, kattintással és billentyűzettel elhelyezhetők. A név, válaszok, pontok és terem localStorage-ban maradnak. Az eredmények JSON-ként menthetők, másik eszközön visszatölthetők, tréneri nézetbe csoportosan beolvashatók.
 
@@ -24,7 +24,7 @@ Ez böngészőben mentő változat, az Omotenashihoz hasonlóan. Nincs központi
 
 A felülvizsgált 20 kérdés 11 egyválaszos, 6 többválaszos és 3 párosító/besoroló feladatból áll. A párosítás soronként lenyíló választót, a besorolás két érinthető kategóriát használ. Minden feladat 10 pontos; a párosítás helyes sorainak arányából egész pontra kerekített részpont jár. A többválaszos feladat pontosan megadja a jelölések számát, és a téves jelöléseket levonja a helyesekből (minimum 0).
 
-A korábbi kérdések a `questionArchives` alatt maradnak; az új kérdések azonosítói `v2-q…` alakúak. A régi és új első/aktuális válaszok nem keverednek, a korábbi eredmény a résztvevői és tréneri riportban külön lenyitható. A meglévő tárgyak és egyenleg megmaradnak. Ugyanazon nap különböző kérdéssorai közös jutalomkeretet használnak: az adott nap verziónkénti legjobb pontösszegei közül a legmagasabb után jár jutalom. Így a v1-ben megszerzett 200 pont után a v2 nem ad újabb 200-at. A későbbi napok önállóan adnak további pontokat.
+A korábbi kérdések a `questionArchives` alatt maradnak; az új kérdések azonosítói `v2-q…` alakúak. A régi és új első/aktuális válaszok nem keverednek, a korábbi eredmény a résztvevői és tréneri riportban külön lenyitható. A meglévő tárgyak és egyenleg megmaradnak. A régi verziókra korábban jóváírt jutalmakat az átállás megőrzi, és az új kérdéssor nem fizeti ki őket még egyszer. A későbbi napok önállóan adnak további pontokat.
 
 ## Személyre szabható tréningterem (roomVersion 2)
 
@@ -39,3 +39,14 @@ A korábbi kérdések a `questionArchives` alatt maradnak; az új kérdések azo
 - A `ledger` csak a vásárlásokat és fizetős fejlesztéseket naplózza. A régi költések egy nyitó összesítő bejegyzést kapnak. A mentés/visszatöltés tartalmazza a szinteket, színeket, forgatást, raktári állapotot, asztali kapcsolódásokat, terem-beállításokat és naplót.
 
 Teszt: `node --test explorer/tests/*.mjs`. A terem tesztjei a régi adatok átvételét, a visszatöltést, a pontlevonásokat, a darabkorlátokat, az ütközést, az asztali tárgyak mozgatását, a forgatást, raktárt és visszavonást is ellenőrzik.
+
+
+## Teljes tesztkörök és gyakorlás (testing.version 1)
+
+- Az aktív folyamatot az `attempts.mjs`, a felületet a `quiz-ui.mjs` kezeli. Az `engine.mjs` korábbi `answer` függvénye csak a régi formátum kompatibilitásához és a migráció tesztjeihez marad; a felület nem használja.
+- `testing.tests[dayId/quizVersion]`: draft, lezárt körök, kérdésenként már jóváírt legjobb pont és a korábbi verziókból átvett jutalmak védelme. A kitöltés nem növeli az egyenleget. Lezárás csak minden kérdés érvényes válasza után lehetséges; ekkor az adott kérdések javulásának összege jár. Rosszabb összeredmény mellett is járhat jutalom egy korábban gyengébben megoldott kérdés javulásáért. Visszaesés nem vesz el pontot.
+- A lezárt körök nem szerkeszthetők. Új kör minden kérdést újra felad, üres válaszokkal. A megoldás és magyarázat a lezárt kör áttekintésében látható. A félkész választások és a kész válaszok is megmaradnak újratöltéskor.
+- A körök kérdés- és válaszpillanatképet, eredményt, elérhető maximumot, jóváírt különbözetet és időpontot őriznek. A statisztika külön mutatja az első, legutóbbi, legjobb teljes kört, a lezárt körök számát és a feladatonkénti eredményeket. Mindez exportálható és a tréneri importban is olvasható.
+- A gyakorlás pontosan 10 különböző kérdést válogat az `open` napok aktív kérdéseiből; archív és lezárt napok kérdéseiből nem. Súlyozott véletlen mintavétel: előnyt kapnak a még jutalmazható, korábban gyengébben megoldott és ritkábban gyakorolt kérdések. A megkezdett kérdéssor rögzített és folytatható. 10-nél kisebb kérdésbankból nem indul gyakorlás.
+- `testing.practice` külön keret: kérdésenként 7, körönként legfeljebb 70 pont. A normál tesztekben megszerzett pont ezt nem fogyasztja. Ugyanarra a kérdésre összesen 7 gyakorlópont járhat; újra csak a korábbi legjobb gyakorlóeredmény feletti különbség. A már kimaxolt kérdések ismétlésre előkerülhetnek, de új pont nélkül. A felület a kérdésbank és az aktuális kör még elérhető jutalmát is mutatja. A jelenlegi 20 kérdés összesen 200 normál és 140 gyakorlópontot adhat; új kérdések növelik a keretet.
+- A migráció a korábbi egyenleget, költést, tárgyakat, esetjegyzeteket és első válaszokat változatlanul megőrzi. Teljes régi kitöltésnél a megőrzött első válaszokból képzett összesítés külön, korábbi rendszerből átvett adatként jelenik meg, ismert lezárási időpont nélkül; nem állítja, hogy ezek egy tényleges, egyben lezárt tesztkörből származnak. Részleges régi kitöltésből folytatható draft lesz. Az első új teljes lezárás ekkor már tényleges köreredmény.
