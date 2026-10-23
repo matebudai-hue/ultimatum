@@ -19,3 +19,9 @@ Ez böngészőben mentő változat, az Omotenashihoz hasonlóan. Nincs központi
 ## Ellenőrzés
 
 `node --test explorer/tests/*.mjs` a repó gyökeréből. Helyi kiszolgálás: `python -m http.server 8000` a repó gyökeréből, majd `/explorer/`.
+
+## Második kérdéssor (v2)
+
+A felülvizsgált 20 kérdés 11 egyválaszos, 6 többválaszos és 3 párosító/besoroló feladatból áll. A párosítás soronként lenyíló választót, a besorolás két érinthető kategóriát használ. Minden feladat 10 pontos; a párosítás helyes sorainak arányából egész pontra kerekített részpont jár. A többválaszos feladat pontosan megadja a jelölések számát, és a téves jelöléseket levonja a helyesekből (minimum 0).
+
+A korábbi kérdések a `questionArchives` alatt maradnak; az új kérdések azonosítói `v2-q…` alakúak. A régi és új első/aktuális válaszok nem keverednek, a korábbi eredmény a résztvevői és tréneri riportban külön lenyitható. A meglévő tárgyak és egyenleg megmaradnak. Ugyanazon nap különböző kérdéssorai közös jutalomkeretet használnak: az adott nap verziónkénti legjobb pontösszegei közül a legmagasabb után jár jutalom. Így a v1-ben megszerzett 200 pont után a v2 nem ad újabb 200-at. A későbbi napok önállóan adnak további pontokat.

@@ -8,125 +8,240 @@
       "materials": [],
       "questions": [
         {
-          "id": "q1",
-          "title": "Öt módszer, öt cél. Melyik párosítás áll meg?",
+          "id": "v2-q1",
+          "revision": "v2",
+          "title": "Melyik módszerhez melyik cél illik?",
           "options": [
-            "Coaching → a szakértő megmondja a megoldást",
-            "Workshop → közös eredmény létrehozása",
-            "Mentorálás → kizárólag kérdésekkel dolgozunk"
+            "Oktatás",
+            "Tréning",
+            "Workshop",
+            "Mentorálás",
+            "Coaching"
+          ],
+          "correct": [
+            2,
+            0,
+            1,
+            4,
+            3
+          ],
+          "type": "match",
+          "explanation": "Az oktatás főként ismeretet ad át; a tréning készséget fejleszt; a workshop közös eredményt hoz létre; a mentor tapasztalatot ad tovább; a coaching a saját megoldás megtalálását támogatja.",
+          "page": 4,
+          "max": 10,
+          "rows": [
+            "A résztvevők tudásából közös javaslat vagy terv készül.",
+            "A résztvevő szakmai ismereteket sajátít el egy hozzáértő segítségével.",
+            "A résztvevő gyakorol, visszajelzést kap, majd újrapróbálja.",
+            "A támogatott saját célján dolgozik, kérdések segítségével jut megoldáshoz.",
+            "A támogatott egy tapasztaltabb ember tapasztalataira és tanácsaira is támaszkodhat."
+          ]
+        },
+        {
+          "id": "v2-q2",
+          "revision": "v2",
+          "title": "Két program témája a visszajelzés. Az egyik végén a résztvevő elmagyarázza a lépéseit. A másikon alkalmazza, visszajelzést kap, majd újrapróbálja. Mi a különbség?",
+          "options": [
+            "Az első egyéni, a második csoportos tanulást mutat.",
+            "Az első az ismeret megértését, a második a készség gyakorlását is mutatja.",
+            "Az első tudatos, a második inkább spontán tanulást mutat.",
+            "Az első szakmai, a második főként önismereti fejlődést mutat."
           ],
           "correct": [
             1
           ],
           "type": "single",
-          "explanation": "A workshop a résztvevők tudásából közös eredményt, megoldást vagy tervet hoz létre.",
-          "page": 4,
+          "explanation": "Egy módszer elmagyarázása az ismeret megértését mutathatja. A kipróbálás, visszajelzés és újrapróbálás már a készség fejlődését is szolgálja.",
+          "page": 7,
           "max": 10
         },
         {
-          "id": "q2",
-          "title": "Egy résztvevő sokat tud a visszajelzésről, de még nem tud jól visszajelzést adni. Mi indokol tréninget?",
+          "id": "v2-q3",
+          "revision": "v2",
+          "title": "Egy csoport közösen dolgozik, facilitátor vezeti. Miből látszik leginkább, hogy ez workshop?",
           "options": [
-            "Újabb fogalmakat kell bemagolnia",
-            "Több előadói példára van szüksége",
-            "Gyakorolnia kell, visszajelzéssel és újrapróbálással"
+            "Többféle kiscsoportos munkaformát használnak.",
+            "A facilitátor szakmai modellt is bemutat.",
+            "A résztvevők tudásából közös, felhasználható eredmény készül.",
+            "Minden résztvevő személyes visszajelzést kap a viselkedéséről."
           ],
           "correct": [
             2
           ],
           "type": "single",
-          "explanation": "A tréning a készségek, viselkedések és kompetenciák fejlődését szolgálja.",
+          "explanation": "A workshop meghatározó célja a közös eredmény: például megoldás, terv vagy produktum. A kiscsoportos forma más módszernél is használható.",
           "page": 4,
           "max": 10
         },
         {
-          "id": "q3",
-          "title": "Ki adhat saját tapasztalatból tanácsot úgy, hogy a döntés a támogatotté marad?",
+          "id": "v2-q4",
+          "revision": "v2",
+          "title": "Egy tapasztalt szakember elmondja, ő hogyan oldott meg egy hasonló helyzetet. A támogatott választja ki a saját következő lépését. Melyik módszer jellegzetes működésére hasonlít leginkább?",
           "options": [
-            "A mentor",
-            "Kizárólag az oktató",
-            "Egyikük sem"
+            "Coachingra: a támogatott hozza meg a végső döntést.",
+            "Oktatásra: a tapasztalt szakember ismeretet ad át.",
+            "Mentorálásra: tapasztalatot kap, a döntés mégis az övé.",
+            "Tréningre: a beszélgetés egy későbbi cselekvést készít elő."
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A mentorálásban a tapasztalatmegosztás és a tanácsadás együtt járhat a támogatott önálló döntésével. Egyetlen részlet még nem írja le a teljes folyamatot; itt a jellegzetes működést kerestük.",
+          "page": 6,
+          "max": 10
+        },
+        {
+          "id": "v2-q5",
+          "revision": "v2",
+          "title": "Egy vezető kérdez, figyel, és segít a munkatársának saját megoldást találni. Mit jelent ez a vezető szerepére nézve?",
+          "options": [
+            "Coaching szemlélettel dolgozhat, miközben vezetői felelőssége megmarad.",
+            "A beszélgetés idejére a külső coach szerepébe lép.",
+            "A döntési felelősséget ilyenkor a munkatárs önállóságához igazítva átengedi.",
+            "A vezetői és coaching szerepet az elhangzó kérdések aránya különíti el."
           ],
           "correct": [
             0
           ],
           "type": "single",
-          "explanation": "A mentor megosztja tapasztalatait és tanácsot is adhat; a döntés felelősségét nem veszi át.",
-          "page": 6,
-          "max": 10
-        },
-        {
-          "id": "q4",
-          "title": "Mitől coaching a coaching?",
-          "options": [
-            "A coach terve alapján halad az ügyfél",
-            "Az ügyfél saját céljához és megoldásához kap támogatást",
-            "A coach a legtapasztaltabb szakmai tanácsadó"
-          ],
-          "correct": [
-            1
-          ],
-          "type": "single",
-          "explanation": "A coaching az ügyfél céljával, saját megoldásaival és felelősségével dolgozik.",
-          "page": 6,
-          "max": 10
-        },
-        {
-          "id": "q5",
-          "title": "Egy vezető coaching szemlélettel kérdez. Mi marad ettől még igaz?",
-          "options": [
-            "Megszűnik közöttük a hierarchia",
-            "A vezető már nem hozhat döntést",
-            "A vezetői szerep és felelősség megmarad"
-          ],
-          "correct": [
-            2
-          ],
-          "type": "single",
-          "explanation": "A kérdezés és figyelem nem szünteti meg a vezetői felelősséget és a szervezeti kereteket.",
+          "explanation": "A coaching szemléletű vezető kérdez és támogat, de közben vezető marad: a hierarchia, a szervezeti érdek és a vezetői felelősség is jelen van.",
           "page": 5,
           "max": 10
         },
         {
-          "id": "q6",
-          "title": "Kész a közös akcióterv. Melyik módszer tipikus eredményét látod?",
+          "id": "v2-q6",
+          "revision": "v2",
+          "title": "Funkció vagy forma? Sorold be az elemeket!",
           "options": [
-            "Workshop",
-            "Coaching",
-            "Oktatás"
+            "Funkció",
+            "Forma"
           ],
           "correct": [
+            1,
+            0,
+            1,
+            0,
+            1,
             0
           ],
-          "type": "single",
-          "explanation": "A közösen létrehozott konkrét eredmény a workshop jellegzetessége.",
-          "page": 4,
-          "max": 10
+          "type": "classify",
+          "explanation": "A funkció azt mondja meg, mit szolgál az elem a folyamatban. A forma azt, milyen módon dolgoznak a résztvevők.",
+          "page": 1,
+          "max": 10,
+          "rows": [
+            "Páros beszélgetés.",
+            "A meglévő tapasztalatok előhívása.",
+            "Szerepjáték.",
+            "A biztonságos együttműködés kereteinek kialakítása.",
+            "Triádos munka.",
+            "A tanulságok összekapcsolása a hétköznapi alkalmazással."
+          ]
         },
         {
-          "id": "q7",
-          "title": "Mi legyen előbb, amikor gyakorlatot választasz?",
+          "id": "v2-q7",
+          "revision": "v2",
+          "title": "Ugyanaz a páros gyakorlat az egyik tréningen az ismerkedést, a másikon egy kommunikációs szokás felismerését segíti. Mi magyarázza ezt?",
           "options": [
-            "Legyen látványos és új",
-            "Tisztázd, milyen tanulási célt szolgál",
-            "Mindenképpen legyen kiscsoportos"
+            "A résztvevők száma határozza meg a gyakorlat módszertani besorolását.",
+            "Ugyanaz a forma többféle funkciót tölthet be a tanulási folyamatban.",
+            "A gyakorlat funkcióját elsősorban az határozza meg, a nap melyik részén használják.",
+            "A gyakorlat funkciója a résztvevők egyéni élményeinek összessége."
           ],
           "correct": [
             1
           ],
           "type": "single",
-          "explanation": "A funkcióból indulunk ki: miért van szükség az elemre? Ehhez választunk formát.",
+          "explanation": "A gyakorlat szerepét az adja, milyen tanulási célt szolgál, és hogyan illeszkedik a folyamatba. A forma önmagában ezt nem dönti el.",
           "page": 1,
           "max": 10
         },
         {
-          "id": "q8",
-          "title": "Melyek formák, amelyek különböző funkciókat is szolgálhatnak?",
+          "id": "v2-q8",
+          "revision": "v2",
+          "title": "„Jól éreztük magunkat, gyorsan eltelt a nap.” Mit tudunk meg ebből a tréningről?",
           "options": [
-            "Páros munka",
-            "A bizalom erősítése",
-            "Triádos munka",
-            "Szerepjáték"
+            "A résztvevők számára pozitív volt a nap megélése.",
+            "A készségfejlesztési célok a résztvevők szerint teljesültek.",
+            "A résztvevők készen állnak a tanultak munkahelyi alkalmazására.",
+            "A gyakorlatok feldolgozása eredményes volt."
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A mondat a megélésről ad információt. A készség fejlődéséről vagy a munkahelyi alkalmazásról külön kell tapasztalatot szereznünk.",
+          "page": 7,
+          "max": 10
+        },
+        {
+          "id": "v2-q9",
+          "revision": "v2",
+          "title": "Melyik két kérdés segít megérteni a már lezajlott gyakorlat történéseit?",
+          "options": [
+            "Mikor változott meg köztetek az együttműködés, és mi történt akkor?",
+            "Melyik következő gyakorlatot próbálnátok ki szívesen?",
+            "Milyen hatást vettetek észre egymáson a saját viselkedésetek után?",
+            "A következő körre mennyi időt kértek?"
+          ],
+          "correct": [
+            0,
+            2
+          ],
+          "type": "multi",
+          "explanation": "A két kérdés visszatekint a megtörtént helyzetre, és segít összekötni a viselkedést annak hatásával. A többi kérdés a következő feladatot készíti elő.",
+          "page": 7,
+          "max": 10,
+          "choose": 2
+        },
+        {
+          "id": "v2-q10",
+          "revision": "v2",
+          "title": "„Most értem, hogy a kérdéseimmel néha már előre kijelölöm a választ.” Miből látszik, hogy a felismerést már gyakorlatban is használja?",
+          "options": [
+            "Pontosan megnevezi a kommunikációs jelenséget.",
+            "Több saját korábbi példát is felidéz.",
+            "Mások kérdéseiben is felismeri a mintát.",
+            "Másképp kérdez, kipróbálja, és visszajelzést kap a hatásáról."
+          ],
+          "correct": [
+            3
+          ],
+          "type": "single",
+          "explanation": "Az első három lépés segítheti a megértést. A saját működés változtatását a kipróbálás és a visszajelzés mutatja; az aha-élmény után a hogyanra is szükség van.",
+          "page": 8,
+          "max": 10
+        },
+        {
+          "id": "v2-q11",
+          "revision": "v2",
+          "title": "Melyik két állítás illik a biztonságos önismereti tanuláshoz?",
+          "options": [
+            "A résztvevő olyan felismerésre is juthat, amelyet megtart magának.",
+            "A megosztás személyessége jelzi, milyen mélyen tanult a résztvevő.",
+            "A trénernek a csoport és a résztvevő határaira is figyelnie kell.",
+            "Az önismereti felismerést a csoport visszaigazolása teszi érvényessé."
+          ],
+          "correct": [
+            0,
+            2
+          ],
+          "type": "multi",
+          "explanation": "Az önismereti tanulás nem azonos a megosztás mélységével. A részvétel önkéntessége és a biztonságos határok a tanulás kereteihez tartoznak.",
+          "page": 8,
+          "max": 10,
+          "choose": 2
+        },
+        {
+          "id": "v2-q12",
+          "revision": "v2",
+          "title": "Melyik három célt szolgálják a tréning közös szabályai?",
+          "options": [
+            "Kiszámíthatóbbá teszik az együttműködés kereteit.",
+            "Egységesítik, milyen következtetést fogadjon el a csoport.",
+            "Támogatják a biztonságos részvételt.",
+            "Világosabbá teszik a közös felelősséget.",
+            "Közös elvárást adnak a személyes megosztások mélységére."
           ],
           "correct": [
             0,
@@ -134,210 +249,169 @@
             3
           ],
           "type": "multi",
-          "explanation": "A páros, triádos és szerepjátékos működés forma; a bizalom erősítése cél vagy funkció.",
-          "page": 2,
-          "max": 10
-        },
-        {
-          "id": "q9",
-          "title": "Egy jó élményből mikor lesz inkább tanulás?",
-          "options": [
-            "Ha elég erős volt az élmény",
-            "Ha mindenki ugyanazt érezte",
-            "Ha feldolgozzuk, visszajelzést kapunk és újra próbálunk"
-          ],
-          "correct": [
-            2
-          ],
-          "type": "single",
-          "explanation": "A tapasztalat feldolgozása, az önreflexió, a visszajelzés és az újrapróbálás segíti a fejlődést.",
-          "page": 7,
-          "max": 10
-        },
-        {
-          "id": "q10",
-          "title": "„Most már értem, miért csinálom ezt!” Mi hiányozhat még az aha-élmény után?",
-          "options": [
-            "Annak kipróbálása, hogyan csinálhatja másképp",
-            "Egy újabb, még meglepőbb felismerés",
-            "A tréner végleges személyiségértékelése"
-          ],
-          "correct": [
-            0
-          ],
-          "type": "single",
-          "explanation": "A felismerés után a hogyan és a gyakorlás viszi tovább a tanulást.",
+          "explanation": "A közös keretek a biztonságot, az együttműködést és a közös felelősséget támogatják. Nem írják elő a résztvevők személyes felismeréseit vagy megosztásuk mélységét.",
           "page": 8,
-          "max": 10
+          "max": 10,
+          "choose": 3
         },
         {
-          "id": "q11",
-          "title": "Mely jelek utalnak inkább tanulásra, mint pusztán jó hangulatra?",
+          "id": "v2-q13",
+          "revision": "v2",
+          "title": "Melyik állítás írja le legteljesebben a tréner etikai felelősségét egy gyakorlatnál?",
           "options": [
-            "Sokat nevettünk",
-            "Új viselkedést próbáltam ki",
-            "Visszajelzésből módosítottam a következő próbát",
-            "Tudom, hol próbálom ki a hétköznapokban"
-          ],
-          "correct": [
-            1,
-            2,
-            3
-          ],
-          "type": "multi",
-          "explanation": "A fejlődéshez gyakorlás, visszajelzés és a hétköznapi alkalmazás kapcsolódik. A jó hangulat önmagában kevés.",
-          "page": 7,
-          "max": 10
-        },
-        {
-          "id": "q12",
-          "title": "Mire valók a tréning közös szabályai?",
-          "options": [
-            "A tréner kényelmére",
-            "A biztonság és az együttműködés kereteinek megteremtésére",
-            "Arra, hogy soha ne lehessen nézeteltérés"
+            "A tréner a tanulási célért felel, a résztvevő a saját testi és lelki terhelhetőségéért.",
+            "A tréner a tanulási cél mellett a testi-lelki biztonságra és saját beavatkozásainak hatására is figyel.",
+            "A tréner felelőssége a feladat érthető ismertetése és a részvételhez adott beleegyezés megszerzése.",
+            "A tréner a feldolgozásban vállal felelősséget a hatásokért; gyakorlás közben a résztvevők önállóan dolgoznak."
           ],
           "correct": [
             1
           ],
           "type": "single",
-          "explanation": "A keretek biztonságos, védett tanulási teret és közös felelősséget támogatnak.",
-          "page": 8,
-          "max": 10
-        },
-        {
-          "id": "q13",
-          "title": "A tréner akkor végzi jól a dolgát, ha…",
-          "options": [
-            "minden kérdésre ő adja a legjobb választ",
-            "szinte láthatatlanná válik, és semmiben nem avatkozik be",
-            "megteremti és tartja a tanulási folyamat kereteit"
-          ],
-          "correct": [
-            2
-          ],
-          "type": "single",
-          "explanation": "A tréner a tanulási folyamatot segíti. Nem veszi át a csoport tanulási munkáját, de felel a folyamat vezetéséért.",
-          "page": 10,
-          "max": 10
-        },
-        {
-          "id": "q14",
-          "title": "Mi tartozhat a csoport kevésbé látható működéséhez?",
-          "options": [
-            "Kimondatlan normák",
-            "A feladat szövege",
-            "Bizalom és feszültség",
-            "Informális szerepek"
-          ],
-          "correct": [
-            0,
-            2,
-            3
-          ],
-          "type": "multi",
-          "explanation": "A feladatok felszíne mögött kapcsolatok, szerepek, bizalom, feszültségek és kimondatlan normák is alakítják a csoportot.",
-          "page": 11,
-          "max": 10
-        },
-        {
-          "id": "q15",
-          "title": "Melyik mondat illik a partneri tréneri szerephez?",
-          "options": [
-            "„Tartsuk a célt, és nézzük meg együtt, mi segíti a munkát.”",
-            "„Én tudom, nektek csak követnetek kell.”",
-            "„A keretekkel mostantól nem foglalkozom.”"
-          ],
-          "correct": [
-            0
-          ],
-          "type": "single",
-          "explanation": "A partneri jelenlét egyenrangú kapcsolódást és tudatos folyamatvezetést jelent egyszerre.",
-          "page": 10,
-          "max": 10
-        },
-        {
-          "id": "q16",
-          "title": "Mely képességek tartoznak a tréner eszköztárához?",
-          "options": [
-            "Aktív figyelem",
-            "Rugalmas reagálás a csoportfolyamatokra",
-            "Tévedhetetlenség",
-            "Érthető kommunikáció"
-          ],
-          "correct": [
-            0,
-            1,
-            3
-          ],
-          "type": "multi",
-          "explanation": "A kommunikáció, figyelem, facilitáció és rugalmasság fontos tréneri képesség; a tévedhetetlenség nem elvárás.",
-          "page": 12,
-          "max": 10
-        },
-        {
-          "id": "q17",
-          "title": "„Erős véleményem van erről.” Mit kíván a tréneri attitűd?",
-          "options": [
-            "Mondjam el addig, amíg mindenki elfogadja",
-            "Tudjak a saját véleményemtől függetlenül a csoport tanulására figyelni",
-            "Tegyem úgy, mintha soha nem lenne véleményem"
-          ],
-          "correct": [
-            1
-          ],
-          "type": "single",
-          "explanation": "A saját véleményhez való ragaszkodás helyett a csoport tanulása kerül előtérbe.",
-          "page": 13,
-          "max": 10
-        },
-        {
-          "id": "q18",
-          "title": "Melyik állítás fér össze a tréner hitelességével?",
-          "options": [
-            "Hiteles tréner soha nem bizonytalan",
-            "Hitelességből minden személyes érzést meg kell osztani",
-            "Emberként hibázhat, reflektálhat rá és korrigálhat"
-          ],
-          "correct": [
-            2
-          ],
-          "type": "single",
-          "explanation": "A hitelességhez önreflexió és önszabályozás tartozik, nem a tökéletesség látszata.",
-          "page": 13,
-          "max": 10
-        },
-        {
-          "id": "q19",
-          "title": "Miért jó, ha a tréner többet tud, mint amennyit éppen elmond?",
-          "options": [
-            "Hogy biztonsággal válassza ki, mire van szüksége a csoportnak",
-            "Hogy mindenáron megmutassa a teljes tudását",
-            "Hogy ne kelljen a csoport kérdéseire figyelnie"
-          ],
-          "correct": [
-            0
-          ],
-          "type": "single",
-          "explanation": "A háttértudás a releváns tartalom kiválasztását és a rugalmas reagálást szolgálja.",
+          "explanation": "A tréner az emberekre gyakorolt hatásáért is felel: a fizikai és érzelmi biztonság, a határok és a saját beavatkozásai egyaránt ide tartoznak.",
           "page": 14,
           "max": 10
         },
         {
-          "id": "q20",
-          "title": "„Hallani a nem hallottat” – mire hívja fel a tréner figyelmét?",
+          "id": "v2-q14",
+          "revision": "v2",
+          "title": "A csoport látható munkája vagy a háttérben ható csoportfolyamat?",
           "options": [
-            "Biztosan tudhatjuk, mit gondol a hallgatag résztvevő",
-            "A kimondott szavakon túl a jelzésekre és a ki nem mondott szükségletekre is figyeljünk",
-            "A csendet mindig azonnal meg kell törni"
+            "Látható munka",
+            "Háttérben ható folyamat"
+          ],
+          "correct": [
+            0,
+            1,
+            0,
+            1,
+            1
+          ],
+          "type": "classify",
+          "explanation": "A kiadott feladat és a bemutatott modell a látható munkához tartozik. A normák, a bizalom és az informális befolyás a háttérben is alakítják a történéseket; ezek jeleit is figyeli a tréner.",
+          "page": 11,
+          "max": 10,
+          "rows": [
+            "A kiadott feladat és az elkészült közös megoldás.",
+            "Az a kimondatlan szokás, hogy egy bizonyos résztvevővel ritkán vitatkoznak.",
+            "A bemutatott szakmai modell.",
+            "A csoporttagok között kialakuló bizalom.",
+            "A résztvevők informális befolyása."
+          ]
+        },
+        {
+          "id": "v2-q15",
+          "revision": "v2",
+          "title": "Melyik két mondat mondja el, mi volt közvetlenül megfigyelhető?",
+          "options": [
+            "A résztvevő nem akar együttműködni.",
+            "Az utolsó három kérdésre ugyanaz a két ember válaszolt.",
+            "A csoport még nem bízik eléggé bennem.",
+            "Az új feladat után ketten egymásra néztek, majd elhallgattak."
+          ],
+          "correct": [
+            1,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A válaszolók száma, az összenézés és az elhallgatás megfigyelhető. Az együttműködési szándék és a bizalom már értelmezés: a jelzésekből érdemes óvatosan következtetni, majd pontosítani.",
+          "page": 11,
+          "max": 10,
+          "choose": 2
+        },
+        {
+          "id": "v2-q16",
+          "revision": "v2",
+          "title": "Mit jelent, hogy a tréner partnerként van jelen?",
+          "options": [
+            "A tréner a következő módszert a résztvevőkkel közösen választja ki.",
+            "A résztvevők tapasztalataira épít, és közben tudatosan vezeti a tanulási folyamatot.",
+            "Előre kijelöli a tanulságokat, majd segíti ezek közös felismerését.",
+            "A résztvevők pillanatnyi igényei alapján határozza meg a tanulási célt."
           ],
           "correct": [
             1
           ],
           "type": "single",
-          "explanation": "A figyelem a ki nem mondott jelzésekre is kiterjed. Ez érzékeny odafigyelés, nem gondolatolvasás.",
-          "page": 16,
+          "explanation": "A partneri viszony kölcsönös tiszteletet és szemmagasságot jelent. Ezzel együtt a tréner tartja a folyamatot, és teret ad a résztvevők saját tanulási munkájának.",
+          "page": 10,
           "max": 10
+        },
+        {
+          "id": "v2-q17",
+          "revision": "v2",
+          "title": "Egy megjegyzés személyesen is erősen hat a trénerre. Hogyan kapcsolódik ehhez az önreflexió és az önszabályozás?",
+          "options": [
+            "Megosztja a személyes reakcióját, hogy a csoport hiteles képet kapjon róla.",
+            "Félreteszi a személyes reakcióját, és visszatér az előre megírt forgatókönyvhöz.",
+            "Felismeri, mi zajlik benne, és ennek tudatában reagál úgy, hogy segítse a csoport tanulását.",
+            "Megkérdezi a csoportot, mennyire tartják indokoltnak a személyes reakcióját."
+          ],
+          "correct": [
+            2
+          ],
+          "type": "single",
+          "explanation": "A saját érzések felismerése segít, hogy a tréner ne vetítse rájuk a csoport működését. A hitelességhez tudatos önszabályozás is tartozik; a reakció megosztása önmagában nem biztosítja ezt.",
+          "page": 13,
+          "max": 10
+        },
+        {
+          "id": "v2-q18",
+          "revision": "v2",
+          "title": "Melyik két visszajelzés épül konkrét viselkedésre és annak hatására?",
+          "options": [
+            "Te alapvetően domináns résztvevő vagy.",
+            "Amikor a társad beszélt, háromszor átvetted a szót; így nem hallottuk végig a javaslatát.",
+            "Neked valószínűleg az együttműködési készségedet kell fejlesztened.",
+            "Amikor megkérdezted, ki látja másképp, két addig hallgató ember is hozzászólt."
+          ],
+          "correct": [
+            1,
+            3
+          ],
+          "type": "multi",
+          "explanation": "A két válasz konkrét történést és annak hatását mutatja meg. Így segítik a tanulást. A személy címkézése vagy egy általános fejlesztési javaslat kevésbé teszi láthatóvá, min lehet változtatni.",
+          "page": 8,
+          "max": 10,
+          "choose": 2
+        },
+        {
+          "id": "v2-q19",
+          "revision": "v2",
+          "title": "Miért fontos, hogy a tréner többet tudjon annál, mint amennyit éppen elmond?",
+          "options": [
+            "A csoport tudásához és kérdéseihez igazítva tudja kiválasztani a lényeges tartalmat.",
+            "Az előre tervezett tartalmat kevesebb résztvevői kérdéssel is át tudja adni.",
+            "Érzékeltetni tudja, mennyi további ismeret elsajátítása vár a résztvevőkre.",
+            "A bemutatott ismeretek mennyiségéből tudja ellenőrizni a tanulás eredményét."
+          ],
+          "correct": [
+            0
+          ],
+          "type": "single",
+          "explanation": "A mélyebb háttértudásból a csoport számára releváns tartalmat tudja kiválasztani. Ez érthetőbbé teszi a munkát, és váratlan kérdéseknél is segíti a trénert.",
+          "page": 14,
+          "max": 10
+        },
+        {
+          "id": "v2-q20",
+          "revision": "v2",
+          "title": "„Hallani a nem hallottat.” Melyik két állítás illik ehhez a tréneri figyelemhez?",
+          "options": [
+            "A csendek, reakciók és kapcsolódások is hordozhatnak információt.",
+            "A szavak és a viselkedés eltéréséből megállapítható az őszinteség.",
+            "A tréner észrevehet egy jelzést, majd ellenőrizheti, jól érti-e.",
+            "A ki nem mondott szükséglet felismerése alapján a tréner megfogalmazhatja a résztvevő személyes problémáját."
+          ],
+          "correct": [
+            0,
+            2
+          ],
+          "type": "multi",
+          "explanation": "A történet arra irányítja a figyelmet, ami nem hangzik el közvetlenül. A csoport jelzései fontosak, de jelentésük értelmezésében érdemes teret hagyni a pontosításnak.",
+          "page": 16,
+          "max": 10,
+          "choose": 2
         }
       ],
       "cases": [
@@ -356,7 +430,348 @@
           "title": "Új résztvevő",
           "text": "Egy fejlesztési tréning második napját tartod felsővezetőknek három héttel az első nap után. A napot egy beszélgetős körrel indítod, ahol az első alkalommal kitűzött egyéni feladatok teljesítésére kérdezel rá. Amikor megszólítod az első résztvevőt, a tulajdonos közbeszól:\n\nBocs, van nekünk egy új vezetőnk, aki nem volt itt az első napon, mert azóta vettük fel, valamiért nem kapott meghívót a mai napra. Arra gondoltam, hogy be kellene hívnunk, várjunk már pár percet amíg a HR vezető megkeresi, itt van lent valahol a gyártásban.\n\nEz nem kérés, a HR felpattan és indul. 14 szempár szegeződik rád. Megtudod, hogy alsóbb szintű, gyártásban dolgozó operatív vezető, két hete van itt, alig ismerik egymást, a csoportban van a főnöke és a főnökének a főnöke is.\n\nMit csinálsz?"
         }
-      ]
+      ],
+      "questionArchives": [
+        {
+          "revision": "v1",
+          "title": "Korábbi kérdéssor",
+          "questions": [
+            {
+              "id": "q1",
+              "title": "Öt módszer, öt cél. Melyik párosítás áll meg?",
+              "options": [
+                "Coaching → a szakértő megmondja a megoldást",
+                "Workshop → közös eredmény létrehozása",
+                "Mentorálás → kizárólag kérdésekkel dolgozunk"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A workshop a résztvevők tudásából közös eredményt, megoldást vagy tervet hoz létre.",
+              "page": 4,
+              "max": 10
+            },
+            {
+              "id": "q2",
+              "title": "Egy résztvevő sokat tud a visszajelzésről, de még nem tud jól visszajelzést adni. Mi indokol tréninget?",
+              "options": [
+                "Újabb fogalmakat kell bemagolnia",
+                "Több előadói példára van szüksége",
+                "Gyakorolnia kell, visszajelzéssel és újrapróbálással"
+              ],
+              "correct": [
+                2
+              ],
+              "type": "single",
+              "explanation": "A tréning a készségek, viselkedések és kompetenciák fejlődését szolgálja.",
+              "page": 4,
+              "max": 10
+            },
+            {
+              "id": "q3",
+              "title": "Ki adhat saját tapasztalatból tanácsot úgy, hogy a döntés a támogatotté marad?",
+              "options": [
+                "A mentor",
+                "Kizárólag az oktató",
+                "Egyikük sem"
+              ],
+              "correct": [
+                0
+              ],
+              "type": "single",
+              "explanation": "A mentor megosztja tapasztalatait és tanácsot is adhat; a döntés felelősségét nem veszi át.",
+              "page": 6,
+              "max": 10
+            },
+            {
+              "id": "q4",
+              "title": "Mitől coaching a coaching?",
+              "options": [
+                "A coach terve alapján halad az ügyfél",
+                "Az ügyfél saját céljához és megoldásához kap támogatást",
+                "A coach a legtapasztaltabb szakmai tanácsadó"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A coaching az ügyfél céljával, saját megoldásaival és felelősségével dolgozik.",
+              "page": 6,
+              "max": 10
+            },
+            {
+              "id": "q5",
+              "title": "Egy vezető coaching szemlélettel kérdez. Mi marad ettől még igaz?",
+              "options": [
+                "Megszűnik közöttük a hierarchia",
+                "A vezető már nem hozhat döntést",
+                "A vezetői szerep és felelősség megmarad"
+              ],
+              "correct": [
+                2
+              ],
+              "type": "single",
+              "explanation": "A kérdezés és figyelem nem szünteti meg a vezetői felelősséget és a szervezeti kereteket.",
+              "page": 5,
+              "max": 10
+            },
+            {
+              "id": "q6",
+              "title": "Kész a közös akcióterv. Melyik módszer tipikus eredményét látod?",
+              "options": [
+                "Workshop",
+                "Coaching",
+                "Oktatás"
+              ],
+              "correct": [
+                0
+              ],
+              "type": "single",
+              "explanation": "A közösen létrehozott konkrét eredmény a workshop jellegzetessége.",
+              "page": 4,
+              "max": 10
+            },
+            {
+              "id": "q7",
+              "title": "Mi legyen előbb, amikor gyakorlatot választasz?",
+              "options": [
+                "Legyen látványos és új",
+                "Tisztázd, milyen tanulási célt szolgál",
+                "Mindenképpen legyen kiscsoportos"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A funkcióból indulunk ki: miért van szükség az elemre? Ehhez választunk formát.",
+              "page": 1,
+              "max": 10
+            },
+            {
+              "id": "q8",
+              "title": "Melyek formák, amelyek különböző funkciókat is szolgálhatnak?",
+              "options": [
+                "Páros munka",
+                "A bizalom erősítése",
+                "Triádos munka",
+                "Szerepjáték"
+              ],
+              "correct": [
+                0,
+                2,
+                3
+              ],
+              "type": "multi",
+              "explanation": "A páros, triádos és szerepjátékos működés forma; a bizalom erősítése cél vagy funkció.",
+              "page": 2,
+              "max": 10
+            },
+            {
+              "id": "q9",
+              "title": "Egy jó élményből mikor lesz inkább tanulás?",
+              "options": [
+                "Ha elég erős volt az élmény",
+                "Ha mindenki ugyanazt érezte",
+                "Ha feldolgozzuk, visszajelzést kapunk és újra próbálunk"
+              ],
+              "correct": [
+                2
+              ],
+              "type": "single",
+              "explanation": "A tapasztalat feldolgozása, az önreflexió, a visszajelzés és az újrapróbálás segíti a fejlődést.",
+              "page": 7,
+              "max": 10
+            },
+            {
+              "id": "q10",
+              "title": "„Most már értem, miért csinálom ezt!” Mi hiányozhat még az aha-élmény után?",
+              "options": [
+                "Annak kipróbálása, hogyan csinálhatja másképp",
+                "Egy újabb, még meglepőbb felismerés",
+                "A tréner végleges személyiségértékelése"
+              ],
+              "correct": [
+                0
+              ],
+              "type": "single",
+              "explanation": "A felismerés után a hogyan és a gyakorlás viszi tovább a tanulást.",
+              "page": 8,
+              "max": 10
+            },
+            {
+              "id": "q11",
+              "title": "Mely jelek utalnak inkább tanulásra, mint pusztán jó hangulatra?",
+              "options": [
+                "Sokat nevettünk",
+                "Új viselkedést próbáltam ki",
+                "Visszajelzésből módosítottam a következő próbát",
+                "Tudom, hol próbálom ki a hétköznapokban"
+              ],
+              "correct": [
+                1,
+                2,
+                3
+              ],
+              "type": "multi",
+              "explanation": "A fejlődéshez gyakorlás, visszajelzés és a hétköznapi alkalmazás kapcsolódik. A jó hangulat önmagában kevés.",
+              "page": 7,
+              "max": 10
+            },
+            {
+              "id": "q12",
+              "title": "Mire valók a tréning közös szabályai?",
+              "options": [
+                "A tréner kényelmére",
+                "A biztonság és az együttműködés kereteinek megteremtésére",
+                "Arra, hogy soha ne lehessen nézeteltérés"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A keretek biztonságos, védett tanulási teret és közös felelősséget támogatnak.",
+              "page": 8,
+              "max": 10
+            },
+            {
+              "id": "q13",
+              "title": "A tréner akkor végzi jól a dolgát, ha…",
+              "options": [
+                "minden kérdésre ő adja a legjobb választ",
+                "szinte láthatatlanná válik, és semmiben nem avatkozik be",
+                "megteremti és tartja a tanulási folyamat kereteit"
+              ],
+              "correct": [
+                2
+              ],
+              "type": "single",
+              "explanation": "A tréner a tanulási folyamatot segíti. Nem veszi át a csoport tanulási munkáját, de felel a folyamat vezetéséért.",
+              "page": 10,
+              "max": 10
+            },
+            {
+              "id": "q14",
+              "title": "Mi tartozhat a csoport kevésbé látható működéséhez?",
+              "options": [
+                "Kimondatlan normák",
+                "A feladat szövege",
+                "Bizalom és feszültség",
+                "Informális szerepek"
+              ],
+              "correct": [
+                0,
+                2,
+                3
+              ],
+              "type": "multi",
+              "explanation": "A feladatok felszíne mögött kapcsolatok, szerepek, bizalom, feszültségek és kimondatlan normák is alakítják a csoportot.",
+              "page": 11,
+              "max": 10
+            },
+            {
+              "id": "q15",
+              "title": "Melyik mondat illik a partneri tréneri szerephez?",
+              "options": [
+                "„Tartsuk a célt, és nézzük meg együtt, mi segíti a munkát.”",
+                "„Én tudom, nektek csak követnetek kell.”",
+                "„A keretekkel mostantól nem foglalkozom.”"
+              ],
+              "correct": [
+                0
+              ],
+              "type": "single",
+              "explanation": "A partneri jelenlét egyenrangú kapcsolódást és tudatos folyamatvezetést jelent egyszerre.",
+              "page": 10,
+              "max": 10
+            },
+            {
+              "id": "q16",
+              "title": "Mely képességek tartoznak a tréner eszköztárához?",
+              "options": [
+                "Aktív figyelem",
+                "Rugalmas reagálás a csoportfolyamatokra",
+                "Tévedhetetlenség",
+                "Érthető kommunikáció"
+              ],
+              "correct": [
+                0,
+                1,
+                3
+              ],
+              "type": "multi",
+              "explanation": "A kommunikáció, figyelem, facilitáció és rugalmasság fontos tréneri képesség; a tévedhetetlenség nem elvárás.",
+              "page": 12,
+              "max": 10
+            },
+            {
+              "id": "q17",
+              "title": "„Erős véleményem van erről.” Mit kíván a tréneri attitűd?",
+              "options": [
+                "Mondjam el addig, amíg mindenki elfogadja",
+                "Tudjak a saját véleményemtől függetlenül a csoport tanulására figyelni",
+                "Tegyem úgy, mintha soha nem lenne véleményem"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A saját véleményhez való ragaszkodás helyett a csoport tanulása kerül előtérbe.",
+              "page": 13,
+              "max": 10
+            },
+            {
+              "id": "q18",
+              "title": "Melyik állítás fér össze a tréner hitelességével?",
+              "options": [
+                "Hiteles tréner soha nem bizonytalan",
+                "Hitelességből minden személyes érzést meg kell osztani",
+                "Emberként hibázhat, reflektálhat rá és korrigálhat"
+              ],
+              "correct": [
+                2
+              ],
+              "type": "single",
+              "explanation": "A hitelességhez önreflexió és önszabályozás tartozik, nem a tökéletesség látszata.",
+              "page": 13,
+              "max": 10
+            },
+            {
+              "id": "q19",
+              "title": "Miért jó, ha a tréner többet tud, mint amennyit éppen elmond?",
+              "options": [
+                "Hogy biztonsággal válassza ki, mire van szüksége a csoportnak",
+                "Hogy mindenáron megmutassa a teljes tudását",
+                "Hogy ne kelljen a csoport kérdéseire figyelnie"
+              ],
+              "correct": [
+                0
+              ],
+              "type": "single",
+              "explanation": "A háttértudás a releváns tartalom kiválasztását és a rugalmas reagálást szolgálja.",
+              "page": 14,
+              "max": 10
+            },
+            {
+              "id": "q20",
+              "title": "„Hallani a nem hallottat” – mire hívja fel a tréner figyelmét?",
+              "options": [
+                "Biztosan tudhatjuk, mit gondol a hallgatag résztvevő",
+                "A kimondott szavakon túl a jelzésekre és a ki nem mondott szükségletekre is figyeljünk",
+                "A csendet mindig azonnal meg kell törni"
+              ],
+              "correct": [
+                1
+              ],
+              "type": "single",
+              "explanation": "A figyelem a ki nem mondott jelzésekre is kiterjed. Ez érzékeny odafigyelés, nem gondolatolvasás.",
+              "page": 16,
+              "max": 10
+            }
+          ]
+        }
+      ],
+      "quizVersion": "v2"
     },
     {
       "id": "day2",
