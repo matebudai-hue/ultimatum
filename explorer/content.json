@@ -362,9 +362,184 @@
       "id": "day2",
       "title": "2. nap · Tapasztalatból tanulás",
       "subtitle": "Tapasztalati tanulás • tréningelemek • felkészülés a 3. napra",
-      "open": false,
+      "open": true,
       "materials": [],
-      "questions": []
+      "questions": [],
+      "reading": {
+        "title": "Explorer – Felkészülés a 3. napra",
+        "intro": [
+          "A feladatot a 2. képzési nap végén adjuk ki. A résztvevők a kapott témából a 3. napra készülnek fel: megtanulják, majd gyakorlatban bemutatják és megtanítják a többieknek, PPT nélkül, workshop-elemmel.",
+          "A leírások kiindulópontot adnak a felkészüléshez. A munkahelyi példák és a tréneri felhasználások szemléltető javaslatok, nem kutatási eredmények. A modellek tudományos háttere eltérő: van köztük kutatási elmélet, gyakorlati keret és forráskritikai feldolgozásra szánt tévhit. A bemutatóban a modell alkalmazási határai is kapjanak helyet."
+        ],
+        "sections": [
+          {
+            "title": "1. Johari-ablak",
+            "paragraphs": [
+              "Lényeg és fő elemek: Luft és Ingham az önismeret és a mások számára látható működés kapcsolatát négy területre bontja: nyílt (én is és mások is ismerik), vak (mások látják, én nem), rejtett (én ismerem, mások nem) és ismeretlen (egyelőre senki sem ismeri). A visszajelzés és az önkéntes megosztás bővítheti a közösen ismert területet.",
+              "Mögötte lévő gondolat: A szándékom és a másokra gyakorolt hatásom eltérhet. Mások tapasztalata olyan információt adhat rólam, amelyhez egyedül nehezen jutok hozzá.",
+              "Élethelyzet és példa: Egy vezető segítőkésznek gondolja magát, miközben rendszeresen befejezi munkatársai mondatait. A többiek ebből sürgetést érzékelnek. A konkrét visszajelzés megmutatja a vakfoltot.",
+              "Tréneri használat: Önismereti, kommunikációs, vezetői és visszajelzési képzésen használható. Páros feladat után a résztvevők összevethetik saját szándékukat a társuk által megfigyelt viselkedéssel. Kivezető kérdés: „Mit tudtál meg a hatásodról, amit eddig nem láttál?”",
+              "Korlát: Tájékozódási keret. A másik véleménye is nézőpont; konkrét megfigyelést kérjünk, és hagyjuk önkéntesnek a személyes megosztást.",
+              "Forrás: Joseph Luft: The Johari Window – szerzői szöveg egyetemi újraközlésben"
+            ]
+          },
+          {
+            "title": "2. Thomas–Kilmann: konfliktuskezelési modell",
+            "paragraphs": [
+              "Lényeg és fő elemek: Két tengelyt használ: mennyire érvényesítem a saját szempontjaimat, illetve mennyire törekszem a másik szempontjainak kielégítésére. Öt módot különböztet meg: versengés, alkalmazkodás, elkerülés, kompromisszumkeresés és együttműködés.",
+              "Mögötte lévő gondolat: A konfliktusban választható viselkedéseink vannak. A helyzet, az idő, a tét és a kapcsolat alapján érdemes választani; minden módnak lehet helye.",
+              "Élethelyzet és példa: Két részleg ugyanarra az időpontra kér egy tárgyalót. A kompromisszum az idő felezése lehet. Együttműködéskor előbb tisztázzák az igényeket: kiderülhet, hogy az egyiknek a videótechnika, a másiknak a nagy asztal fontos, így más megoldás is adódhat.",
+              "Tréneri használat: Konfliktuskezelési, tárgyalási és vezetői tréningen. Ugyanazt a rövid helyzetet többféle konfliktuskezelési móddal játszassuk el, majd vizsgáljuk a következményeket. Kérdés: „Milyen feltételek mellett működne itt ez a megoldás?”",
+              "Korlát: A módok viselkedési lehetőségek; az együttműködéshez idő és megfelelő körülmények is kellenek. Egyetlen jelenetből nem állapítunk meg tartós személyes profilt.",
+              "Forrás: Ralph Kilmann: a konfliktushelyzet jellemzői és az öt mód"
+            ]
+          },
+          {
+            "title": "3. Blanchard: helyzetfüggő vezetés – SLII",
+            "paragraphs": [
+              "Lényeg és fő elemek: Egy meghatározott feladathoz kapcsolódó kompetenciát és elkötelezettséget vizsgál. Az elkötelezettséghez a motiváció és az önbizalom is hozzátartozik. Négy fejlettségi helyzethez eltérő irányító és támogató viselkedést rendel: S1 irányítás, S2 tanító-edző vezetés, S3 támogatás, S4 delegálás.",
+              "Mögötte lévő gondolat: Ugyanaz az ember különböző feladatokban különböző segítséget igényelhet. A vezető dolga felmérni, hogy most mire van szükség.",
+              "Élethelyzet és példa: Egy tapasztalt értékesítő önállóan tárgyal, de az új CRM-ben kezdő. A vezető a tárgyalásokat rábízhatja, az első CRM-rögzítésnél viszont megmutatja a lépéseket és ellenőrzi a megértést.",
+              "Tréneri használat: Delegálási, betanítási és vezetői képzésen. Ugyanannak a munkatársnak két eltérő feladatára tervezzenek vezetői beszélgetést. Kérdés: „Miből tudod, mennyi irányításra és támogatásra van szüksége?”",
+              "Korlát: A fejlettségi szint feladathoz kötött, és a munkatárssal érdemes egyeztetni. A modellt használjuk megbeszélési keretként; önmagában nem garantál vezetői eredményességet. Az SLII változatot ne keverjük a korábbi modellek eltérő elnevezéseivel.",
+              "Forrás: Blanchard: SLII – hivatalos modellismertető"
+            ]
+          },
+          {
+            "title": "4. Kolb: tapasztalati tanulási ciklus",
+            "paragraphs": [
+              "Lényeg és fő elemek: Négy összekapcsolódó tanulási mód: konkrét tapasztalat, reflektív megfigyelés, elvont fogalomalkotás és aktív kísérletezés. Átélünk valamit, végiggondoljuk, értelmezzük, majd kipróbáljuk, mire jutottunk.",
+              "Mögötte lévő gondolat: Egy élmény akkor válik tudatosan használható tanulássá, ha feldolgozzuk, és a következő cselekvésünkben is változtatunk valamin.",
+              "Élethelyzet és példa: Egy ügyfélbeszélgetés elakad. Utólag felismerem, hogy túl hamar ajánlottam megoldást. Megfogalmazom, milyen kérdést hagytam ki, majd a következő beszélgetésben kipróbálom.",
+              "Tréneri használat: Kommunikációs, értékesítési, vezetői és más készségfejlesztő képzésen. Rövid szerepjáték után kérjünk megfigyeléseket, közösen fogalmazzunk meg egy alkalmazható elvet, majd legyen újabb próba. Kivezető kérdés: „Mit változtatsz a következő körben, és miből látjuk, hogy működött?”",
+              "Korlát: A ciklus tervezési segítség, a tanulás a gyakorlatban rugalmasabb lehet. Ebből nem következik, hogy a résztvevőket rögzített tanulási típusokba kell sorolni, vagy kizárólag az állítólagos típusuk szerint kell tanítani.",
+              "Forrás: Institute for Experiential Learning: a Kolb-ciklus bemutatása"
+            ]
+          },
+          {
+            "title": "5. Herzberg: kéttényezős motivációelmélet",
+            "paragraphs": [
+              "Lényeg és fő elemek: Elkülöníti az elégedetlenséget befolyásoló higiénés tényezőket és a munkával kapcsolatos elégedettséget erősítő motivátorokat. Előbbiekhez például a munkafeltételek, a szabályok, a fizetés és a vezetői kapcsolatok tartoznak; utóbbiakhoz a teljesítményélmény, az elismerés, a felelősség, a fejlődés és a munka tartalma.",
+              "Mögötte lévő gondolat: A zavaró körülmények rendezése és az értelmes, fejlődést adó munka kialakítása két külön vezetői feladat.",
+              "Élethelyzet és példa: A vezető megjavíttatja a rendszeresen lefagyó számítógépeket. Csökken a bosszúság, de a monotonná vált munka még nem lesz izgalmasabb. A munkatárs később önálló ügyfélprojektet kap: más jellegű változás történik.",
+              "Tréneri használat: Vezetőfejlesztésen, motiválási és munkaszervezési workshopon. A résztvevők gyűjtsék össze egy munkakör bosszantó körülményeit és a munkában rejlő fejlődési lehetőségeket, majd mindkettőre tervezzenek intézkedést.",
+              "Korlát: Az elmélet kategóriáit helyzetenként ellenőrizzük. A fizetés jelentőségét nem lehet vele elintézni: „a pénz nem motivál” túlzó következtetés. A kérdés az, mire és milyen körülmények között hat az adott változtatás.",
+              "Forrás: Frederick Herzberg: One More Time – szerzői gondolatok egyetemi közlésben"
+            ]
+          },
+          {
+            "title": "6. Belbin: csapatszerepek",
+            "paragraphs": [
+              "Lényeg és fő elemek: Kilencféle hasznos csapathozzájárulást ír le: ötletadó (Plant), helyzetértékelő (Monitor Evaluator), specialista (Specialist), forrásfeltáró (Resource Investigator), csapatjátékos (Teamworker), koordinátor (Co-ordinator), serkentő (Shaper), megvalósító (Implementer) és befejező (Completer Finisher). A szerepek erősségekkel és hozzájuk kapcsolódó gyengeségekkel járhatnak.",
+              "Mögötte lévő gondolat: A csapatnak többféle hozzájárulásra van szüksége. Érdemes azt vizsgálni, melyik viselkedés segíti most a közös munkát, és mi hiányzik.",
+              "Élethelyzet és példa: Egy csapat rengeteg új termékötletet gyűjt, mégsem jut el a megvalósításig. A feladatok ütemezése, a kockázatok mérlegelése és a részletek lezárása háttérbe szorul.",
+              "Tréneri használat: Csapatépítő, együttműködési és projektvezetési képzésen. Közös feladat után a résztvevők konkrét viselkedéseket azonosíthatnak: ki hozott ötletet, ki szervezte a munkát, ki ellenőrzött? Ezután tudatosan pótoljanak egy hiányzó hozzájárulást.",
+              "Korlát: Egy ember több szerepet is betölthet, és a szerepek helyzetfüggők. A kilenc szerep nem jelent kilenc kötelező csapattagot. Saját megfigyelési gyakorlatból ne állítsunk elő hivatalos Belbin-profilt.",
+              "Forrás: Belbin: a kilenc csapatszerep és alkalmazásuk"
+            ]
+          },
+          {
+            "title": "7. Lencioni: a csapatműködés öt zavara",
+            "paragraphs": [
+              "Lényeg és fő elemek: Öt egymásra ható működési problémát nevez meg: bizalomhiány, a konfliktustól való félelem, az elköteleződés hiánya, egymás számonkérésének kerülése és a közös eredmények háttérbe szorulása. A bizalom itt különösen a hibák és bizonytalanság vállalhatóságát jelenti.",
+              "Mögötte lévő gondolat: A látható eredményproblémák mögött gyakran a mindennapi együttműködés szokásai állnak. Érdemes ezekből konkrétan megváltoztatható viselkedést keresni.",
+              "Élethelyzet és példa: A vezetői értekezleten mindenki rábólint egy tervre, kifelé menet viszont többen elmondják, miért végrehajthatatlan. Az ellenvélemények kimondatlansága bizonytalan elköteleződéshez vezethet.",
+              "Tréneri használat: Vezetői csapatok fejlesztésében és együttműködési workshopon. Egy közelmúltbeli közös döntést vizsgáljanak meg az öt szemponttal. Ezután válasszanak egy új szokást: például döntés előtt mindenki megfogalmaz egy kockázatot, végül rögzítik a felelőst és a következő lépést.",
+              "Korlát: Gyakorlati tanácsadói keret. Az öt elem és sorrendjük használható munkahipotézis, de egy csapat problémáit önmagában nem magyarázza meg.",
+              "Forrás: The Table Group: The Five Dysfunctions of a Team"
+            ]
+          },
+          {
+            "title": "8. Tuckman: csoportfejlődési szakaszok",
+            "paragraphs": [
+              "Lényeg és fő elemek: Az eredeti modell négy szakasza: forming – tájékozódás és alakulás; storming – ütközések, szerep- és befolyásviták; norming – közös normák kialakítása; performing – összehangolt feladatvégzés. Tuckman és Jensen később hozzáadták az adjourning, a lezárás szakaszát.",
+              "Mögötte lévő gondolat: Az együttműködés fejlődése során a csoportnak a feladattal és a tagok közötti viszonyokkal is dolga van. Az ütközés jelzés lehet arról, hogy valamit tisztázni kell.",
+              "Élethelyzet és példa: Egy új projektcsapat kezdetben udvarias. Később összevesznek a feladatelosztáson. A felelősségek és döntési szabályok tisztázása után gördülékenyebben dolgoznak.",
+              "Tréneri használat: Csapatvezetői, projektvezetési és együttműködési képzésen. A résztvevők helyzetkártyákból gyűjtsenek megfigyelhető jeleket, majd tervezzék meg, hogyan segítene a vezető. A tréner saját csoportjában is figyelheti, több keretre, tisztázásra vagy önállóságra van-e szükség.",
+              "Korlát: A szakaszok lehetséges mintázatot írnak le. Új tag vagy feladat ismét bizonytalanságot hozhat; a csoportok útja nem szükségszerűen egyenes. A modell nem indokolja a konfliktusok mesterséges előidézését.",
+              "Forrás: Tuckman és Jensen (1977): Stages of Small-Group Development Revisited"
+            ]
+          },
+          {
+            "title": "9. Deci–Ryan: öndeterminációs elmélet",
+            "paragraphs": [
+              "Lényeg és fő elemek: A motiváció minőségét és társas feltételeit vizsgálja. Három alapvető pszichológiai szükségletet emel ki: autonómia – a cselekvés személyes vállalhatósága; kompetencia – a hatékonyság és fejlődés megélése; kapcsolódás – elfogadó, jelentős kapcsolatok. A külső indítékból végzett tevékenység is válhat személyesen vállalttá.",
+              "Mögötte lévő gondolat: A vezető és a tréner alakíthatja azokat a feltételeket, amelyek között valaki értelmét látja a részvételnek, képesnek érzi magát és kapcsolódni tud.",
+              "Élethelyzet és példa: Kötelező képzésen a résztvevő választhat saját munkahelyi esetet, kezelhető lépésekben gyakorol, konkrét visszajelzést kap és támogató párban dolgozik. Ezekkel mindhárom szükségletet támogathatjuk.",
+              "Tréneri használat: Motivációs és vezetői tréningen, valamint saját képzéstervezésben. Egy csapathelyzetben keressék meg, hol sérülhet az autonómia, a kompetencia vagy a kapcsolódás, majd fogalmazzanak meg konkrét vezetői változtatást.",
+              "Korlát: Az autonómia az elvárások és keretek között is megélhető. Az elméletből nem következik, hogy mindenki bármit választhat, vagy hogy minden külső jutalom szükségszerűen káros.",
+              "Forrás: Self-Determination Theory: hivatalos elméleti áttekintés"
+            ]
+          },
+          {
+            "title": "10. Edmondson: pszichológiai biztonság",
+            "paragraphs": [
+              "Lényeg és fő elemek: A csapat közös meggyőződése arról, hogy vállalhatók a személyközi kockázatok: lehet kérdezni, segítséget kérni, hibát jelezni vagy eltérő véleményt mondani a megszégyenítés félelme nélkül. A tanulási viselkedés és a csapat működésének megértésében fontos fogalom.",
+              "Mögötte lévő gondolat: A csoport csak olyan információval tud dolgozni, amelyet valaki hajlandó kimondani. A megszólalásra adott reakció befolyásolja a következő megszólalást.",
+              "Élethelyzet és példa: Egy munkatárs hibát talál az ajánlatban. Korábban a hibajelzőt nyilvánosan leszidták, ezért most hallgat. Más vezető először megköszöni a jelzést, tisztázza a kockázatot és intézkedik.",
+              "Tréneri használat: Vezetői, együttműködési, hibából tanulási és biztonságtudatossági képzésen. Párok ugyanazt a hibajelzést kétféle vezetői válasszal játsszák el, majd vizsgálják, melyik válasz után mit mernének legközelebb elmondani. A tréner saját reakcióival is mintát adhat.",
+              "Korlát: A magas szakmai elvárások és az elszámoltathatóság összeegyeztethetők vele. Egy kellemes tréningnap önmagában nem bizonyítja a munkahelyi pszichológiai biztonságot; ahhoz a tartós tapasztalatok is számítanak.",
+              "Forrás: Amy Edmondson (1999): Psychological Safety and Learning Behavior in Work Teams"
+            ]
+          },
+          {
+            "title": "11. Mehrabian: a 7–38–55 szabály, kritikákkal",
+            "paragraphs": [
+              "Lényeg és fő elemek: A közismert arányok a szavak, a hang és az arckifejezés relatív szerepéhez kapcsolódnak, szűk kísérleti helyzetekben, érzések és attitűdök közlésének értelmezésekor. Különösen fontos az egymásnak ellentmondó jelzések esete. Az 55 százalék az eredeti összefüggésben arckifejezésekre utal.",
+              "Mögötte lévő gondolat: A befogadó a szavakon túl a közlés módjából is következtet arra, hogyan viszonyulunk hozzá. Az ellentmondó jelzések bizonytalanságot kelthetnek.",
+              "Élethelyzet és példa: A vezető azt mondja: „Örülök, hogy szóltál”, közben sóhajt és elfordul. A munkatárs kétségbe vonhatja a mondat őszinteségét.",
+              "Tréneri használat: Kommunikációs, prezentációs, ügyfélkezelési és vezetői képzésen. Egy érzelmi tartalmú mondat hangozzon el többféle hangsúllyal; a csoport beszélje meg az eltérő értelmezéseket. A bemutató a jelzések összhangját szemlélteti, az arányokat nem méri.",
+              "Kritika és határ: Nem állíthatjuk, hogy minden kommunikációban csupán 7 százalékot számítanak a szavak, vagy 93 százalék a nonverbális közlés. Mehrabian maga is korlátozza a képlet alkalmazását. A tartalmi pontosság jelentőségét az eredmény nem csökkenti.",
+              "Forrás: Albert Mehrabian: saját magyarázata a képlet érvényességéről"
+            ]
+          },
+          {
+            "title": "12. Dale-nek tulajdonított tanulási piramis, kritikákkal",
+            "paragraphs": [
+              "Lényeg és fő elemek: Két dolgot kell elkülöníteni. Dale tapasztalati kúpja a közvetlenebb és az elvontabb tapasztalati, illetve szemléltetési formákat rendezte el. A később hozzákapcsolt tanulási piramis olvasáshoz, hallgatáshoz, gyakorláshoz vagy tanításhoz rögzített megjegyzési százalékokat társít. Ezek a számok nem részei Dale eredeti kúpjának, és nem megalapozott általános tanulási arányok.",
+              "Mögötte lévő gondolat: Az élményszerű szemléltetés és az aktív feldolgozás lehet értékes. Egy kép tetszetőssége és egy százalék pontosságot sugalló formája még nem igazolja az állítást.",
+              "Élethelyzet és példa: Egy tréner szerint a résztvevők a tanított anyag 90 százalékát megjegyzik. Ha pontatlanul tanítják tovább, a hibás ismeret is terjedhet. A tényleges eredményt külön kell ellenőrizni.",
+              "Tréneri használat: Trénerképzésen, tudásmegosztási és kritikai gondolkodási workshopon. A csoport egy ilyen ábrán válassza szét az ellenőrizhető állításokat és a bizonyítást igénylő számokat. Saját gyakorlatukhoz tervezzenek késleltetett, valós alkalmazási próbát.",
+              "Kritika és határ: Tévhitként és forráskritikai esetként tanítsuk. A százalékokat ne használjuk módszerválasztás igazolására; az eredmény a tartalomtól, a feladattól, az előtudástól és a mérés módjától is függ.",
+              "Forrás: Will Thalheimer: a százalékok és Dale kúpjának forrásvizsgálata"
+            ]
+          },
+          {
+            "title": "13. Maslow: szükséglethierarchia, kritikákkal",
+            "paragraphs": [
+              "Lényeg és fő elemek: A klasszikus öt szükségletcsoport: fiziológiai szükségletek, biztonság, szeretet és odatartozás, megbecsülés, önmegvalósítás. Maslow felvetése szerint a kielégítetlen alapvető szükségletek erősen előtérbe kerülhetnek. Az eredeti szöveg a sorrend kivételeit és a részleges, egyidejű kielégülést is tárgyalja.",
+              "Mögötte lévő gondolat: Az ember figyelmére és viselkedésére az aktuális élethelyzete is hat. Érdemes megkérdezni, milyen feltételek és szükségletek mozgatják éppen.",
+              "Élethelyzet és példa: Létszámleépítés híre mellett a munkatársakat a vezető fejlődési lehetőségekkel próbálja lelkesíteni. Őket közben az foglalkoztatja, megmarad-e az állásuk. A bizonytalanság érdemi megbeszélésre szorul.",
+              "Tréneri használat: Vezetői, motivációs és ügyfélkezelési képzésen. Egy esethez több lehetséges szükségletet és tisztázó kérdést gyűjtsenek. A tréner a saját csoportjában is figyelhet a pihenésre, a kiszámíthatóságra és az elfogadó kapcsolódásra.",
+              "Kritika és határ: Az öt szint merev, mindenkire azonos sorrendjét ne tanítsuk bizonyított törvényként. A szükségletek egyszerre is jelen lehetnek; az emberek bizonytalan körülmények között is alkothatnak és kereshetnek értelmet. Beszélgetést indító szempontsor, személyes motivációt csak megkérdezéssel tisztázhatunk.",
+              "Forrás: Abraham Maslow (1943): A Theory of Human Motivation – eredeti szöveg"
+            ]
+          },
+          {
+            "title": "14. Gordon: én-üzenetek és aktív hallgatás",
+            "paragraphs": [
+              "Lényeg és fő elemek: A problémagazda tisztázása segít a megfelelő készség megválasztásában. Ha a másiknak van nehézsége, aktív hallgatással segíthetjük a megértést. Ha az ő viselkedése okoz nekünk konkrét problémát, konfrontáló én-üzenettel jelezhetjük: a megfigyelhető viselkedést, annak ránk gyakorolt kézzelfogható hatását és az érzésünket.",
+              "Mögötte lévő gondolat: Világosan képviselhetem a saját problémámat, miközben teret adok a másik tapasztalatának is. A megértés ellenőrzése segít elkerülni a túl gyors tanácsadást.",
+              "Élethelyzet és példa: „Amikor a pénteki adatot hétfőn kapom meg, hétvégén nem tudom lezárni a riportot, és feszültté válok.” A munkatárs válaszára visszatükrözhetjük: „Jól értem, hogy a másik részleg adataira vártál?”",
+              "Tréneri használat: Kommunikációs, vezetői, ügyfélkezelési és konfliktuskezelési képzésen. Párok előbb egy hibáztató mondatot fogalmazzanak át, majd a másik válaszát tanácsadás nélkül értsék meg. A megfigyelő ellenőrizze a konkrétságot és a visszatükrözés pontosságát.",
+              "Korlát: Az „én úgy érzem, hogy te önző vagy” burkolt minősítés. Az aktív hallgatás megértést ellenőriz, és nem jelent automatikus egyetértést.",
+              "Forrás: Thomas Gordon: az én-üzenet elemei; a Gordon-modell eredete",
+              "Forrás: Thomas Gordon: Origins of the Gordon Model"
+            ]
+          },
+          {
+            "title": "15. Rosenberg: erőszakmentes kommunikáció",
+            "paragraphs": [
+              "Lényeg és fő elemek: Négy kapaszkodót ad az önkifejezéshez és az empatikus megértéshez: megfigyelés, érzés, szükséglet és kérés. A megfigyelés konkrét történést nevez meg, az érzés a saját állapotot, a szükséglet a számunkra fontos emberi igényt, a kérés pedig megtehető cselekvést.",
+              "Mögötte lévő gondolat: A vita mögött érdemes megérteni, mi fontos az érintetteknek. Ugyanazt a szükségletet többféle megoldás is szolgálhatja, ezért a konkrét megoldási javaslatról lehet egyeztetni.",
+              "Élethelyzet és példa: „A mai megbeszélésen háromszor kezdtél beszélni, miközben mondtam a javaslatomat. Feszült vagyok, mert fontos, hogy végig tudjam mondani. Megvárnád, amíg befejezem, és utána mondanád el a véleményed?” A mögöttes szükséglet a meghallgatás és a részvétel lehet.",
+              "Tréneri használat: Kommunikációs, együttműködési és konfliktuskezelési képzésen. A résztvevők válasszák szét egy mondatban a tényt és az értékelést, majd fogalmazzanak meg egy teljesíthető kérést. Gyakorolják azt is, hogyan reagálnak az elutasításra.",
+              "Korlát: A négy elem kapaszkodó, élő beszélgetésben rugalmasan használható. A kérés attól is kérés, hogy a másik válasza számít. Az együttérző megfogalmazás önmagában nem old fel minden érdekellentétet.",
+              "Forrás: PuddleDancer Press: a Rosenberg-féle NVC négy eleme"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "day3",
