@@ -6,7 +6,7 @@ Közös indítóoldal: https://matebudai-hue.github.io/ultimatum/kozpont/
 
 ## Használati rend
 
-A központban a tréningprogramok, a személyes játékok, a fejlesztési változatok és a korábbi oldalak külön jelennek meg. A régi változatok megmaradnak; a központ nem töröl adatot és nem írja át a programok belépőcímeit. A korábbi Mátra-verziók külön lenyitható listában találhatók.
+A központban a tréningprogramok, a személyes játékok, a fejlesztési változatok és a korábbi oldalak külön jelennek meg. A régi változatok megmaradnak; a központ nem töröl adatot és nem írja át a programok belépőcímeit. A Mátrának két aktív felülete van: az alapjáték és annak azonos sandboxmásolata. A régi változatok a repók archív mentési ágaiban maradnak.
 
 ## Fő programok
 
@@ -18,7 +18,6 @@ A központban a tréningprogramok, a személyes játékok, a fejlesztési válto
 | Omotenashi | `ultimatum`, `main`, `omotenashi/` | https://matebudai-hue.github.io/ultimatum/omotenashi/ |
 | Toyota-pontozó | `ultimatum`, `main`, `toyota/` | https://matebudai-hue.github.io/ultimatum/toyota/ |
 | Mátra – alapjáték | `matra-hardtrail`, `main`, `matra-v11.html` | https://matebudai-hue.github.io/matra-hardtrail/ |
-| Mátra – vezetői | `matra-hardtrail`, `main`, `matra-leader.html` | https://matebudai-hue.github.io/matra-hardtrail/matra-leader.html |
 | Skorpió | `skorpio`, `main` | https://matebudai-hue.github.io/skorpio/ |
 | Matek-sziget | `ultimatum`, `main`, `matek/` | https://matebudai-hue.github.io/ultimatum/matek/ |
 | Autós Bajnokok Ligája | `ultimatum`, `autos-bajnokok-ligaja` ág, `games/autos-bajnokok-ligaja/` | https://autos-bajnokok-ligaja.mbudai.chatgpt.site |
@@ -31,11 +30,10 @@ Az Autós BL külön tárhelyen, a dokumentáció szerint tulajdonosi hozzáfér
 |---|---|---|
 | Halastó 2 – utód | `halasto` repó, `halasto-3` ág, `halasto-3/` | https://matebudai-hue.github.io/halasto/halasto-3/ |
 | Halastó sandbox | `halasto` repó, `halasto-sandbox` ág, `halasto-2/` | https://matebudai-hue.github.io/halasto/sandbox/ |
-| Mátra sandbox | `matra_sandbox`, `main`, `matra-v24-single-report.html` | https://matebudai-hue.github.io/matra_sandbox/ |
+| Mátra sandbox | `matra_sandbox`, `main`, az alapjáték azonos v11-es kódja | https://matebudai-hue.github.io/matra_sandbox/ |
 | Eredeti Halastó alternatív címe | Ugyanaz a publikált eredeti program | https://matebudai-hue.github.io/halasto/halasto-2/ |
 | Régi Halastó sandbox | Átirányító a jelenlegi sandboxhoz | https://matebudai-hue.github.io/halasto-sandbox/ |
 | Halastó RC | Korábbi külön kiadási workflow; legutóbb ellenőrzött futása sikertelen | https://github.com/matebudai-hue/halasto-rc |
-| Mátra megfigyelő | Külön ágban lévő eszköz; élő közzététel nem igazolt | https://github.com/matebudai-hue/halasto/blob/feature/matra-observer-dashboard/matra-observer.html |
 
 ## Közvetlen segédoldalak
 
@@ -43,9 +41,6 @@ Az Autós BL külön tárhelyen, a dokumentáció szerint tulajdonosi hozzáfér
 - Ichigo Ichie: https://matebudai-hue.github.io/ultimatum/omotenashi/ichigo-ichie.html
 - Andon: https://matebudai-hue.github.io/ultimatum/omotenashi/andon.html
 - Sztenderdizálás: https://matebudai-hue.github.io/ultimatum/omotenashi/sztenderdizalas.html
-- Mátra tréneri leírás: https://matebudai-hue.github.io/matra-hardtrail/treneri-leiras.html
-- Mátra vezetői leírás: https://matebudai-hue.github.io/matra-hardtrail/treneri-leiras-leader.html
-- Mátra vezetői kártyák: https://matebudai-hue.github.io/matra-hardtrail/vezeto-kartyak.html
 
 ## Mi nem külön program?
 
@@ -64,3 +59,13 @@ A fájlok megléte és az utolsó sikeres közzététel nem jelent teljes műkö
 3. Régi ágakat és fájlokat tömegesen ne töröljünk leltár és szükség esetén mentés nélkül. A jelen rendezés linkeket és dokumentációt rendszerez.
 4. A Halastó `AGENTS.md` védelmi szabályai érvényesek; az eredeti játékhoz ez a rendezés nem nyúl.
 5. A központ, a nyilvántartás és a repók README-je ugyanarra az aktuális indítócímre mutasson.
+
+## Mátra rendezése – 2026. október 25.
+
+Az alapjáték és a sandbox játékprogramja azonos. Az alapjáték a korábbi mentési kulcsát használja; a sandboxnak külön mentési kulcsa van. A külön vezetői változat, régi kísérletek és segédoldalak kikerültek az aktív programjegyzékből. Korábbi HTML-címeik az adott környezet jelenlegi alapjátékára irányítanak.
+
+A teljes korábbi forrás megőrzése:
+- https://github.com/matebudai-hue/matra-hardtrail/tree/archive/pre-two-environments-20261025
+- https://github.com/matebudai-hue/matra_sandbox/tree/archive/pre-two-environments-20261025
+
+A két környezet a rendezéskor azonos; későbbi sandboxfejlesztések szándékosan eltérhetnek, az élesítés külön lépés.
