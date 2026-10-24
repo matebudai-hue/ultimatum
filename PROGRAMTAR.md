@@ -33,7 +33,7 @@ Az Autós BL külön tárhelyen, a dokumentáció szerint tulajdonosi hozzáfér
 | Mátra sandbox | `matra_sandbox`, `main`, az alapjáték azonos v11-es kódja | https://matebudai-hue.github.io/matra_sandbox/ |
 | Eredeti Halastó alternatív címe | Ugyanaz a publikált eredeti program | https://matebudai-hue.github.io/halasto/halasto-2/ |
 | Régi Halastó sandbox | Átirányító a jelenlegi sandboxhoz | https://matebudai-hue.github.io/halasto-sandbox/ |
-| Halastó RC | Korábbi külön kiadási workflow; legutóbb ellenőrzött futása sikertelen | https://github.com/matebudai-hue/halasto-rc |
+| Halastó RC | Kivezetett kiadási környezet, teljes Drive-archívummal | https://drive.google.com/file/d/16GrOl9LIA6fZm1i5gB67kdHzuhgGbPhE/view?usp=drivesdk |
 
 ## Közvetlen segédoldalak
 
@@ -65,7 +65,15 @@ A fájlok megléte és az utolsó sikeres közzététel nem jelent teljes műkö
 Az alapjáték és a sandbox játékprogramja azonos. Az alapjáték a korábbi mentési kulcsát használja; a sandboxnak külön mentési kulcsa van. A külön vezetői változat, régi kísérletek és segédoldalak kikerültek az aktív programjegyzékből. Korábbi HTML-címeik az adott környezet jelenlegi alapjátékára irányítanak.
 
 A teljes korábbi forrás megőrzése:
-- https://github.com/matebudai-hue/matra-hardtrail/tree/archive/pre-two-environments-20261025
-- https://github.com/matebudai-hue/matra_sandbox/tree/archive/pre-two-environments-20261025
+- https://drive.google.com/file/d/1rd4Zc_KQIwmWGAKdJdDmQVabWqsRAwSr/view?usp=drivesdk
+- https://drive.google.com/file/d/1T8PZtUFrURtR4ua9qN_3Bi0EBYJn5GbL/view?usp=drivesdk
 
 A két környezet a rendezéskor azonos; későbbi sandboxfejlesztések szándékosan eltérhetnek, az élesítés külön lépés.
+
+## Teljes GitHub-archívum – 2026. október 25.
+
+Mind a hét repó összes elérhető ága, címkéje és Git-előzménye önállóan visszaállítható bundle-mentésbe került. A Drive-ról visszaolvasott archívumok SHA-256 ellenőrzése és a Git-visszaállítási próba sikeres.
+
+Archívum: https://drive.google.com/drive/folders/1JT6XF0LKd30JMDmuLTwrpy1JgBcVQ466
+
+A régi ágakat innen lehet visszaállítani. Az élő programágak, a Halastó védett eredeti mentési pontja és a nyitott pull requestek forráságai megmaradnak. A régi Halastó sandbox-repó csak átirányítást tart fenn, az RC kiadási automatizmus megszűnt.
