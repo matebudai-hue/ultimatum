@@ -83,6 +83,20 @@ test('A közös kassza állapotsávja a rögzített vezérlés alatt marad', asy
     });
     expect(values.position).toBe('sticky');
     expect(values.barTop).toBeGreaterThanOrEqual(values.headerHeight);
+    for (const viewport of [{width: 1280, height: 800}, {width: 390, height: 844}]) {
+      await page.setViewportSize(viewport);
+      await page.evaluate(() => {
+        const bar = document.querySelector('.pool-sticky-live')!;
+        window.scrollTo(0, window.scrollY + bar.getBoundingClientRect().top + 200);
+      });
+      await expect.poll(async () => page.evaluate(() => {
+        const header = document.querySelector('.trainer-sticky')!.getBoundingClientRect();
+        const bar = document.querySelector('.pool-sticky-live')!.getBoundingClientRect();
+        return Math.round(bar.top - header.bottom);
+      })).toBeGreaterThanOrEqual(0);
+      const box = await live.boundingBox();
+      expect(box!.y + box!.height).toBeLessThan(viewport.height);
+    }
   } finally { await context.close(); }
 });
 
