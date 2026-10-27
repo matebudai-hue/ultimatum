@@ -33,6 +33,73 @@ const sendOffer = async (proposer: Page, amount: string) => {
   await expect(proposer.getByText(/Ajánlat elküldve:/)).toBeVisible({ timeout: 25_000 });
 };
 
+test('A vezérlés és állapotok görgetéskor is látszanak, a kártyákon elérhető a beavatkozás', async ({ browser }) => {
+  for (const viewport of [{width: 390, height: 844}, {width: 1440, height: 900}]) {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    try {
+      await page.goto('/?demo=trainer');
+      await expect(page.getByRole('heading', {name: 'Élő páros helyzetkép'})).toBeVisible();
+      await expect(page.locator('.attention-center')).not.toHaveAttribute('open', '');
+      await expect(page.locator('.pair-tile').first().locator('summary')).toHaveText('Beavatkozás');
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await expect.poll(async () => page.locator('.trainer-sticky').evaluate(el => Math.round(el.getBoundingClientRect().top))).toBe(0);
+      const command = page.locator('.compact-primary-action');
+      const firstMetric = page.locator('.trainer-pulse .pulse-card').first();
+      const lastMetric = page.locator('.trainer-pulse .pulse-card').last();
+      for (const item of [command, firstMetric, lastMetric]) {
+        const box = await item.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.y).toBeGreaterThanOrEqual(0);
+        expect(box!.y + box!.height).toBeLessThan(viewport.height);
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+      }
+    } finally { await context.close(); }
+  }
+});
+
+test('A közös kassza állapotsávja a rögzített vezérlés alatt marad', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: {width: 1280, height: 800} });
+  const page = await context.newPage();
+  try {
+    await page.goto('/?role=trainer&test=1');
+    await page.getByLabel('Játékosok száma').fill('2');
+    await page.getByRole('button', {name:'Tesztjáték virtuális résztvevőkkel'}).click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', {name:/Játék indítása.*2 fővel/}).click();
+    for (let round=0;round<6;round++) {
+      await page.getByRole('button', {name:'Döntések szimulálása'}).click();
+      await page.getByRole('button', {name:'Kör lezárása és könyvelése'}).click();
+      await page.getByRole('button', {name: round===5 ? 'Első szakasz lezárása → csapatképzés' : 'Következő kör indítása'}).click();
+    }
+    await page.getByRole('button', {name:'Első kasszakör indítása'}).click();
+    const live = page.locator('.pool-sticky-live');
+    await expect(live).toBeVisible();
+    const values = await page.evaluate(() => {
+      const header = document.querySelector('.trainer-sticky')!;
+      const bar = document.querySelector('.pool-sticky-live')!;
+      return { headerHeight: header.getBoundingClientRect().height, barTop: parseFloat(getComputedStyle(bar).top), position: getComputedStyle(bar).position };
+    });
+    expect(values.position).toBe('sticky');
+    expect(values.barTop).toBeGreaterThanOrEqual(values.headerHeight);
+    for (const viewport of [{width: 1280, height: 800}, {width: 390, height: 844}]) {
+      await page.setViewportSize(viewport);
+      await page.evaluate(() => {
+        const bar = document.querySelector('.pool-sticky-live')!;
+        window.scrollTo(0, window.scrollY + bar.getBoundingClientRect().top + 200);
+      });
+      await expect.poll(async () => page.evaluate(() => {
+        const header = document.querySelector('.trainer-sticky')!.getBoundingClientRect();
+        const bar = document.querySelector('.pool-sticky-live')!.getBoundingClientRect();
+        return Math.round(bar.top - header.bottom);
+      })).toBeGreaterThanOrEqual(0);
+      const box = await live.boundingBox();
+      expect(box!.y + box!.height).toBeLessThan(viewport.height);
+    }
+  } finally { await context.close(); }
+});
+
 test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en', async ({ browser }) => {
   const trainerContext = await browser.newContext({
     ...devices['Desktop Safari'],

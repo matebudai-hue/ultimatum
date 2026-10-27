@@ -2571,3 +2571,40 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .setup-options{margin-top:22px}.setup-options summary{cursor:pointer;font-weight:700;padding:10px 0}.setup-options .field{max-width:280px;margin-top:12px}
 .lobby-join{display:flex;align-items:center;justify-content:space-between;gap:20px;overflow-wrap:anywhere}.lobby-join svg{flex-shrink:0}.attention-center{border:2px solid #e3ab57;background:#fff9ed}.attention-row{display:flex;justify-content:space-between;gap:16px;border-top:1px solid #eddfc7;padding:10px 0}.attention-row p{margin:4px 0}.attention-row .intervention{margin:0}.minimum-warning{background:#fff0c8;border:3px solid #a75b00;border-radius:14px;padding:18px;margin:15px 0;color:#572c00}.minimum-warning strong,.minimum-warning h1{font-size:1.3rem}.round-view-controls{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.round-view-controls .active{background:#15365a;color:white}.pattern-explanation{font-size:13px;color:#52657b}.participant-patterns{overflow:auto;max-height:500px}.participant-pattern-grid{display:grid;grid-template-columns:minmax(110px,1fr) repeat(2,minmax(220px,2fr));gap:0;min-width:600px}.participant-pattern-grid>*{padding:8px;border-bottom:1px solid #dbe3ec;font-size:13px}.trust-flow-pager{display:flex;gap:12px;justify-content:center;align-items:center}.participant-patterns .trust-flow-pager{margin-top:10px}
 @media(max-width:600px){.lobby-join{display:block}.lobby-join svg{margin-top:12px}.attention-row{display:block}}
+
+/* A tréneri vezérlés görgetés közben is látható; a részletes kivetítővezérlés külön marad. */
+.trainer-sticky{position:sticky;top:0;z-index:100;overflow:visible!important;background:#fff;box-shadow:0 5px 20px rgba(15,23,42,.14)}
+.trainer-sticky .compact-command-bar{border-radius:9px 9px 0 0}
+.trainer-sticky .trainer-pulse{background:#fff;border-radius:0 0 9px 9px}
+.attention-center{padding:10px 14px;margin-bottom:10px}
+.attention-center>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+.attention-center>summary::-webkit-details-marker{display:none}
+.attention-center>summary strong{font-size:15px;color:#6e3b00}
+.attention-center>summary span{font-size:12px;font-weight:750;color:#71420c}
+.attention-center[open]>summary span{font-size:0}
+.attention-center[open]>summary span::after{content:'Bezárás';font-size:12px}
+.pair-board-grid{grid-template-columns:repeat(auto-fit,minmax(195px,1fr));align-items:start}
+.pair-tile{padding:10px 12px;border-radius:10px}
+.pair-actions{margin-top:8px;border-top:1px solid #eadbb5;padding-top:6px}
+.pair-actions>summary{color:#71420c;font-size:12px;font-weight:750;cursor:pointer}
+.pair-actions .intervention,.pair-actions-visible .intervention{margin-top:7px;padding-top:7px}
+.projection-dashboard-controller{margin-bottom:10px}
+@media(max-width:760px){
+  .trainer-sticky{top:0}
+  .trainer-sticky .compact-controls{flex-wrap:wrap}
+  .trainer-sticky .trainer-pulse{grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:5px}
+  .trainer-sticky .trainer-pulse .pulse-card:last-child{grid-column:auto}
+  .trainer-sticky .pulse-card{padding:5px 4px;min-height:45px}
+  .trainer-sticky .pulse-card>span{font-size:7px;letter-spacing:0}
+  .trainer-sticky .pulse-card>strong{font-size:14px}
+  .trainer-sticky .pulse-card>small{font-size:7px}
+  .trainer-sticky .metric-credit{font-size:11px!important}
+}
+@media(max-width:560px){.pair-board-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
+.bot-attention{display:block}
+.bot-attention summary{cursor:pointer}
+.bot-attention-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px}
+#debrief-workspace{scroll-margin-top:190px}
+@media(max-width:760px){#debrief-workspace{scroll-margin-top:220px}}
+.pool-sticky-live{top:calc(var(--trainer-sticky-height, 180px) + 4px)}
+@media(max-width:760px){.pool-sticky-live{top:calc(var(--trainer-sticky-height, 220px) + 4px)}}
