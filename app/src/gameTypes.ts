@@ -174,6 +174,7 @@ export type GameSession = {
   roundKey: RoundKey;
   startingCredit: number;
   expectedPlayerCount: number;
+  flexiblePlayerCount?: boolean;
   createdAt: string;
   roundStartedAt?: string;
   publicGoodsDeadlineAt?: string;
@@ -211,3 +212,4 @@ export const ROUND_LABELS: Record<RoundKey, string> = {
   '4': 'Közös kassza',
   report: 'Riport',
 };
+
