@@ -625,7 +625,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 /* Aktuális párok */
 .pair-board{padding:18px 20px}
-.pair-board-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;max-height:380px;overflow:auto;padding-right:2px}
+.pair-board-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;padding-right:2px}
+.intervention{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:8px;border-top:1px solid #cbd5e1}
+.intervention strong{width:100%;font-size:12px}
+.intervention button{font-size:11px;line-height:1.25;border:1px solid #9a6b28;background:#fff;color:#50320f;border-radius:7px;padding:7px;cursor:pointer}
+.intervention button:hover{background:#fff2d7}
+.pool-interventions{margin:14px 0;padding:14px;border:1px solid #d4ad70;border-radius:12px;background:#fff8eb}
 .pair-tile{border:1px solid var(--border);border-left-width:5px;border-radius:14px;padding:11px 12px;background:#fff;min-width:0}
 .pair-tile.pair-success{border-color:var(--success-border);border-left-color:var(--success);background:var(--success-bg)}
 .pair-tile.pair-failed{border-color:var(--danger-border);border-left-color:var(--danger);background:var(--danger-bg)}
@@ -643,7 +648,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pair-names strong:last-child{text-align:right}
 .pair-names span{color:#94a3b8}
 .pair-tile p{margin:7px 0 0;font-size:10px;line-height:1.35;color:#475569}
-@media(max-width:560px){.pair-board{padding:14px}.pair-board-grid{grid-template-columns:1fr;max-height:320px}}
+@media(max-width:560px){.pair-board{padding:14px}.pair-board-grid{grid-template-columns:1fr}}
 
 
 /* Magyar helyneves csoportazonosítás */
@@ -2560,3 +2565,4 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .amount-preview { display: block; font-size: 1rem; line-height: 1.5; padding: .65rem 0; overflow-wrap: anywhere; }
 .stake-saved { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; }
 .decision-buttons { gap: 1.5rem; }
+

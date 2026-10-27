@@ -762,16 +762,59 @@ function TrainerPulse({ session }: { session: GameSession }) {
 
 function TrainerAttention({ session }: { session: GameSession }) {
   const offline = session.players.filter((player) => !gameStore.isPlayerOnline(player));
-  if (offline.length === 0) return null;
+  const controlled = session.players.filter((player) => player.botControlled);
+  if (offline.length === 0 && controlled.length === 0) return null;
 
   return (
     <div className="attention-strip">
-      <div className="attention-item warning-attention">
+      {offline.length > 0 && <div className="attention-item warning-attention">
         <strong>{offline.length} offline résztvevő</strong>
         <span>{offline.slice(0, 5).map((player) => player.name).join(', ')}{offline.length > 5 ? '…' : ''}</span>
-      </div>
+      </div>}
+      {controlled.map((player) => <div className="attention-item warning-attention" key={player.id}>
+        <strong>{player.name} helyett rendszerjátékos játszik</strong>
+        <button type="button" onClick={() => gameStore.setPlayerBotControl(session.code, player.id, false)}>Irányítás visszaadása</button>
+      </div>)}
     </div>
   );
+}
+
+function TrainerIntervention({ session, playerId, pairing }: { session: GameSession; playerId: string; pairing?: Pairing }) {
+  const player = session.players.find((p) => p.id === playerId);
+  if (!player || player.isBot) return null;
+  const issue = pairing && session.strategicTechnicalIssues.find((i) => i.pairingId === pairing.id && i.playerId === playerId && !i.resolvedAt);
+  const type = pairing ? expectedDecision(session, pairing, playerId) : 'public_goods_contribution';
+  const decisions = pairing ? decisionsFor(session, pairing) : [];
+  const pending = pairing ? !!type && !decisions.some((d) => d.type === type || d.type === 'ultimatum_timeout') &&
+    (type !== 'ultimatum_response' || decisions.some((d) => d.type === 'ultimatum_offer')) &&
+    (type !== 'trust_return' || decisions.some((d) => d.type === 'trust_send')) : true;
+  const run = (action: () => void) => { try { action(); } catch (e) { window.alert(e instanceof Error ? e.message : 'A művelet nem sikerült.'); } };
+  const manual = () => run(() => {
+    if (type === 'ultimatum_response') {
+      const answer = window.prompt(`${player.name} döntése: írd be: igen vagy nem`);
+      if (answer === null) return;
+      const clean = answer.trim().toLocaleLowerCase('hu');
+      if (clean !== 'igen' && clean !== 'nem') throw new Error('Írd be: igen vagy nem.');
+      gameStore.trainerSubmitStrategicDecision(session.code, playerId, clean === 'igen');
+    } else {
+      const max = type === 'trust_return' ? (decisions.find((d) => d.type === 'trust_send')?.amount ?? 0) * 3 : pairing ? session.startingCredit : player.currentBalance;
+      const answer = window.prompt(`${player.name} döntése: hány kreditet küld? (0–${max})`);
+      if (answer === null) return;
+      if (!/^\d+$/.test(answer.trim())) throw new Error('Egész számot adj meg.');
+      const amount = Number(answer.trim());
+      if (pairing) gameStore.trainerSubmitStrategicDecision(session.code, playerId, amount);
+      else gameStore.trainerSubmitPublicGoods(session.code, playerId, amount);
+    }
+  });
+  return <div className="intervention">
+    <strong>{player.name}</strong>
+    {issue && <button type="button" onClick={() => run(() => { gameStore.reopenTechnicalDecision(session.code, pairing!.id, playerId); })}>Döntés újranyitása</button>}
+    {pending && !player.botControlled && <button type="button" onClick={manual}>Döntés kézi rögzítése</button>}
+    <button type="button" onClick={() => run(() => {
+      if (!player.botControlled && !window.confirm(`${player.name} helyett rendszerjátékos döntsön? Az átvétel a következő körökben is érvényes, amíg vissza nem adod az irányítást.`)) return;
+      gameStore.setPlayerBotControl(session.code, playerId, !player.botControlled);
+    })}>{player.botControlled ? 'Irányítás visszaadása' : 'Rendszerjátékos vegye át'}</button>
+  </div>;
 }
 
 function CurrentPairsBoard({ session }: { session: GameSession }) {
@@ -848,6 +891,8 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
                 <strong>{playerName(session, pairing.playerB)}</strong>
               </div>
               <p>{detail}</p>
+              {(state === 'waiting' || state === 'technical') && !session.closedRounds.includes(session.roundKey as StrategicRound) &&
+                [pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}
             </div>
           );
         })}
@@ -1993,6 +2038,9 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
       </div>
 
       <PublicGoodsLiveBar session={session} />
+      {session.publicGoodsPhase === 'open' && <div className="pool-interventions"><strong>Elakadt vagy hiányzó résztvevők</strong>
+        {session.players.filter((p) => !p.isBot && session.publicGoodsRounds.some((r) => r.roundNumber === session.publicGoodsRoundNumber && r.memberIds.includes(p.id) && r.contributions[p.id] === undefined)).map((p) => <TrainerIntervention key={p.id} session={session} playerId={p.id} />)}
+      </div>}
       <PoolPlanning session={session} />
 
       <div className="group-boxes">
@@ -5272,6 +5320,10 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         </div>
       </>
     );
+  }
+
+  if (session.decisions.some((d) => d.playerId === playerId && d.publicGoodsRound === session.publicGoodsRoundNumber && d.type === 'public_goods_contribution' && d.submissionSource === 'manual_correction')) {
+    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)} kredit.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
   }
 
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;

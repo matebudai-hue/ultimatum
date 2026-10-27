@@ -777,6 +777,18 @@ export const firebaseSessionStore = {
     return trainerMutation(code, () => session, [playerId]);
   },
 
+  trainerSubmitStrategicDecision(code: string, playerId: string, value: number | boolean) {
+    const before = localSessionStore.get(code);
+    const affected = before ? affectedPairPlayers(before, playerId) : [playerId];
+    const session = localSessionStore.trainerSubmitStrategicDecision(code, playerId, value);
+    return trainerMutation(code, () => session, affected);
+  },
+
+  trainerSubmitPublicGoods(code: string, playerId: string, amount: number) {
+    const session = localSessionStore.trainerSubmitPublicGoods(code, playerId, amount);
+    return trainerMutation(code, () => session, [playerId]);
+  },
+
   submitStrategicDecision(
     code: string,
     playerId: string,
@@ -915,3 +927,4 @@ export const firebaseSessionStore = {
       : subscribeTrainer(code.toUpperCase(), listener);
   },
 };
+
