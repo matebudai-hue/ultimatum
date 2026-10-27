@@ -774,6 +774,44 @@ function TrainerAttention({ session }: { session: GameSession }) {
   );
 }
 
+function TrainerIntervention({ session, playerId, pairing }: { session: GameSession; playerId: string; pairing?: Pairing }) {
+  const player = session.players.find((p) => p.id === playerId);
+  if (!player || player.isBot) return null;
+  const issue = pairing && session.strategicTechnicalIssues.find((i) => i.pairingId === pairing.id && i.playerId === playerId && !i.resolvedAt);
+  const type = pairing ? expectedDecision(session, pairing, playerId) : 'public_goods_contribution';
+  const decisions = pairing ? decisionsFor(session, pairing) : [];
+  const pending = pairing ? !!type && !decisions.some((d) => d.type === type || d.type === 'ultimatum_timeout') &&
+    (type !== 'ultimatum_response' || decisions.some((d) => d.type === 'ultimatum_offer')) &&
+    (type !== 'trust_return' || decisions.some((d) => d.type === 'trust_send')) : true;
+  const run = (action: () => void) => { try { action(); } catch (e) { window.alert(e instanceof Error ? e.message : 'A művelet nem sikerült.'); } };
+  const manual = () => run(() => {
+    if (type === 'ultimatum_response') {
+      const answer = window.prompt(`${player.name} döntése: írd be: igen vagy nem`);
+      if (answer === null) return;
+      const clean = answer.trim().toLocaleLowerCase('hu');
+      if (clean !== 'igen' && clean !== 'nem') throw new Error('Írd be: igen vagy nem.');
+      gameStore.trainerSubmitStrategicDecision(session.code, playerId, clean === 'igen');
+    } else {
+      const max = type === 'trust_return' ? (decisions.find((d) => d.type === 'trust_send')?.amount ?? 0) * 3 : pairing ? session.startingCredit : player.currentBalance;
+      const answer = window.prompt(`${player.name} döntése: hány kreditet küld? (0–${max})`);
+      if (answer === null) return;
+      if (!/^\d+$/.test(answer.trim())) throw new Error('Egész számot adj meg.');
+      const amount = Number(answer.trim());
+      if (pairing) gameStore.trainerSubmitStrategicDecision(session.code, playerId, amount);
+      else gameStore.trainerSubmitPublicGoods(session.code, playerId, amount);
+    }
+  });
+  return <div className="intervention">
+    <strong>{player.name}</strong>
+    {issue && <button type="button" onClick={() => run(() => { gameStore.reopenTechnicalDecision(session.code, pairing!.id, playerId); })}>Döntés újranyitása</button>}
+    {pending && !player.botControlled && <button type="button" onClick={manual}>Döntés kézi rögzítése</button>}
+    <button type="button" onClick={() => run(() => {
+      if (!player.botControlled && !window.confirm(`${player.name} helyett rendszerjátékos döntsön? Az átvétel a következő körökben is érvényes, amíg vissza nem adod az irányítást.`)) return;
+      gameStore.setPlayerBotControl(session.code, playerId, !player.botControlled);
+    })}>{player.botControlled ? 'Irányítás visszaadása' : 'Rendszerjátékos vegye át'}</button>
+  </div>;
+}
+
 function CurrentPairsBoard({ session }: { session: GameSession }) {
   if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) return null;
   const pairings = session.pairings.filter((pairing) => pairing.roundKey === session.roundKey);
@@ -848,6 +886,8 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
                 <strong>{playerName(session, pairing.playerB)}</strong>
               </div>
               <p>{detail}</p>
+              {(state === 'waiting' || state === 'technical') && !session.closedRounds.includes(session.roundKey as StrategicRound) &&
+                [pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}
             </div>
           );
         })}
@@ -1993,6 +2033,9 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
       </div>
 
       <PublicGoodsLiveBar session={session} />
+      {session.publicGoodsPhase === 'open' && <div className="pool-interventions"><strong>Elakadt vagy hiányzó résztvevők</strong>
+        {session.players.filter((p) => !p.isBot && session.publicGoodsRounds.some((r) => r.roundNumber === session.publicGoodsRoundNumber && r.memberIds.includes(p.id) && r.contributions[p.id] === undefined)).map((p) => <TrainerIntervention key={p.id} session={session} playerId={p.id} />)}
+      </div>}
       <PoolPlanning session={session} />
 
       <div className="group-boxes">
