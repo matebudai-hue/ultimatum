@@ -655,10 +655,12 @@ function TrainerAttention({ session }: { session: GameSession }) {
         <strong>{offline.length} offline résztvevő</strong>
         <span>{offline.slice(0, 5).map((player) => player.name).join(', ')}{offline.length > 5 ? '…' : ''}</span>
       </div>}
-      {controlled.map((player) => <div className="attention-item warning-attention" key={player.id}>
-        <strong>{player.name} helyett rendszerjátékos játszik</strong>
-        <button type="button" onClick={() => gameStore.setPlayerBotControl(session.code, player.id, false)}>Irányítás visszaadása</button>
-      </div>)}
+      {controlled.length > 0 && <details className="attention-item warning-attention bot-attention">
+        <summary><strong>{controlled.length} résztvevő helyett rendszerjátékos játszik</strong></summary>
+        {controlled.map((player) => <div className="bot-attention-row" key={player.id}>
+          <span>{player.name}</span><button type="button" onClick={() => gameStore.setPlayerBotControl(session.code, player.id, false)}>Irányítás visszaadása</button>
+        </div>)}
+      </details>}
     </div>
   );
 }
