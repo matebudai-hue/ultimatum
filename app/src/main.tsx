@@ -2140,8 +2140,14 @@ function ReportPanel({ session }: { session: GameSession }) {
         </button>
       </div>
 
-      <label className="field"><span><input type="checkbox" checked={includeBots} onChange={event => setIncludeBots(event.target.checked)} /> Rendszerjátékossal játszott párok beszámítása</span></label>
-      <p className="game-summary-note">Alapértelmezésben csak az ember–ember párok szerepelnek a páros játékok összesítőiben. A teljes CSV minden döntést tartalmaz, gépi jelöléssel.</p>
+      <details className="game-summary-settings">
+        <summary>Összesítő beállításai</summary>
+        <label className="game-summary-bots">
+          <input type="checkbox" checked={includeBots} onChange={event => setIncludeBots(event.target.checked)} />
+          <span>Rendszerjátékosok bevonása az összesítésbe</span>
+        </label>
+        <p className="game-summary-note">Alapértelmezésben csak az ember–ember párok szerepelnek a páros játékok összesítőiben. A teljes CSV minden döntést tartalmaz, gépi jelöléssel.</p>
+      </details>
       <div className="game-summary-stack">
         <section className={blockClass('ultimatum')}>
           <button className="game-summary-toggle" type="button" onClick={() => toggleGame('ultimatum')} aria-expanded={openGames.ultimatum}>
