@@ -2601,6 +2601,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .trainer-sticky .metric-credit{font-size:11px!important}
 }
 @media(max-width:560px){.pair-board-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
+.bot-attention{display:block}
 .bot-attention summary{cursor:pointer}
 .bot-attention-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px}
 #debrief-workspace{scroll-margin-top:190px}
