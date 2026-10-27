@@ -33,6 +33,32 @@ const sendOffer = async (proposer: Page, amount: string) => {
   await expect(proposer.getByText(/Ajánlat elküldve:/)).toBeVisible({ timeout: 25_000 });
 };
 
+test('A vezérlés és állapotok görgetéskor is látszanak, a kártyákon elérhető a beavatkozás', async ({ browser }) => {
+  for (const viewport of [{width: 390, height: 844}, {width: 1440, height: 900}]) {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    try {
+      await page.goto('/?demo=trainer');
+      await expect(page.getByRole('heading', {name: 'Élő páros helyzetkép'})).toBeVisible();
+      await expect(page.locator('.attention-center')).not.toHaveAttribute('open', '');
+      await expect(page.locator('.pair-tile').first().locator('summary')).toHaveText('Beavatkozás');
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await expect.poll(async () => page.locator('.trainer-sticky').evaluate(el => Math.round(el.getBoundingClientRect().top))).toBe(0);
+      const command = page.locator('.compact-primary-action');
+      const firstMetric = page.locator('.trainer-pulse .pulse-card').first();
+      const lastMetric = page.locator('.trainer-pulse .pulse-card').last();
+      for (const item of [command, firstMetric, lastMetric]) {
+        const box = await item.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.y).toBeGreaterThanOrEqual(0);
+        expect(box!.y + box!.height).toBeLessThan(viewport.height);
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+      }
+    } finally { await context.close(); }
+  }
+});
+
 test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en', async ({ browser }) => {
   const trainerContext = await browser.newContext({
     ...devices['Desktop Safari'],
