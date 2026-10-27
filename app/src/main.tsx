@@ -262,157 +262,41 @@ function Landing({ onTrainer, onPlayer }: { onTrainer: () => void; onPlayer: () 
 }
 
 function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: GameSession) => void; testMode?: boolean }) {
-  const [startingCredit, setStartingCredit] = useState<number | ''>(100_000);
-  const [playerCount, setPlayerCount] = useState(12);
+  const [credit, setCredit] = useState<number | ''>(100_000);
+  const [count, setCount] = useState(12);
   const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [pendingSetup, setPendingSetup] = useState<{
-    count: number;
-    credit: number;
-    virtual: boolean;
-  } | null>(null);
-
-  const normalizedSetup = (virtual = false) => {
-    const rawStartingCredit = startingCredit === '' ? 0 : startingCredit;
-    return {
-      credit: Math.max(1_000, Math.min(1_000_000, Math.round(rawStartingCredit / 100) * 100)),
-      count: Math.max(2, Math.min(MAX_PLAYERS, Math.round(playerCount))),
-      virtual,
-    };
-  };
-
-  const requestCreate = (virtual = false) => {
-    setCreateError('');
-    setPendingSetup(normalizedSetup(virtual));
-  };
-
-  const create = async ({ virtual, credit, count }: { virtual: boolean; credit: number; count: number }) => {
-    setCreating(true);
-    setCreateError('');
+  const [error, setError] = useState('');
+  const recentGames = useMemo(() => {
+    try {
+      return Object.keys(localStorage).filter(key => key.startsWith('kreditjatek_session_')).map(key => {
+        try { return JSON.parse(localStorage.getItem(key) || 'null') as GameSession | null; } catch { return null; }
+      }).filter((item): item is GameSession => Boolean(item?.code && item?.createdAt)).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,20);
+    } catch { return []; }
+  }, []);
+  const create = async (virtual = false) => {
+    if (creating) return;
+    if (credit === '' || credit < 1000 || credit > 1000000 || credit % 100 !== 0) { setError('Az induló kredit 1 000 és 1 000 000 közötti, 100-zal osztható összeg legyen.'); return; }
+    setCreating(true); setError('');
     try {
       await gameStore.ready();
-      const created = gameStore.create(credit, count);
+      const created = gameStore.create(credit, virtual ? count : MAX_PLAYERS, !virtual);
       const prepared = virtual ? fillVirtualPlayers(created) : created;
       await gameStore.afterCreate(prepared);
       onCreated(prepared);
-    } catch (error) {
-      setCreateError(error instanceof Error ? error.message : 'Nem sikerült létrehozni a játékot.');
-    } finally {
-      setCreating(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'A játék létrehozása nem sikerült. Próbáld újra.'); }
+    finally { setCreating(false); }
   };
-
-  return (
-    <main className="shell narrow">
-      <header className="brand">
-        <p className="eyebrow">{testMode ? 'Firebase előtti tesztmód' : 'Tréneri setup'}</p>
-        <h1>Új Kreditjáték</h1>
-        <p>
-          {testMode
-            ? 'Ugyanaz a játékmotor fut, mint az éles játékban. A virtuális résztvevők csak az emberi jelenlétet helyettesítik.'
-            : 'Indulás előtt ezt a két dolgot kell megadnod. Később minden a dashboardról vezérelhető.'}
-        </p>
-      </header>
-      <section className="panel setup-panel">
-        <div className="setup-grid">
-          <label className="field">
-            <span>Játékosok száma</span>
-            <input
-              type="number"
-              min={2}
-              max={MAX_PLAYERS}
-              value={playerCount}
-              onChange={(event) => setPlayerCount(Number(event.target.value))}
-            />
-            <small>2–{MAX_PLAYERS} fő.</small>
-          </label>
-          <div className="field">
-            <span>Induló kredit</span>
-            <input
-              aria-label="Induló kredit"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9 ]*"
-              autoComplete="off"
-              value={formatCreditInput(startingCredit)}
-              onChange={(event) => setStartingCredit(parseCreditInput(event.target.value))}
-            />
-            <div className="starting-credit-presets" aria-label="Gyors induló kredit választás">
-              {[1_000, 100_000, 1_000_000].map((value) => (
-                <button
-                  type="button"
-                  key={value}
-                  className={startingCredit === value ? 'active' : ''}
-                  onClick={() => setStartingCredit(value)}
-                >
-                  {formatCreditInput(value)}
-                </button>
-              ))}
-            </div>
-            <small>1 000–1 000 000, 100-as lépésekben.</small>
-          </div>
-        </div>
-        {createError && <div className="error">{createError}</div>}
-        <div className="setup-actions">
-          <button className="primary big" disabled={creating} onClick={() => requestCreate(false)}><Play size={19} />{creating ? 'Kapcsolódás…' : 'Játék előkészítése'}</button>
-          {testMode && (
-            <button className="secondary big test-create" disabled={creating} onClick={() => requestCreate(true)}>
-              <Users size={19} />Tesztjáték virtuális résztvevőkkel
-            </button>
-          )}
-        </div>
-      </section>
-
-      {pendingSetup && (
-        <div className="setup-confirm-backdrop" role="presentation" onMouseDown={() => !creating && setPendingSetup(null)}>
-          <section
-            className="setup-confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="setup-confirm-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <p className="eyebrow">Indítás előtti ellenőrzés</p>
-            <h2 id="setup-confirm-title">Biztosan így indítod el a játékot?</h2>
-            <div className="setup-confirm-values">
-              <div>
-                <span>Játékosok száma</span>
-                <strong>{pendingSetup.count} fő</strong>
-              </div>
-              <div>
-                <span>Induló kredit</span>
-                <strong>{formatCreditInput(pendingSetup.credit)}</strong>
-              </div>
-            </div>
-            <p className="setup-confirm-note">A játék létrehozása után ezekkel az alapértékekkel indul a Kreditjáték.</p>
-            <div className="setup-confirm-actions">
-              <button
-                type="button"
-                className="secondary"
-                disabled={creating}
-                onClick={() => setPendingSetup(null)}
-              >
-                Vissza
-              </button>
-              <button
-                type="button"
-                className="primary"
-                disabled={creating}
-                onClick={() => {
-                  const setup = pendingSetup;
-                  setPendingSetup(null);
-                  void create(setup);
-                }}
-              >
-                <Play size={17} />
-                {creating ? 'Indítás…' : 'Igen, induljon'}
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-    </main>
-  );
+  return <main className="shell trainer-shell">
+    <header className="brand"><p className="eyebrow">Tréneri dashboard</p><h1>Kreditjáték</h1><p>Indíts új játékot, és hívd meg a résztvevőket.</p></header>
+    <section className="panel setup-panel"><button className="primary big" disabled={creating} onClick={() => void create()}><Play size={19} />{creating ? 'Játék létrehozása…' : 'Új játék'}</button>
+      <details className="setup-options"><summary>Beállítások · induló kredit: {formatCreditInput(credit)} </summary>
+        <label className="field"><span>Induló kredit</span><input aria-label="Induló kredit" type="text" inputMode="numeric" value={formatCreditInput(credit)} onChange={e => setCredit(parseCreditInput(e.target.value))} /><small>1 000–1 000 000 kredit, 100-as lépésekben.</small></label>
+      </details>
+      {testMode && <div><label className="field"><span>Játékosok száma</span><input type="number" min={2} max={MAX_PLAYERS} value={count} onChange={e => setCount(Math.max(2, Math.min(MAX_PLAYERS, Number(e.target.value))))}/></label><button className="secondary" onClick={() => void create(true)}>Tesztjáték virtuális résztvevőkkel</button></div>}
+      {error && <div className="error" role="alert">{error}</div>}
+    </section>
+    {recentGames.length > 0 && <details className="panel recent-games"><summary>Korábbi játékok ezen a gépen</summary><ul>{recentGames.map(game => <li key={game.code}><a href={'?role=trainer&code=' + encodeURIComponent(game.code)}>{game.code}</a> · {game.players.length} fő · {game.status === 'finished' ? 'lezárt' : game.status === 'active' ? 'folyamatban' : 'váróterem'}</li>)}</ul></details>}
+  </main>;
 }
 
 function SummaryCell({ lines }: { lines: React.ReactNode[] }) {
@@ -777,6 +661,25 @@ function TrainerAttention({ session }: { session: GameSession }) {
       </div>)}
     </div>
   );
+}
+
+function TrainerInterventionCenter({ session }: { session: GameSession }) {
+  if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound) || session.closedRounds.includes(session.roundKey as StrategicRound)) return null;
+  const pending = session.pairings.filter(p => p.roundKey === session.roundKey).flatMap(pairing => {
+    const decisions = decisionsFor(session, pairing);
+    const type = pairing.gameId === 'ultimatum' ? (!decisions.some(d => d.type === 'ultimatum_offer') ? 'ultimatum_offer' : !decisions.some(d => d.type === 'ultimatum_response' || d.type === 'ultimatum_timeout') ? 'ultimatum_response' : null) : pairing.gameId === 'dictator' ? (!decisions.some(d => d.type === 'dictator_give') ? 'dictator_give' : null) : (!decisions.some(d => d.type === 'trust_send') ? 'trust_send' : !decisions.some(d => d.type === 'trust_return') ? 'trust_return' : null);
+    if (!type || decisions.some(d => d.type === 'ultimatum_timeout')) return [];
+    const playerId = type === 'ultimatum_response' || type === 'trust_return' ? pairing.playerB : pairing.playerA;
+    const player = session.players.find(p => p.id === playerId);
+    if (!player) return [];
+    const issue = session.strategicTechnicalIssues.some(i => i.pairingId === pairing.id && i.playerId === playerId && !i.resolvedAt);
+    const seen = session.strategicTaskSeenAt[pairing.id + ':' + playerId];
+    const offline = !gameStore.isPlayerOnline(player);
+    if (!issue && !offline && seen) return [];
+    return [{ pairing, player, reason: issue ? 'Technikai hiba – döntésre vár' : offline ? 'Kapcsolata nem észlelhető – döntésre vár' : 'A feladat megjelenése még nincs visszaigazolva' }];
+  });
+  if (!pending.length) return null;
+  return <section className="panel attention-center"><h2>Figyelmet igényel · {pending.length}</h2><p>A kapcsolatjelzés tájékoztató; az újonnan érkező feladat megjelenése néhány pillanatig tarthat.</p>{pending.map(({pairing, player, reason}) => <div className="attention-row" key={pairing.id}><div><strong>{player.name}</strong><p>{reason}</p></div><TrainerIntervention session={session} playerId={player.id} pairing={pairing} /></div>)}</section>;
 }
 
 function TrainerIntervention({ session, playerId, pairing }: { session: GameSession; playerId: string; pairing?: Pairing }) {
@@ -1281,14 +1184,18 @@ function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
   const statusValue = doc.createElement('strong');
   const statusLabel = doc.createElement('span');
   if (session.roundKey === 'lobby') {
-    statusValue.textContent = `${session.players.length} / ${session.expectedPlayerCount}`;
+    statusValue.textContent = session.flexiblePlayerCount ? `${session.players.length}` : `${session.players.length} / ${session.expectedPlayerCount}`;
     statusLabel.textContent = 'résztvevő belépett';
   } else {
     statusValue.textContent = `${session.players.filter((player) => gameStore.isPlayerOnline(player)).length} / ${session.players.length}`;
     statusLabel.textContent = 'résztvevő online';
   }
   status.append(statusValue, statusLabel);
-  copy.append(eyebrow, title, lead, code, status);
+  const address = doc.createElement('p');
+  const entry = new URL('../j/', joinUrl);
+  address.textContent = 'QR nélkül: ' + entry.host + entry.pathname + ' · Játékkód: ' + session.code;
+  address.className = 'lead';
+  copy.append(eyebrow, title, lead, code, address, status);
 
   const qr = doc.createElement('section');
   qr.className = 'qr';
@@ -1471,15 +1378,20 @@ function TrainerCockpit({
 
   let primaryLabel = 'Játék indítása';
   let primaryDisabled = false;
-  let primaryAction = () => gameStore.startGame(session.code);
+  let primaryAction: () => void = () => { gameStore.startGame(session.code); };
   let primaryIcon: React.ReactNode = <Play size={20} />;
   let actionHint = 'Minden résztvevő belépése után indítható.';
 
   if (session.roundKey === 'lobby') {
-    primaryDisabled = session.players.length !== session.expectedPlayerCount;
-    actionHint = primaryDisabled
-      ? `Még ${session.expectedPlayerCount - session.players.length} résztvevő hiányzik.`
-      : 'Mindenki bent van. Indítható az 1a kör.';
+    primaryDisabled = session.players.length < 2 || (!session.flexiblePlayerCount && session.players.length !== session.expectedPlayerCount);
+    primaryLabel = `Játék indítása – ${session.players.length} fővel`;
+    primaryAction = () => {
+      const count = session.players.length;
+      if (!window.confirm(`${count} résztvevő van bent. Indítod a játékot?`)) return;
+      if (gameStore.get(session.code)?.players.length !== count) { window.alert('A létszám közben megváltozott. Ellenőrizd, és indítsd újra.'); return; }
+      gameStore.startGame(session.code);
+    };
+    actionHint = primaryDisabled ? 'Legalább két résztvevő szükséges.' : 'Ellenőrizd a létszámot, majd indítsd el a játékot.';
   } else if (strategic && !strategicClosed) {
     primaryLabel = 'Kör lezárása és könyvelése';
     primaryDisabled = !strategicProgress?.complete;
@@ -2811,10 +2723,12 @@ function TestHarness({ session }: { session: GameSession }) {
 
 function FirebaseSyncBanner() {
   const [message, setMessage] = useState('');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'pending' | 'ok' | 'error'>('idle');
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ status: 'ok' | 'error'; message?: string }>).detail;
+      const detail = (event as CustomEvent<{ status: 'ok' | 'error' | 'pending'; message?: string }>).detail;
+      if (detail?.status) setSyncStatus(detail.status);
       if (detail?.status === 'error') setMessage(detail.message || 'Firebase szinkronhiba.');
       if (detail?.status === 'ok') setMessage('');
     };
@@ -2822,7 +2736,8 @@ function FirebaseSyncBanner() {
     return () => window.removeEventListener('kreditjatek-sync-status', handler);
   }, []);
 
-  if (!message) return null;
+  if (!message && syncStatus === 'idle') return null;
+  if (!message && syncStatus !== 'error') return <div className="sync-indicator" role="status">{syncStatus === 'pending' ? 'Mentés folyamatban…' : 'Legutóbbi szinkronizálás sikeres'}</div>;
   return (
     <div className="firebase-sync-error" role="alert">
       <strong>Kapcsolati hiba</strong>
@@ -3447,14 +3362,41 @@ function patternPairings(session: GameSession, gameId: 'ultimatum' | 'dictator' 
   );
 }
 
+function ParticipantPatterns({ session, game, showNames, roleFilter, page, onPageChange }: { session: GameSession; game: 'ultimatum' | 'dictator' | 'trust'; showNames: boolean; roleFilter: 'all' | 'first-giver' | 'first-receiver'; page: number; onPageChange: (page: number) => void }) {
+  const rounds: StrategicRound[] = game === 'ultimatum' ? ['1a', '1b'] : game === 'dictator' ? ['2a', '2b'] : ['3a', '3b'];
+  const participants = session.players.map((player, index) => ({ player, index, first: session.pairings.find(p => p.roundKey === rounds[0] && (p.playerA === player.id || p.playerB === player.id)) })).filter(({ first }) => Boolean(first));
+  const filtered = participants.filter(({player, first}) => roleFilter === 'all' || (roleFilter === 'first-giver' ? first!.playerA === player.id : first!.playerB === player.id));
+  const pages = Math.max(1, Math.ceil(filtered.length / 8));
+  const safePage = Math.min(page, pages - 1);
+  const describe = (playerId: string, round: StrategicRound) => {
+    if (!session.closedRounds.includes(round)) return 'Még nincs lezárva';
+    const pair = session.pairings.find(p => p.roundKey === round && (p.playerA === playerId || p.playerB === playerId));
+    if (!pair) return 'Nincs párosítás';
+    const giver = pair.playerA === playerId;
+    const role = game === 'ultimatum' ? (giver ? 'ajánlattevő' : 'fogadó') : game === 'dictator' ? (giver ? 'döntő' : 'fogadó') : (giver ? 'küldő' : 'fogadó / visszaadó');
+    const ds = decisionsFor(session, pair);
+    const main = ds.find(d => d.type === (game === 'ultimatum' ? 'ultimatum_offer' : game === 'dictator' ? 'dictator_give' : 'trust_send'));
+    const response = ds.find(d => d.type === (game === 'ultimatum' ? 'ultimatum_response' : 'trust_return'));
+    const partner = pair.playerA === playerId ? pair.playerB : pair.playerA;
+    const markers = [partner === 'BOT' || ds.some(d => d.isBotDecision) ? 'rendszerjátékos' : '', ds.some(d => d.timedOutRole || d.type === 'ultimatum_timeout') ? 'időtúllépés' : '', (ds.some(d => d.submissionSource === 'manual_correction') || session.manualCorrections.some(c => c.pairingId === pair.id)) ? 'kézi rögzítés' : ''].filter(Boolean).join(', ');
+    const amounts = game === 'ultimatum' ? `ajánlat ${main?.amount === undefined ? '–' : formatCredits(main.amount)} · ${response ? (response.accepted ? 'elfogadva' : 'elutasítva') : 'nincs válasz'}` : game === 'dictator' ? `átadás ${main?.amount === undefined ? '–' : formatCredits(main.amount)}` : `küldött ${main?.amount === undefined ? '–' : formatCredits(main.amount)} · vissza ${response?.amount === undefined ? '–' : formatCredits(response.amount)}`;
+    return `${role} · ${amounts}${showNames ? ' · partner: ' + playerName(session, partner) : ''}${markers ? ' · ' + markers : ''}`;
+  };
+  return <div className="participant-patterns"><p>A két körben rendszerint más a partner. A megjelölt döntések technikai vagy tréneri beavatkozással születtek.</p><div className="participant-pattern-grid"><strong>Résztvevő</strong><strong>1. kör · {rounds[0]}</strong><strong>2. kör · {rounds[1]}</strong>{filtered.slice(safePage * 8, safePage * 8 + 8).map(({player,index}) => <React.Fragment key={player.id}><span>{showNames ? player.name : `${index + 1}. résztvevő`}</span><span>{describe(player.id, rounds[0])}</span><span>{describe(player.id, rounds[1])}</span></React.Fragment>)}</div><div className="trust-flow-pager"><button className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>Előző</button><span>{safePage + 1} / {pages}</span><button className="secondary" disabled={safePage + 1 >= pages} onClick={() => onPageChange(safePage + 1)}>Következő</button></div></div>;
+}
+
 function SplitDecisionPattern({
   session,
   game,
   showNames,
+  page,
+  onPageChange,
 }: {
   session: GameSession;
   game: 'ultimatum' | 'dictator';
   showNames: boolean;
+  page: number;
+  onPageChange: (page: number) => void;
 }) {
   const rows = patternPairings(session, game)
     .map((pairing) => {
@@ -3480,6 +3422,9 @@ function SplitDecisionPattern({
   }
 
   const total = Math.max(1, session.startingCredit);
+  const pages = Math.max(1, Math.ceil(rows.length / 10));
+  const safePage = Math.min(page, pages - 1);
+  const visibleRows = rows.slice(safePage * 10, safePage * 10 + 10);
 
   return (
     <div className="split-pattern-chart">
@@ -3488,8 +3433,8 @@ function SplitDecisionPattern({
         <span>{formatCredits(total / 2)}</span>
         <span>0</span>
       </div>
-      <div className="split-pattern-grid" style={{ gridTemplateColumns: 'repeat(' + rows.length + ', minmax(0, 1fr))' }}>
-        {rows.map((row, index) => {
+      <div className="split-pattern-grid" style={{ gridTemplateColumns: 'repeat(' + visibleRows.length + ', minmax(0, 1fr))' }}>
+        {visibleRows.map((row, index) => {
           const givePercent = Math.max(0, Math.min(100, row.amount / total * 100));
           const keepPercent = 100 - givePercent;
           const pairLabel = row.giver + ' → ' + row.receiver;
@@ -3499,7 +3444,7 @@ function SplitDecisionPattern({
               <div className="split-pattern-value">{formatCredits(row.amount)}</div>
               <div
                 className={'split-pattern-bar ' + (game === 'ultimatum' ? (row.accepted ? 'is-accepted' : 'is-rejected') : 'is-dictator')}
-                title={pairLabel + ' · ' + formatCredits(row.amount) + ' · ' + status}
+                title={(showNames ? pairLabel + ' · ' : '') + formatCredits(row.amount) + ' · ' + status}
               >
                 <div className="split-pattern-kept" style={{ height: keepPercent + '%' }}>
                   {keepPercent >= 18 && <span>{Math.round(keepPercent)}%</span>}
@@ -3508,8 +3453,8 @@ function SplitDecisionPattern({
                   {givePercent >= 13 && <span>{Math.round(givePercent)}%</span>}
                 </div>
               </div>
-              <div className="split-pattern-label" title={pairLabel}>
-                {showNames ? pairLabel : String(index + 1)}
+              <div className="split-pattern-label" title={showNames ? pairLabel : undefined}>
+                {showNames ? pairLabel : String(safePage * 10 + index + 1)}
               </div>
               {game === 'ultimatum' && (
                 <div className={'split-pattern-status ' + (row.accepted ? 'accepted' : 'rejected')}>
@@ -3520,6 +3465,7 @@ function SplitDecisionPattern({
           );
         })}
       </div>
+      {pages > 1 && <div className="trust-flow-pager"><button className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>Előző</button><span>{safePage + 1} / {pages}</span><button className="secondary" disabled={safePage + 1 >= pages} onClick={() => onPageChange(safePage + 1)}>Következő</button></div>}
       <div className="pattern-legend">
         <span><i className="legend-given" />{game === 'ultimatum' ? 'Felajánlott' : 'Átadott'}</span>
         <span><i className="legend-kept" />Megtartott</span>
@@ -4029,6 +3975,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
     return 'ultimatum';
   });
   const [showNames, setShowNames] = useState(false);
+  const [roundView, setRoundView] = useState<'first' | 'second' | 'people' | 'first-giver' | 'first-receiver'>('first');
   const [trustView, setTrustView] = useState<'simple' | 'matrix'>('simple');
   const [trustPage, setTrustPage] = useState(0);
   const [poolHover, setPoolHover] = useState<PoolPatternHover | null>(null);
@@ -4051,7 +3998,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
       renderPatternProjectionFromElement(game);
     });
     return () => window.cancelAnimationFrame(id);
-  }, [game, showNames, trustView, trustPage, selectedPoolGroupId, poolHover, session]);
+  }, [game, showNames, trustView, trustPage, selectedPoolGroupId, poolHover, roundView, session]);
 
   const project = () => {
     setProjectionError('');
@@ -4068,7 +4015,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
             type="button"
             key={option.id}
             className={game === option.id ? 'active' : ''}
-            onClick={() => setGame(option.id)}
+            onClick={() => { setGame(option.id); setTrustPage(0); }}
           >
             {option.label}
           </button>
@@ -4121,17 +4068,20 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
           </header>
 
           <div className="pattern-chart-area">
-            {game === 'ultimatum' && <SplitDecisionPattern session={session} game="ultimatum" showNames={showNames} />}
-            {game === 'dictator' && <SplitDecisionPattern session={session} game="dictator" showNames={showNames} />}
-            {game === 'trust' && trustView === 'simple' && (
+            {game !== 'publicGoods' && <div className="round-view-controls">{([{id:'first', label:'1. kör'}, {id:'second', label:'2. kör'}, {id:'people', label:'Résztvevők'}, {id:'first-giver', label:'Előbb küldő / döntő'}, {id:'first-receiver', label:'Előbb fogadó'}] as const).map(option => <button type="button" key={option.id} className={roundView === option.id ? 'secondary active' : 'secondary'} onClick={() => { setRoundView(option.id); setTrustPage(0); }}>{option.label}</button>)}</div>}
+            {game !== 'publicGoods' && <p className="pattern-explanation">{roundView === 'first' ? '1. kör' : roundView === 'second' ? '2. kör' : 'Szerepsorrend és résztvevői nézet'} · A körgrafikonok az ember–ember, időtúllépés nélküli párokat mutatják. A résztvevői nézet jelöli az eltéréseket.</p>}
+            {game !== 'publicGoods' && !['first','second'].includes(roundView) && <ParticipantPatterns key={game + roundView} session={session} game={game} showNames={showNames} page={trustPage} onPageChange={setTrustPage} roleFilter={roundView === 'first-giver' ? 'first-giver' : roundView === 'first-receiver' ? 'first-receiver' : 'all'} />}
+            {game === 'ultimatum' && ['first','second'].includes(roundView) && <SplitDecisionPattern session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '1a' : '1b'))}} game="ultimatum" showNames={showNames} page={trustPage} onPageChange={setTrustPage} />}
+            {game === 'dictator' && ['first','second'].includes(roundView) && <SplitDecisionPattern session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '2a' : '2b'))}} game="dictator" showNames={showNames} page={trustPage} onPageChange={setTrustPage} />}
+            {game === 'trust' && ['first','second'].includes(roundView) && trustView === 'simple' && (
               <TrustBarsPattern
-                session={session}
+                session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '3a' : '3b'))}}
                 showNames={showNames}
                 page={trustPage}
                 onPageChange={setTrustPage}
               />
             )}
-            {game === 'trust' && trustView === 'matrix' && <TrustMatrixPattern session={session} showNames={showNames} />}
+            {game === 'trust' && ['first','second'].includes(roundView) && trustView === 'matrix' && <TrustMatrixPattern session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '3a' : '3b'))}} showNames={showNames} />}
             {game === 'publicGoods' && (
               <PublicGoodsPatterns
                 session={session}
@@ -4599,6 +4549,8 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <PostReportLearningRoundPanel session={session} />
       {testMode && <TestHarness session={session} />}
 
+      {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
+      <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
       <DebriefWorkspace session={session} open={debriefOpen} onOpenChange={setDebriefOpen} />
@@ -5197,6 +5149,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [acknowledgedMinimum, setAcknowledgedMinimum] = useState('');
 
   useEffect(() => {
     if (pendingAmount !== null && existingAmount === pendingAmount) {
@@ -5326,6 +5279,9 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)} kredit.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
   }
 
+  const minimumKey = currentRound.id + ':' + currentRound.minimumMode + ':' + currentRound.minimumAmount;
+  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)} kredit</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
+
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
   const canEdit = session.publicGoodsPhase === 'open' && now < deadline;
 
@@ -5356,6 +5312,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         </div>
         <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} />
       </div>
+      {minimumVisible && <div className="minimum-warning" role="status"><strong>A CSOPORT MINIMUMA: {formatCredits(currentRound.minimumAmount ?? 0)} kredit</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
 
       {submitError && <div className="error" role="alert">{submitError}</div>}
       {editing && existingAmount !== undefined && amount !== existingAmount && <p role="status">A módosításod még nincs beküldve. A korábbi beérkezett tét marad érvényben.</p>}
@@ -5819,9 +5776,9 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       }
 
       const result = gameStore.join(cleanCode, resolvedPlayerId, cleanName);
-      await gameStore.afterJoin(cleanCode, resolvedPlayerId);
+      const accepted = await gameStore.afterJoin(cleanCode, resolvedPlayerId);
       setCode(cleanCode);
-      setSession(result);
+      setSession(accepted ?? result);
       setJoined(true);
       const url = new URL(window.location.href);
       url.searchParams.set('role', 'player');
@@ -5859,11 +5816,12 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           <h1>Csatlakozás</h1>
           <p>{initial ? 'Add meg a neved. Ezen a telefonon kapod a döntéseidet.' : 'Olvasd be a tréner QR-kódját, vagy nyisd meg a tőle kapott meghívólinket.'}</p>
         </header>
-        {initial && <form className="panel join-panel" onSubmit={submitJoin}>
+        <form className="panel join-panel" onSubmit={submitJoin}>
+          {!initial && <label className="field"><span>Játékkód</span><input value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" onChange={e => setCode(e.target.value.toUpperCase())} /></label>}
           <label className="field"><span>Neved</span><input value={name} maxLength={60} autoComplete="name" enterKeyHint="go" onChange={(e) => setName(e.target.value)} /></label>
           {error && <div className="error">{error}</div>}
           <button className="primary big" type="submit">Belépek a játékba</button>
-        </form>}
+        </form>
       </main>
     );
   }
@@ -5989,7 +5947,7 @@ function App() {
     if (initialRole === 'trainer' && initialCode) return 'trainer';
     if (initialRole === 'trainer') return 'trainer-start';
     if (initialRole === 'player') return 'player';
-    return 'landing';
+    return 'trainer-start';
   });
   const [trainerCode, setTrainerCode] = useState(demoCode || initialCode);
 
@@ -6033,3 +5991,4 @@ function App() {
 createRoot(document.getElementById('root')!).render(<App />);
 
 import { buildSelfReportShareText } from './selfReportExport';
+
