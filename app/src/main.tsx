@@ -679,7 +679,7 @@ function TrainerInterventionCenter({ session }: { session: GameSession }) {
     return [{ pairing, player, reason: issue ? 'Technikai hiba – döntésre vár' : offline ? 'Kapcsolata nem észlelhető – döntésre vár' : 'A feladat megjelenése még nincs visszaigazolva' }];
   });
   if (!pending.length) return null;
-  return <section className="panel attention-center"><h2>Figyelmet igényel · {pending.length}</h2><p>A kapcsolatjelzés tájékoztató; az újonnan érkező feladat megjelenése néhány pillanatig tarthat.</p>{pending.map(({pairing, player, reason}) => <div className="attention-row" key={pairing.id}><div><strong>{player.name}</strong><p>{reason}</p></div><TrainerIntervention session={session} playerId={player.id} pairing={pairing} /></div>)}</section>;
+  return <details className="panel attention-center"><summary><strong>Figyelmet igényel · {pending.length}</strong><span>Megnézem</span></summary><p>A kapcsolatjelzés tájékoztató; az újonnan érkező feladat megjelenése néhány pillanatig tarthat.</p>{pending.map(({pairing, player, reason}) => <div className="attention-row" key={pairing.id}><div><strong>{player.name}</strong><p>{reason}</p></div><TrainerIntervention session={session} playerId={player.id} pairing={pairing} /></div>)}</details>;
 }
 
 function TrainerIntervention({ session, playerId, pairing }: { session: GameSession; playerId: string; pairing?: Pairing }) {
@@ -794,8 +794,11 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
                 <strong>{playerName(session, pairing.playerB)}</strong>
               </div>
               <p>{detail}</p>
-              {(state === 'waiting' || state === 'technical') && !session.closedRounds.includes(session.roundKey as StrategicRound) &&
-                [pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}
+              {(state === 'waiting' || state === 'technical') && !session.closedRounds.includes(session.roundKey as StrategicRound) && (
+                state === 'technical'
+                  ? <div className="pair-actions-visible">{[pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}</div>
+                  : <details className="pair-actions"><summary>Beavatkozás</summary>{[pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}</details>
+              )}
             </div>
           );
         })}
@@ -1445,7 +1448,9 @@ function TrainerCockpit({
   }
 
   return (
-    <section className="cockpit cockpit-v2">
+    <>
+    <section className="cockpit cockpit-v2 trainer-sticky">
+      <FirebaseSyncBanner />
       <div className="command-deck">
         <div className="compact-command-bar">
           <div className="compact-state">
@@ -1497,6 +1502,11 @@ function TrainerCockpit({
           </div>
         </div>
 
+
+        <GameTimeline session={session} />
+        <TrainerPulse session={session} />
+      </div>
+    </section>
         {projectionControlsOpen && (
           <div className="projection-dashboard-controller">
             <div className="projection-dashboard-head">
@@ -1536,18 +1546,11 @@ function TrainerCockpit({
           </div>
         )}
 
-        <GameTimeline session={session} />
-        <TrainerPulse session={session} />
-        <TrainerAttention session={session} />
-
-
-      </div>
-
-      <div id="projection-qr-source" style={{ display: 'none' }} aria-hidden="true">
-        <QRCodeSVG value={joinUrl} size={620} level="M" includeMargin />
-      </div>
-
-    </section>
+    <TrainerAttention session={session} />
+    <div id="projection-qr-source" style={{ display: 'none' }} aria-hidden="true">
+      <QRCodeSVG value={joinUrl} size={620} level="M" includeMargin />
+    </div>
+    </>
   );
 }
 
@@ -4547,7 +4550,6 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
 
   return (
     <main className="shell trainer-shell">
-      <FirebaseSyncBanner />
       <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} />
       <PostReportLearningRoundPanel session={session} />
       {testMode && <TestHarness session={session} />}
@@ -4555,10 +4557,11 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
       <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
+      {session.roundKey === '4' && <ReportPanel session={session} />}
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
       <DebriefWorkspace session={session} open={debriefOpen} onOpenChange={setDebriefOpen} />
 
-      <ReportPanel session={session} />
+      {session.roundKey !== '4' && <ReportPanel session={session} />}
       <PlayerTable session={session} />
       <TrainerCorrectionPanel session={session} />
 
