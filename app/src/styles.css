@@ -2605,3 +2605,5 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .bot-attention-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px}
 #debrief-workspace{scroll-margin-top:190px}
 @media(max-width:760px){#debrief-workspace{scroll-margin-top:220px}}
+.pool-sticky-live{top:calc(var(--trainer-sticky-height, 180px) + 4px)}
+@media(max-width:760px){.pool-sticky-live{top:calc(var(--trainer-sticky-height, 220px) + 4px)}}
