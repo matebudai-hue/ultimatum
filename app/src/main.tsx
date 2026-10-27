@@ -1966,7 +1966,6 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
         </div>
       </div>
 
-      <PublicGoodsLiveBar session={session} />
       {session.publicGoodsPhase === 'open' && <div className="pool-interventions"><strong>Elakadt vagy hiányzó résztvevők</strong>
         {session.players.filter((p) => !p.isBot && session.publicGoodsRounds.some((r) => r.roundNumber === session.publicGoodsRoundNumber && r.memberIds.includes(p.id) && r.contributions[p.id] === undefined)).map((p) => <TrainerIntervention key={p.id} session={session} playerId={p.id} />)}
       </div>}
@@ -4571,6 +4570,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
       <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
+      {session.roundKey === '4' && <PublicGoodsLiveBar session={session} />}
       {session.roundKey === '4' && <ReportPanel session={session} />}
       {session.roundKey === '4' ? <PublicGoodsDashboard session={session} /> : null}
       <DebriefWorkspace session={session} open={debriefOpen} onOpenChange={setDebriefOpen} />
