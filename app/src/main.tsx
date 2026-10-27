@@ -2730,7 +2730,6 @@ function FirebaseSyncBanner() {
       const detail = (event as CustomEvent<{ status: 'ok' | 'error' | 'pending'; message?: string }>).detail;
       if (detail?.status) setSyncStatus(detail.status);
       if (detail?.status === 'error') setMessage(detail.message || 'Firebase szinkronhiba.');
-      if (detail?.status === 'ok') setMessage('');
     };
     window.addEventListener('kreditjatek-sync-status', handler);
     return () => window.removeEventListener('kreditjatek-sync-status', handler);
