@@ -1345,6 +1345,18 @@ function TrainerCockpit({
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
   const [externalProjectionLabel, setExternalProjectionLabel] = useState<string | null>(null);
+  const stickyRef = React.useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const element = stickyRef.current;
+    if (!element) return;
+    const update = () => document.documentElement.style.setProperty('--trainer-sticky-height', `${Math.ceil(element.getBoundingClientRect().height)}px`);
+    update();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    observer?.observe(element);
+    window.addEventListener('resize', update);
+    return () => { observer?.disconnect(); window.removeEventListener('resize', update); document.documentElement.style.removeProperty('--trainer-sticky-height'); };
+  }, []);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -1451,7 +1463,7 @@ function TrainerCockpit({
 
   return (
     <>
-    <section className="cockpit cockpit-v2 trainer-sticky">
+    <section className="cockpit cockpit-v2 trainer-sticky" ref={stickyRef}>
       <FirebaseSyncBanner />
       <div className="command-deck">
         <div className="compact-command-bar">
