@@ -762,14 +762,19 @@ function TrainerPulse({ session }: { session: GameSession }) {
 
 function TrainerAttention({ session }: { session: GameSession }) {
   const offline = session.players.filter((player) => !gameStore.isPlayerOnline(player));
-  if (offline.length === 0) return null;
+  const controlled = session.players.filter((player) => player.botControlled);
+  if (offline.length === 0 && controlled.length === 0) return null;
 
   return (
     <div className="attention-strip">
-      <div className="attention-item warning-attention">
+      {offline.length > 0 && <div className="attention-item warning-attention">
         <strong>{offline.length} offline résztvevő</strong>
         <span>{offline.slice(0, 5).map((player) => player.name).join(', ')}{offline.length > 5 ? '…' : ''}</span>
-      </div>
+      </div>}
+      {controlled.map((player) => <div className="attention-item warning-attention" key={player.id}>
+        <strong>{player.name} helyett rendszerjátékos játszik</strong>
+        <button type="button" onClick={() => gameStore.setPlayerBotControl(session.code, player.id, false)}>Irányítás visszaadása</button>
+      </div>)}
     </div>
   );
 }
