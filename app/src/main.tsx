@@ -3705,7 +3705,7 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
           const labelOnLeft = showNames && px > 720;
           return (
             <g key={row.pairing.id} className="trust-point">
-              <title>{row.giver + ' → ' + row.receiver + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
+              <title>{(showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár') + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
               <circle cx={px} cy={py} r={showNames ? 10 : 13} />
               <text
                 x={showNames ? px + (labelOnLeft ? -14 : 14) : px}
@@ -3738,12 +3738,14 @@ const poolPlayerColor = (index: number) => 'hsl(' + ((index * 47 + 198) % 360) +
 
 function PublicGoodsPatterns({
   session,
+  showNames,
   selectedGroupId,
   onSelectGroup,
   hoveredSegment,
   onHoverSegment,
 }: {
   session: GameSession;
+  showNames: boolean;
   selectedGroupId: string;
   onSelectGroup: (groupId: string) => void;
   hoveredSegment: PoolPatternHover | null;
@@ -3757,6 +3759,7 @@ function PublicGoodsPatterns({
   }
 
   const group = groupsWithRounds.find((item) => item.id === selectedGroupId) ?? groupsWithRounds[0];
+  const displayPlayer = (playerId: string) => showNames ? playerName(session, playerId) : `${group.memberIds.indexOf(playerId) + 1}. résztvevő`;
   const rounds = settled.filter((round) => round.groupId === group.id).sort((a, b) => a.roundNumber - b.roundNumber);
 
   const yMax = Math.max(
@@ -3791,7 +3794,7 @@ function PublicGoodsPatterns({
           </div>
           <div className="pool-pattern-legend">
             {group.memberIds.map((playerId, index) => (
-              <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{playerName(session, playerId)}</span>
+              <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{displayPlayer(playerId)}</span>
             ))}
           </div>
         </header>
@@ -3801,7 +3804,7 @@ function PublicGoodsPatterns({
             <div className="pool-pattern-hover-person">
               <i style={{ background: poolPlayerColor(Math.max(0, group.memberIds.indexOf(hoveredSegment.playerId))) }} />
               <div>
-                <strong>{hoveredSegment.player}</strong>
+                <strong>{displayPlayer(hoveredSegment.playerId)}</strong>
                 <span>{hoveredSegment.roundLabel}</span>
               </div>
             </div>
@@ -3869,12 +3872,12 @@ function PublicGoodsPatterns({
                             key={playerId}
                             tabIndex={0}
                             role="img"
-                            aria-label={playerName(session, playerId) + ' · befizetés ' + formatCredits(amount) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
+                            aria-label={displayPlayer(playerId) + ' · befizetés ' + formatCredits(amount) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
                             style={{
                               height: segmentShareOfBar + '%',
                               background: poolPlayerColor(Math.max(0, memberIndex)),
                             }}
-                            title={playerName(session, playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
+                            title={displayPlayer(playerId) + ' · saját vagyonából ' + (Math.round(ownPercent * 10) / 10) + '% · kasszából ' + (Math.round(potPercent * 10) / 10) + '%'}
                             onMouseEnter={() => onHoverSegment({
                               groupId: group.id,
                               roundId: round.id,
@@ -4051,13 +4054,13 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
                   </button>
                 </div>
               )}
-              {game !== 'publicGoods' && (
+              {true && (
                 <button
                   type="button"
                   className={showNames ? 'secondary active' : 'secondary'}
-                  onClick={() => setShowNames((value) => !value)}
+                  onClick={() => { setPoolHover(null); setShowNames((value) => !value); }}
                 >
-                  {showNames ? 'Párok elrejtése' : 'Párok mutatása'}
+                  {showNames ? 'Nevek elrejtése' : 'Nevek mutatása'}
                 </button>
               )}
               <button type="button" className="secondary pattern-project-button" onClick={project}>
@@ -4084,6 +4087,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
             {game === 'publicGoods' && (
               <PublicGoodsPatterns
                 session={session}
+                showNames={showNames}
                 selectedGroupId={selectedPoolGroupId}
                 onSelectGroup={(groupId) => {
                   setPoolHover(null);
@@ -4474,7 +4478,7 @@ function PostReportLearningRoundPanel({ session }: { session: GameSession }) {
         <h2>Tanultak belőle?</h2>
         <p>
           Ugyanazok a csoportok újabb kasszaköröket játszhatnak. Mindenki az első lezáráskor meglévő vagyonával indul tovább;
-          aki {formatCredits(session.startingCredit)} alatt maradt, {formatCredits(session.startingCredit)} kreditre egészül ki.
+          aki {formatCredits(session.startingCredit)} alatt maradt, {formatCreditInput(session.startingCredit)} kreditre egészül ki.
         </p>
         <small>
           {belowFloor.length > 0
@@ -5275,11 +5279,11 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   }
 
   if (session.decisions.some((d) => d.playerId === playerId && d.publicGoodsRound === session.publicGoodsRoundNumber && d.type === 'public_goods_contribution' && d.submissionSource === 'manual_correction')) {
-    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)} kredit.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
+    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)}.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
   }
 
   const minimumKey = currentRound.id + ':' + currentRound.minimumMode + ':' + currentRound.minimumAmount;
-  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)} kredit</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
+  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)}</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
 
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
   const canEdit = session.publicGoodsPhase === 'open' && now < deadline;
@@ -5311,7 +5315,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         </div>
         <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} />
       </div>
-      {minimumVisible && <div className="minimum-warning" role="status"><strong>A CSOPORT MINIMUMA: {formatCredits(currentRound.minimumAmount ?? 0)} kredit</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
+      {minimumVisible && <div className="minimum-warning" role="status"><strong>A CSOPORT MINIMUMA: {formatCredits(currentRound.minimumAmount ?? 0)}</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
 
       {submitError && <div className="error" role="alert">{submitError}</div>}
       {editing && existingAmount !== undefined && amount !== existingAmount && <p role="status">A módosításod még nincs beküldve. A korábbi beérkezett tét marad érvényben.</p>}

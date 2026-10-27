@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {transformSync} from 'esbuild';
+const src=fs.readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');
+const fragment=src.slice(src.indexOf('function TrustMatrixPattern('),src.indexOf('type PoolPatternHover'));
+const js=transformSync(fragment,{loader:'tsx',jsx:'transform'}).code;
+const pair={id:'p',playerA:'a',playerB:'b'};
+const session={startingCredit:100000,players:[{id:'a',name:'Alma'},{id:'b',name:'Béla'}],decisions:[{pairingId:'p',type:'trust_send',amount:10000},{pairingId:'p',type:'trust_return',amount:10000}]};
+const component=new Function('React','patternPairings','decisionsFor','playerName',js+';return TrustMatrixPattern;')(React,()=>[pair],(s:any,p:any)=>s.decisions.filter((d:any)=>d.pairingId===p.id),(s:any,id:string)=>s.players.find((p:any)=>p.id===id).name);
+const render=(showNames:boolean)=>renderToStaticMarkup(React.createElement(component,{session,showNames}));
+assert.doesNotMatch(render(false),/Alma|Béla/);
+assert.match(render(true),/Alma/);
+console.log('TRUST MATRIX ANONYMITY OK');
