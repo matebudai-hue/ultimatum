@@ -60,4 +60,15 @@ await submit();
 assert.match(document.querySelector('[role="alert"]')!.textContent!, /Lejárt/);
 assert.equal((Array.from(document.querySelectorAll('button')).find(b => b.type === 'submit') as HTMLButtonElement).disabled, false);
 await act(async () => root.unmount());
+session = {...session, publicGoodsRoundNumber:9, publicGoodsPhase:'open', publicGoodsRounds:[{id:'r9',roundNumber:9,memberIds:['p'],contributions:{},minimumMode:'custom',minimumAmount:200000}]};
+root = createRoot(document.getElementById('root')!);
+await render();
+assert.match(document.body.textContent!, /csoport minimuma/i);
+assert.match(document.body.textContent!, /200\s?000/);
+assert.equal(document.querySelector('form'), null, 'A döntés előtt meg kell jeleníteni a minimumot.');
+await act(async () => Array.from(document.querySelectorAll('button')).find(b => /Megértettem/.test(b.textContent ?? ''))!.click());
+assert.ok(document.querySelector('form'));
+assert.match(document.body.textContent!, /CSOPORT MINIMUMA/);
+await act(async () => root.unmount());
 console.log('PUBLIC GOODS UI: confirmation, delayed acknowledgement, saved state and interrupted modification PASS');
+
