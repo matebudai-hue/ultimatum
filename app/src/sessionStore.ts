@@ -283,6 +283,7 @@ const isBotControlledActor = (session: GameSession, playerId: string | 'BOT') =>
 const botPublicGoodsContribution = (session: GameSession, playerId: string) => {
   const round = currentPublicGoodsRounds(session).find((item) => item.memberIds.includes(playerId));
   if (!round || round.status !== 'open') return;
+  if (round.contributions[playerId] !== undefined) return;
 
   const startingWealth = round.startingPlayerWealth?.[playerId] ?? 0;
   if (startingWealth <= 0) {
@@ -409,6 +410,12 @@ const autoBotDecisions = (session: GameSession, pairingId: string) => {
           isBotDecision: true,
         });
       }
+    }
+  }
+  for (const issue of session.strategicTechnicalIssues) {
+    if (issue.pairingId === pairing.id && !issue.resolvedAt && pairDecisions().some((d) => d.playerId === issue.playerId && d.isBotDecision)) {
+      issue.resolvedAt = new Date().toISOString();
+      issue.resolution = 'decision_received';
     }
   }
 };
@@ -696,7 +703,17 @@ export const localSessionStore = {
 
     if (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) {
       const pairing = this.getPairingForPlayer(session, playerId);
-      if (pairing) autoBotDecisions(session, pairing.id);
+      if (pairing && enabled) {
+        autoBotDecisions(session, pairing.id);
+        if (session.decisions.some((d) => d.pairingId === pairing.id && d.playerId === playerId && d.isBotDecision)) {
+          for (const issue of session.strategicTechnicalIssues) {
+            if (issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt) {
+              issue.resolvedAt = new Date().toISOString();
+              issue.resolution = 'decision_received';
+            }
+          }
+        }
+      }
     } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open' && enabled) {
       botPublicGoodsContribution(session, playerId);
     }
@@ -833,6 +850,42 @@ export const localSessionStore = {
     const key = strategicWindowKey(pairingId, playerId);
     delete session.strategicSubmitIntentAt[key];
     delete session.strategicTaskSeenAt[key];
+    write(session);
+    return session;
+  },
+
+  trainerSubmitStrategicDecision(code: string, playerId: string, value: number | boolean): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound) || session.closedRounds.includes(session.roundKey as StrategicRound)) throw new Error('A kör nem módosítható.');
+    const pairing = this.getPairingForPlayer(session, playerId);
+    const pending = pairing && pendingStrategicActor(session, pairing.id);
+    if (!pairing || !pending || pending.playerId !== playerId) throw new Error('Ez a résztvevő most nem vár döntésre.');
+    if (session.players.find((p) => p.id === playerId)?.botControlled) throw new Error('Előbb add vissza az irányítást a résztvevőnek.');
+    const isResponse = pending.type === 'ultimatum_response';
+    const max = pending.type === 'trust_return' ? (decisionsForPair(session, pairing.id).find((d) => d.type === 'trust_send')?.amount ?? 0) * 3 : session.startingCredit;
+    if (isResponse ? typeof value !== 'boolean' : typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > max) throw new Error(isResponse ? 'Válassz elfogadást vagy elutasítást.' : `0 és ${max} közötti egész összeget adj meg.`);
+    addDecision(session, { pairingId: pairing.id, playerId, roundKey: session.roundKey, type: pending.type, ...(isResponse ? { accepted: value as boolean } : { amount: value as number }), submissionSource: 'manual_correction' });
+    session.manualCorrections.push({ id: crypto.randomUUID(), kind: 'strategic_decision', playerId, roundKey: session.roundKey, pairingId: pairing.id, field: pending.type, beforeValue: null, afterValue: value, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
+    for (const issue of session.strategicTechnicalIssues) if (issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt) { issue.resolvedAt = new Date().toISOString(); issue.resolution = 'decision_received'; }
+    delete session.strategicSubmitIntentAt[strategicWindowKey(pairing.id, playerId)];
+    autoBotDecisions(session, pairing.id);
+    write(session);
+    return session;
+  },
+
+  trainerSubmitPublicGoods(code: string, playerId: string, amount: number): GameSession {
+    const session = read(code);
+    if (!session || session.roundKey !== '4' || session.publicGoodsPhase !== 'open') throw new Error('Nincs nyitott kasszakör.');
+    const player = session.players.find((p) => p.id === playerId);
+    const round = currentPublicGoodsRounds(session).find((r) => r.memberIds.includes(playerId) && r.status === 'open');
+    if (!player || !round || player.botControlled) throw new Error('A résztvevő nem elérhető kézi döntéshez.');
+    if (round.contributions[playerId] !== undefined) throw new Error('A résztvevő döntése már beérkezett.');
+    if (!Number.isInteger(amount) || amount < 0 || amount > player.currentBalance) throw new Error(`0 és ${player.currentBalance} közötti egész összeget adj meg.`);
+    round.contributions[playerId] = amount;
+    round.totalContribution = Object.values(round.contributions).reduce((sum, n) => sum + n, 0);
+    upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, amount, false, undefined, 'manual_correction');
+    session.manualCorrections.push({ id: crypto.randomUUID(), kind: 'public_goods_contribution', playerId, roundKey: '4', publicGoodsRound: round.roundNumber, field: 'contribution', beforeValue: null, afterValue: amount, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
     write(session);
     return session;
   },
@@ -1301,6 +1354,7 @@ export const localSessionStore = {
 
     const round = currentPublicGoodsRounds(session).find((item) => item.memberIds.includes(playerId));
     if (!round || round.status !== 'open') throw new Error('Nem található az aktuális csoportkör.');
+    if (session.decisions.some((d) => d.playerId === playerId && d.publicGoodsRound === round.roundNumber && d.type === 'public_goods_contribution' && d.submissionSource === 'manual_correction')) throw new Error('A tréner már rögzítette ezt a döntést.');
 
     round.contributions[playerId] = Math.round(amount);
     round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
@@ -1579,3 +1633,4 @@ export const localSessionStore = {
     };
   },
 };
+
