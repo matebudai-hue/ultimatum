@@ -585,7 +585,7 @@ export const localSessionStore = {
     return session;
   },
 
-  create(startingCredit: number, expectedPlayerCount = 2): GameSession {
+  create(startingCredit: number, expectedPlayerCount = 2, flexiblePlayerCount = false): GameSession {
     let code = makeCode();
     while (read(code)) code = makeCode();
     const safeCount = Math.max(2, Math.min(MAX_PLAYERS, Math.round(expectedPlayerCount)));
@@ -596,6 +596,7 @@ export const localSessionStore = {
       roundKey: 'lobby',
       startingCredit: safeStartingCredit,
       expectedPlayerCount: safeCount,
+      flexiblePlayerCount,
       createdAt: new Date().toISOString(),
       players: [],
       pairings: [],
@@ -730,9 +731,11 @@ export const localSessionStore = {
   startGame(code: string): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
-    if (session.players.length !== session.expectedPlayerCount) {
+    if (session.flexiblePlayerCount && session.players.length < 2) throw new Error('Legalább két résztvevő szükséges.');
+    if (!session.flexiblePlayerCount && session.players.length !== session.expectedPlayerCount) {
       throw new Error(`Még nincs bent mindenki: ${session.players.length}/${session.expectedPlayerCount}.`);
     }
+    if (session.flexiblePlayerCount) session.expectedPlayerCount = session.players.length;
     session.pairings = buildSixRoundPairingSchedule(session.players.map((player) => player.id));
     prepareStrategicRound(session, '1a');
     write(session);
@@ -1633,4 +1636,5 @@ export const localSessionStore = {
     };
   },
 };
+
 

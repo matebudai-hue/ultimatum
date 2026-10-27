@@ -47,10 +47,7 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
 
   try {
     await trainer.goto('/?role=trainer');
-    await trainer.getByLabel('Játékosok száma').fill('2');
-    await trainer.getByRole('button', { name: /Játék előkészítése/ }).click();
-    await expect(trainer.getByRole('dialog')).toBeVisible();
-    await trainer.getByRole('button', { name: 'Igen, induljon' }).click();
+    await trainer.getByRole('button', { name: 'Új játék' }).click();
 
     await expect.poll(() => new URL(trainer.url()).searchParams.get('code'), { timeout: 25_000 })
       .not.toBeNull();
@@ -62,8 +59,9 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
       joinPlayer(iphoneB, code!, 'iPhone B'),
     ]);
 
-    const start = trainer.getByRole('button', { name: 'Játék indítása' });
+    const start = trainer.getByRole('button', { name: /Játék indítása.*2 fővel/ });
     await expect(start).toBeEnabled({ timeout: 25_000 });
+    trainer.once('dialog', dialog => dialog.accept());
     await start.click();
 
     // 1a: valódi touch eseménnyel ELFOGADÁS.
@@ -106,3 +104,4 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
     ]);
   }
 });
+

@@ -70,6 +70,7 @@ const playerProjectionPrefix = 'kreditjatek_firebase_player_';
 const publicGameCache = new Map<string, PublicGame>();
 const remotePlayers = new Map<string, Map<string, RemotePlayer>>();
 const queues = new Map<string, Promise<void>>();
+const pendingWrites = new Map<string, number>();
 const creationPromises = new Map<string, Promise<void>>();
 const joinPromises = new Map<string, Promise<void>>();
 
@@ -197,20 +198,21 @@ const placeholderSession = (
   selfReport: [],
 });
 
-const emitSyncStatus = (status: 'ok' | 'error', message?: string) => {
+const emitSyncStatus = (status: 'ok' | 'error' | 'pending', message?: string) => {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('kreditjatek-sync-status', {
     detail: { status, message },
   }));
 };
 
-const enqueue = (code: string, task: () => Promise<void>) => {
+const enqueue = (code: string, task: () => Promise<void>, showProgress = true) => {
   const key = code.toUpperCase();
+  if (showProgress) { pendingWrites.set(key, (pendingWrites.get(key) ?? 0) + 1); emitSyncStatus('pending'); }
   const previous = queues.get(key) ?? Promise.resolve();
   const next = previous.catch(() => undefined).then(task);
   next.then(
-    () => emitSyncStatus('ok'),
-    (error) => emitSyncStatus('error', error instanceof Error ? error.message : 'Firebase szinkronhiba.'),
+    () => { if (showProgress) { const remaining = Math.max(0, (pendingWrites.get(key) ?? 1) - 1); pendingWrites.set(key, remaining); if (remaining === 0) emitSyncStatus('ok'); } },
+    (error) => { if (showProgress) pendingWrites.set(key, Math.max(0, (pendingWrites.get(key) ?? 1) - 1)); emitSyncStatus('error', error instanceof Error ? error.message : 'Firebase szinkronhiba.'); },
   );
   queues.set(key, next);
   return next;
@@ -472,7 +474,7 @@ const subscribeTrainer = (code: string, listener: Listener) => {
         const map = new Map<string, RemotePlayer>();
         snapshot.docs.forEach((item) => map.set(item.id, item.data() as RemotePlayer));
         remotePlayers.set(code, map);
-        void enqueue(code, () => processRemotePlayers(code));
+        void enqueue(code, () => processRemotePlayers(code), false);
       },
       () => {
         playersStarted = false;
@@ -631,7 +633,22 @@ export const firebaseSessionStore = {
     const key = code.toUpperCase() + ':' + playerId;
     const pending = joinPromises.get(key);
     if (pending) await pending;
-    return readPlayerProjection(code, playerId);
+    return new Promise<GameSession>((resolve, reject) => {
+      let finished = false;
+      let unsubscribe = () => {};
+      const timer = window.setTimeout(() => finish(undefined, new Error('A belépés visszaigazolása nem érkezett meg. Kérd meg a trénert, hogy ellenőrizze a kapcsolatot, majd próbáld újra.')), 20000);
+      const finish = (session?: GameSession, error?: Error) => {
+        if (finished) return;
+        finished = true; window.clearTimeout(timer); unsubscribe();
+        if (session) { cachePlayerProjection(code, playerId, session); resolve(session); }
+        else reject(error ?? new Error('A belépés nem sikerült.'));
+      };
+      unsubscribe = onSnapshot(playerRef(code, playerId), (snapshot) => {
+        const data = snapshot.data() as RemotePlayer | undefined;
+        if (data?.view) finish(data.view);
+        else if (data?.admission === 'rejected') finish(undefined, new Error(data.joinError || 'A belépés nem sikerült.'));
+      }, (error) => finish(undefined, error));
+    });
   },
 
   async resumePlayer(code: string, playerId: string) {
@@ -643,7 +660,7 @@ export const firebaseSessionStore = {
     const data = snapshot.data() as RemotePlayer;
     if (data.authUid !== user.uid || data.playerId !== playerId) return null;
 
-    const view = data.view ?? readPlayerProjection(normalized, playerId);
+    const view = data.view;
     if (!view) return null;
 
     cachePlayerProjection(normalized, playerId, view);
@@ -679,10 +696,10 @@ export const firebaseSessionStore = {
     return localSessionStore.replaceFromRemote(session);
   },
 
-  create(startingCredit: number, expectedPlayerCount = 2) {
+  create(startingCredit: number, expectedPlayerCount = 2, flexiblePlayerCount = false) {
     const user = firebaseAuth.currentUser;
     if (!user) throw new Error('A Firebase kapcsolat még nem áll készen.');
-    const session = localSessionStore.create(startingCredit, expectedPlayerCount);
+    const session = localSessionStore.create(startingCredit, expectedPlayerCount, flexiblePlayerCount);
     const creation = enqueue(session.code, () => persistState(session));
     creationPromises.set(session.code, creation);
     void creation.finally(() => creationPromises.delete(session.code));
@@ -708,7 +725,6 @@ export const firebaseSessionStore = {
     const normalized = code.toUpperCase();
     const info = publicGameCache.get(normalized);
     const placeholder = placeholderSession(normalized, playerId, name, info);
-    cachePlayerProjection(normalized, playerId, placeholder);
     const key = normalized + ':' + playerId;
     const joining = setDoc(playerRef(normalized, playerId), {
       playerId,
@@ -927,4 +943,5 @@ export const firebaseSessionStore = {
       : subscribeTrainer(code.toUpperCase(), listener);
   },
 };
+
 
