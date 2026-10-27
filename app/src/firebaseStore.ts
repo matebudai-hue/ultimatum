@@ -205,15 +205,14 @@ const emitSyncStatus = (status: 'ok' | 'error' | 'pending', message?: string) =>
   }));
 };
 
-const enqueue = (code: string, task: () => Promise<void>) => {
+const enqueue = (code: string, task: () => Promise<void>, showProgress = true) => {
   const key = code.toUpperCase();
-  pendingWrites.set(key, (pendingWrites.get(key) ?? 0) + 1);
-  emitSyncStatus('pending');
+  if (showProgress) { pendingWrites.set(key, (pendingWrites.get(key) ?? 0) + 1); emitSyncStatus('pending'); }
   const previous = queues.get(key) ?? Promise.resolve();
   const next = previous.catch(() => undefined).then(task);
   next.then(
-    () => { const remaining = Math.max(0, (pendingWrites.get(key) ?? 1) - 1); pendingWrites.set(key, remaining); if (remaining === 0) emitSyncStatus('ok'); },
-    (error) => { pendingWrites.set(key, Math.max(0, (pendingWrites.get(key) ?? 1) - 1)); emitSyncStatus('error', error instanceof Error ? error.message : 'Firebase szinkronhiba.'); },
+    () => { if (showProgress) { const remaining = Math.max(0, (pendingWrites.get(key) ?? 1) - 1); pendingWrites.set(key, remaining); if (remaining === 0) emitSyncStatus('ok'); } },
+    (error) => { if (showProgress) pendingWrites.set(key, Math.max(0, (pendingWrites.get(key) ?? 1) - 1)); emitSyncStatus('error', error instanceof Error ? error.message : 'Firebase szinkronhiba.'); },
   );
   queues.set(key, next);
   return next;
@@ -475,7 +474,7 @@ const subscribeTrainer = (code: string, listener: Listener) => {
         const map = new Map<string, RemotePlayer>();
         snapshot.docs.forEach((item) => map.set(item.id, item.data() as RemotePlayer));
         remotePlayers.set(code, map);
-        void enqueue(code, () => processRemotePlayers(code));
+        void enqueue(code, () => processRemotePlayers(code), false);
       },
       () => {
         playersStarted = false;
