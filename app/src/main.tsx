@@ -5322,6 +5322,10 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     );
   }
 
+  if (session.decisions.some((d) => d.playerId === playerId && d.publicGoodsRound === session.publicGoodsRoundNumber && d.type === 'public_goods_contribution' && d.submissionSource === 'manual_correction')) {
+    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)} kredit.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
+  }
+
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
   const canEdit = session.publicGoodsPhase === 'open' && now < deadline;
 
