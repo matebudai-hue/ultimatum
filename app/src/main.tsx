@@ -4478,7 +4478,7 @@ function PostReportLearningRoundPanel({ session }: { session: GameSession }) {
         <h2>Tanultak belőle?</h2>
         <p>
           Ugyanazok a csoportok újabb kasszaköröket játszhatnak. Mindenki az első lezáráskor meglévő vagyonával indul tovább;
-          aki {formatCredits(session.startingCredit)} alatt maradt, {formatCredits(session.startingCredit)} kreditre egészül ki.
+          aki {formatCredits(session.startingCredit)} alatt maradt, {formatCreditInput(session.startingCredit)} kreditre egészül ki.
         </p>
         <small>
           {belowFloor.length > 0
@@ -5279,7 +5279,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   }
 
   if (session.decisions.some((d) => d.playerId === playerId && d.publicGoodsRound === session.publicGoodsRoundNumber && d.type === 'public_goods_contribution' && d.submissionSource === 'manual_correction')) {
-    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)} kredit.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
+    return <div className="submitted"><Check size={28} /><strong>A tréner rögzítette a döntésed: {formatCredits(existingAmount ?? 0)}.</strong><span>Ez a tét már nem módosítható. Várakozás a kör lezárására.</span></div>;
   }
 
   const minimumKey = currentRound.id + ':' + currentRound.minimumMode + ':' + currentRound.minimumAmount;
