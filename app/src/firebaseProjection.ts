@@ -57,7 +57,8 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
     strategicTaskSeenAt: ownTaskSeen,
     strategicSubmitIntentAt: ownIntent,
     strategicTechnicalIssues: clone(
-      session.strategicTechnicalIssues.filter((issue) => issue.playerId === playerId && !issue.resolvedAt),
+      session.strategicTechnicalIssues.filter((issue) => issue.playerId === playerId &&
+        (!issue.resolvedAt || (issue.resolution === 'reopened' && issue.roundKey === session.roundKey))),
     ),
     manualCorrections: clone(
       session.manualCorrections.filter((correction) => correction.playerId === playerId),

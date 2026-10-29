@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { commandContext, assertCommandContext } from '../src/commandContext';
+import { buildParticipantProjection } from '../src/firebaseProjection';
 const dom = new JSDOM('', { url: 'http://localhost/' });
 for (const key of ['window', 'document', 'localStorage', 'sessionStorage', 'CustomEvent', 'StorageEvent'] as const)
   Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true });
@@ -15,6 +16,10 @@ assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTas
 session.strategicTechnicalIssues.push({pairingId:pair.id, playerId:pair.playerA, roundKey:'1a', role:'proposer', detectedAt:new Date().toISOString(), resolvedAt:new Date().toISOString(), resolution:'reopened'});
 assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', oldContext));
 assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', commandContext(session, pair.playerA)));
+const reopenedView = buildParticipantProjection(session, pair.playerA);
+assert.deepEqual(commandContext(reopenedView, pair.playerA), commandContext(session, pair.playerA));
+assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', commandContext(reopenedView, pair.playerA)));
+assert.equal(buildParticipantProjection(session, pair.playerB).strategicTechnicalIssues.length,0,'The partner must not receive the private reopening history');
 for (const amount of [undefined, NaN, Infinity, -1, 0.5, 100001]) {
   assert.throws(() => store.submitStrategicDecision(game.code, pair.playerA, { type: 'ultimatum_offer', amount }));
 }
