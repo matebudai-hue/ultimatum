@@ -35,6 +35,7 @@ import {
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
+import { renderCreditStandings, STANDINGS_PAGE_SIZE } from './creditStandings';
 import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
@@ -914,7 +915,7 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
 }
 
 type RulesProjectionGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
-type ProjectionMode = 'qr' | 'summary' | 'blank' | RulesProjectionGame;
+type ProjectionMode = 'qr' | 'summary' | 'standings' | 'blank' | RulesProjectionGame;
 
 const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short: string }[] = [
   { id: 'ultimatum', label: 'Ultimátumjáték', short: '1. játék' },
@@ -1333,6 +1334,13 @@ function renderSummaryProjectionWindow(session: GameSession) {
   return true;
 }
 
+function renderStandingsProjectionWindow(session: GameSession, page=0) {
+  const target=ensureProjectorWindow();
+  if(!target) return false;
+  projectorContentMode='standings';
+  return renderCreditStandings(target,session,page);
+}
+
 function TrainerCockpit({
   session,
   joinUrl,
@@ -1343,6 +1351,8 @@ function TrainerCockpit({
   onOpenDebrief: () => void;
 }) {
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
+  const [standingsPage, setStandingsPage] = useState(0);
+  const standingsPages = Math.max(1,Math.ceil(session.players.filter(player=>!player.isBot).length/STANDINGS_PAGE_SIZE));
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
   const [externalProjectionLabel, setExternalProjectionLabel] = useState<string | null>(null);
   const stickyRef = React.useRef<HTMLElement>(null);
@@ -1373,6 +1383,7 @@ function TrainerCockpit({
     let opened = false;
     if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
     else if (mode === 'summary') opened = renderSummaryProjectionWindow(session);
+    else if (mode === 'standings') { setStandingsPage(0); opened = renderStandingsProjectionWindow(session,0); }
     else if (mode === 'blank') opened = renderBlankProjectionWindow();
     else opened = renderRulesProjectionWindow(session, mode);
 
@@ -1385,9 +1396,10 @@ function TrainerCockpit({
     if (!projectorWindow || projectorWindow.closed || projectorContentMode !== selectedProjectionMode) return;
     if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
     else if (selectedProjectionMode === 'summary') renderSummaryProjectionWindow(session);
+    else if (selectedProjectionMode === 'standings') renderStandingsProjectionWindow(session,standingsPage);
     else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
     else renderRulesProjectionWindow(session, selectedProjectionMode);
-  }, [joinUrl, selectedProjectionMode, session]);
+  }, [joinUrl, selectedProjectionMode, session, standingsPage]);
 
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
   const strategicClosed = strategic && session.closedRounds.includes(session.roundKey as StrategicRound);
@@ -1530,6 +1542,7 @@ function TrainerCockpit({
                   Aktuális: {externalProjectionLabel ?? (
                     selectedProjectionMode === 'qr' ? 'QR-kód' :
                     selectedProjectionMode === 'summary' ? 'Kivezetés · csoportkép' :
+                    selectedProjectionMode === 'standings' ? 'Végeredmény · kreditek játékonként' :
                     selectedProjectionMode === 'blank' ? 'Üres képernyő' :
                     RULES_PROJECTION_OPTIONS.find((option) => option.id === selectedProjectionMode)?.label ?? 'Játékszabály'
                   )}
@@ -1552,8 +1565,10 @@ function TrainerCockpit({
                 </button>
               ))}
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'summary' ? 'active' : ''} onClick={() => projectMode('summary')}><BarChart3 size={15} />Kivezetés · csoportkép</button>
+              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'standings' ? 'active' : ''} onClick={() => projectMode('standings')}><BarChart3 size={15} />Végeredmény</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
             </div>
+            {selectedProjectionMode === 'standings' && !externalProjectionLabel && <div className="standings-page-controls"><button type="button" className="secondary" disabled={standingsPage===0} onClick={()=>setStandingsPage(page=>Math.max(0,page-1))}>Előző oldal</button><strong>{Math.min(standingsPage+1,standingsPages)} / {standingsPages}</strong><button type="button" className="secondary" disabled={standingsPage+1>=standingsPages} onClick={()=>setStandingsPage(page=>page+1)}>Következő oldal</button><span>Végső kredit és nettó eredmények játékonként.</span></div>}
             <small>
               A projektorablakot egyszer húzd át a kivetítőre. Ezután minden váltást innen végzel; az ablak a helyén marad.
             </small>
@@ -1981,10 +1996,9 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
 function ReportPanel({ session }: { session: GameSession }) {
   type SummaryGame = 'ultimatum' | 'dictator' | 'trust' | 'pool';
 
-  const [includeBots, setIncludeBots] = useState(false);
   const botPair = (p: Pairing) => p.playerA === 'BOT' || p.playerB === 'BOT' || p.playerAIsBot || p.playerBIsBot || session.decisions.some(d => d.pairingId === p.id && d.isBotDecision);
-  const reportSession = includeBots ? session : { ...session, pairings: session.pairings.filter(p => !botPair(p)) };
-  const summary = reportSummary(session, includeBots);
+  const reportSession = session;
+  const summary = reportSummary(session, true);
   const currentSummaryGame: SummaryGame | null =
     session.roundKey === '1a' || session.roundKey === '1b' ? 'ultimatum' :
     session.roundKey === '2a' || session.roundKey === '2b' ? 'dictator' :
@@ -2140,14 +2154,7 @@ function ReportPanel({ session }: { session: GameSession }) {
         </button>
       </div>
 
-      <details className="game-summary-settings">
-        <summary>Összesítő beállításai</summary>
-        <label className="game-summary-bots">
-          <input type="checkbox" checked={includeBots} onChange={event => setIncludeBots(event.target.checked)} />
-          <span>Rendszerjátékosok bevonása az összesítésbe</span>
-        </label>
-        <p className="game-summary-note">Alapértelmezésben csak az ember–ember párok szerepelnek a páros játékok összesítőiben. A teljes CSV minden döntést tartalmaz, gépi jelöléssel.</p>
-      </details>
+      {session.pairings.some(botPair) && <p className="game-summary-note">A tartalékjátékossal játszott párok is szerepelnek az összesítésben, külön jelöléssel.</p>}
       <div className="game-summary-stack">
         <section className={blockClass('ultimatum')}>
           <button className="game-summary-toggle" type="button" onClick={() => toggleGame('ultimatum')} aria-expanded={openGames.ultimatum}>
@@ -3374,14 +3381,15 @@ const PATTERN_TITLES: Record<PatternGame, string> = {
 function patternPairings(session: GameSession, gameId: 'ultimatum' | 'dictator' | 'trust') {
   return session.pairings.filter((pairing) =>
     pairing.gameId === gameId &&
-    pairing.playerA !== 'BOT' &&
-    pairing.playerB !== 'BOT' &&
     session.closedRounds.includes(pairing.roundKey) &&
     !session.decisions.some((decision) =>
       decision.pairingId === pairing.id &&
-      (decision.isBotDecision || decision.type === 'ultimatum_timeout' || decision.timedOutRole)
+      (decision.type === 'ultimatum_timeout' || decision.timedOutRole)
     )
-  );
+  ).sort((a, b) => {
+    const system = (p: Pairing) => p.playerA === 'BOT' || p.playerB === 'BOT' || p.playerAIsBot || p.playerBIsBot || session.decisions.some(d => d.pairingId === p.id && d.isBotDecision);
+    return Number(system(a)) - Number(system(b));
+  });
 }
 
 function ParticipantPatterns({ session, game, showNames, roleFilter, page, onPageChange }: { session: GameSession; game: 'ultimatum' | 'dictator' | 'trust'; showNames: boolean; roleFilter: 'all' | 'first-giver' | 'first-receiver'; page: number; onPageChange: (page: number) => void }) {
@@ -3435,18 +3443,21 @@ function SplitDecisionPattern({
         accepted,
         giver: playerName(session, pairing.playerA),
         receiver: playerName(session, pairing.playerB),
+        system: pairing.playerA === 'BOT' || pairing.playerB === 'BOT' || pairDecisions.some(d => d.isBotDecision),
       };
     })
-    .sort((a, b) => a.amount - b.amount);
+    .sort((a, b) => Number(a.system) - Number(b.system) || a.amount - b.amount);
 
   if (rows.length === 0) {
-    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+    return <div className="pattern-empty">Még nincs lezárt döntés ehhez a grafikonhoz.</div>;
   }
 
   const total = Math.max(1, session.startingCredit);
-  const pages = Math.max(1, Math.ceil(rows.length / 10));
+  const humanRows = rows.filter(row => !row.system);
+  const systemRows = rows.filter(row => row.system);
+  const pages = Math.max(1, Math.ceil(humanRows.length / 10));
   const safePage = Math.min(page, pages - 1);
-  const visibleRows = rows.slice(safePage * 10, safePage * 10 + 10);
+  const visibleRows = [...humanRows.slice(safePage * 10, safePage * 10 + 10), ...systemRows];
 
   return (
     <div className="split-pattern-chart">
@@ -3462,7 +3473,7 @@ function SplitDecisionPattern({
           const pairLabel = row.giver + ' → ' + row.receiver;
           const status = game === 'ultimatum' ? (row.accepted ? 'Elfogadva' : 'Elutasítva') : 'Átadva';
           return (
-            <div className="split-pattern-item" key={row.pairing.id}>
+            <div className={'split-pattern-item' + (row.system ? ' is-system-pair' : '')} key={row.pairing.id}>
               <div className="split-pattern-value">{formatCredits(row.amount)}</div>
               <div
                 className={'split-pattern-bar ' + (game === 'ultimatum' ? (row.accepted ? 'is-accepted' : 'is-rejected') : 'is-dictator')}
@@ -3478,6 +3489,7 @@ function SplitDecisionPattern({
               <div className="split-pattern-label" title={showNames ? pairLabel : undefined}>
                 {showNames ? pairLabel : String(safePage * 10 + index + 1)}
               </div>
+              {row.system && <span className="system-pair-badge">Tartalékjátékos</span>}
               {game === 'ultimatum' && (
                 <div className={'split-pattern-status ' + (row.accepted ? 'accepted' : 'rejected')}>
                   {row.accepted ? 'elfogadva' : 'elutasítva'}
@@ -3534,6 +3546,7 @@ function TrustBarsPattern({
       returnPercent,
       giver: playerName(session, pairing.playerA),
       receiver: playerName(session, pairing.playerB),
+      system: pairing.playerA === 'BOT' || pairing.playerB === 'BOT' || pairDecisions.some(d => d.isBotDecision),
     };
   });
 
@@ -3541,18 +3554,19 @@ function TrustBarsPattern({
   const roundB = rows.filter((row) => row.pairing.roundKey === '3b');
 
   if (roundA.length === 0 && roundB.length === 0) {
-    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+    return <div className="pattern-empty">Még nincs lezárt döntés ehhez a grafikonhoz.</div>;
   }
 
   const pageCount = Math.max(
     1,
-    Math.ceil(roundA.length / PAGE_SIZE_PER_ROUND),
-    Math.ceil(roundB.length / PAGE_SIZE_PER_ROUND),
+    Math.ceil(roundA.filter(row => !row.system).length / PAGE_SIZE_PER_ROUND),
+    Math.ceil(roundB.filter(row => !row.system).length / PAGE_SIZE_PER_ROUND),
   );
   const safePage = Math.min(Math.max(0, page), pageCount - 1);
   const startIndex = safePage * PAGE_SIZE_PER_ROUND;
-  const visibleA = roundA.slice(startIndex, startIndex + PAGE_SIZE_PER_ROUND);
-  const visibleB = roundB.slice(startIndex, startIndex + PAGE_SIZE_PER_ROUND);
+  const onPage = (round: typeof rows) => [...round.filter(row => !row.system).slice(startIndex, startIndex + PAGE_SIZE_PER_ROUND), ...round.filter(row => row.system)];
+  const visibleA = onPage(roundA);
+  const visibleB = onPage(roundB);
 
   const renderRound = (
     title: string,
@@ -3581,9 +3595,9 @@ function TrustBarsPattern({
             : pairNumber + '. pár · Küldő → Fogadó';
 
           return (
-            <article className="trust-simple-pair" key={row.pairing.id}>
+            <article className={'trust-simple-pair' + (row.system ? ' is-system-pair' : '')} key={row.pairing.id}>
               <div className="trust-simple-pair-head">
-                <strong title={showNames ? pairText : undefined}>{pairText}</strong>
+                <strong title={showNames ? pairText : undefined}>{pairText}{row.system && <span className="system-pair-badge">Tartalékjátékos</span>}</strong>
                 <div className="trust-simple-story" aria-label={
                   formatAmount(row.sent) + ' kredit ment, ' +
                   formatAmount(row.multiplied) + ' kredit lett belőle, ' +
@@ -3672,11 +3686,12 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
       returnPercent: Math.max(0, Math.min(100, returnPercent)),
       giver: playerName(session, pairing.playerA),
       receiver: playerName(session, pairing.playerB),
+      system: pairing.playerA === 'BOT' || pairing.playerB === 'BOT' || pairDecisions.some(d => d.isBotDecision),
     };
   });
 
   if (rows.length === 0) {
-    return <div className="pattern-empty">Még nincs lezárt, ember–ember döntés ehhez a grafikonhoz.</div>;
+    return <div className="pattern-empty">Még nincs lezárt döntés ehhez a grafikonhoz.</div>;
   }
 
   const x = (percent: number) => 92 + percent * 7.96;
@@ -3724,11 +3739,11 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
           const angle = bucketTotal > 1 ? (Math.PI * 2 * bucketIndex) / bucketTotal : 0;
           const px = Math.max(108, Math.min(872, x(row.sentPercent) + Math.cos(angle) * spreadRadius));
           const py = Math.max(96, Math.min(526, y(row.returnPercent) + Math.sin(angle) * spreadRadius));
-          const label = showNames ? row.giver + ' → ' + row.receiver : String(index + 1);
+          const label = showNames ? row.giver + ' → ' + row.receiver : row.system ? 'T' : String(index + 1);
           const labelOnLeft = showNames && px > 720;
           return (
-            <g key={row.pairing.id} className="trust-point">
-              <title>{(showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár') + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
+            <g key={row.pairing.id} className={'trust-point' + (row.system ? ' is-system-pair' : '')}>
+              <title>{(row.system ? 'Tartalékjátékos · ' : '') + (showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár') + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
               <circle cx={px} cy={py} r={showNames ? 10 : 13} />
               <text
                 x={showNames ? px + (labelOnLeft ? -14 : 14) : px}
@@ -3742,6 +3757,7 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
           );
         })}
       </svg>
+      {rows.some(row => row.system) && <div className="pattern-legend"><span className="system-pair-badge">T · Tartalékjátékossal játszott pár</span></div>}
     </div>
   );
 }
@@ -3880,7 +3896,7 @@ function PublicGoodsPatterns({
                         <span>minimum {Math.round(minimumPercent * 10) / 10}%</span>
                       </div>
                     )}
-                    <div className="pool-pattern-stack" style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
+                    <div className={'pool-pattern-stack' + (hoveredSegment?.roundId === round.id ? ' has-highlight' : '')} style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
                       {round.memberIds.map((playerId) => {
                         const memberIndex = group.memberIds.indexOf(playerId);
                         const amount = round.contributions[playerId] ?? 0;
@@ -3891,7 +3907,7 @@ function PublicGoodsPatterns({
                         const segmentShareOfBar = totalPercent > 0 ? segmentOfGroupWealth / totalPercent * 100 : 0;
                         return (
                           <div
-                            className="pool-pattern-segment"
+                            className={'pool-pattern-segment' + (hoveredSegment?.roundId === round.id && hoveredSegment?.playerId === playerId ? ' is-highlighted' : '')}
                             key={playerId}
                             tabIndex={0}
                             role="img"
@@ -3923,7 +3939,9 @@ function PublicGoodsPatterns({
                               potPercent,
                             })}
                             onBlur={() => onHoverSegment(null)}
-                          />
+                          >
+                            {hoveredSegment?.roundId === round.id && hoveredSegment?.playerId === playerId && <svg className="pool-pattern-pointer" viewBox="0 0 36 44" aria-hidden="true"><path d="M3 3 L7 32 L15 24 L24 40 L32 35 L23 20 L34 17 Z" fill="#10213a" stroke="white" strokeWidth="3" strokeLinejoin="round" /></svg>}
+                          </div>
                         );
                       })}
                     </div>
@@ -3956,6 +3974,9 @@ function renderPatternProjectionFromElement(game: PatternGame) {
   const doc = target.document;
   const gameLabel = PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '';
   doc.title = 'Kreditjáték – Mintázatok – ' + gameLabel;
+  const styleSources = Array.from(document.querySelectorAll('link[rel="stylesheet"],style'));
+  const styleSignature = styleSources.map(node => node instanceof HTMLLinkElement ? node.href : node.textContent ?? '').join('\n');
+  if (doc.getElementById('kredit-pattern-projection-style')?.getAttribute('data-source-style') !== styleSignature) {
   doc.head.replaceChildren();
 
   document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach((link) => {
@@ -3964,8 +3985,11 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     copy.href = link.href;
     doc.head.appendChild(copy);
   });
+  document.querySelectorAll('style').forEach((style) => doc.head.appendChild(doc.importNode(style, true)));
 
   const projectionStyle = doc.createElement('style');
+  projectionStyle.id = 'kredit-pattern-projection-style';
+  projectionStyle.setAttribute('data-source-style', styleSignature);
   projectionStyle.textContent = [
     'html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#f4f7fb}',
     'body{padding:22px 30px;display:flex;align-items:stretch}',
@@ -3988,6 +4012,7 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pool-pattern-legend span,.pool-pattern-minimum span{font-size:10px!important}'
   ].join('');
   doc.head.appendChild(projectionStyle);
+  }
   doc.body.replaceChildren(doc.importNode(source, true));
   return true;
 }
@@ -4094,7 +4119,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
 
           <div className="pattern-chart-area">
             {game !== 'publicGoods' && <div className="round-view-controls">{([{id:'first', label:'1. kör'}, {id:'second', label:'2. kör'}, {id:'people', label:'Résztvevők'}, {id:'first-giver', label:'Előbb küldő / döntő'}, {id:'first-receiver', label:'Előbb fogadó'}] as const).map(option => <button type="button" key={option.id} className={roundView === option.id ? 'secondary active' : 'secondary'} onClick={() => { setRoundView(option.id); setTrustPage(0); }}>{option.label}</button>)}</div>}
-            {game !== 'publicGoods' && <p className="pattern-explanation">{roundView === 'first' ? '1. kör' : roundView === 'second' ? '2. kör' : 'Szerepsorrend és résztvevői nézet'} · A körgrafikonok az ember–ember, időtúllépés nélküli párokat mutatják. A résztvevői nézet jelöli az eltéréseket.</p>}
+            {game !== 'publicGoods' && <p className="pattern-explanation">{roundView === 'first' ? '1. kör' : roundView === 'second' ? '2. kör' : 'Szerepsorrend és résztvevői nézet'} · A tartalékjátékossal játszott párok külön jelöléssel szerepelnek. Az időtúllépéseket a résztvevői nézet mutatja.</p>}
             {game !== 'publicGoods' && !['first','second'].includes(roundView) && <ParticipantPatterns key={game + roundView} session={session} game={game} showNames={showNames} page={trustPage} onPageChange={setTrustPage} roleFilter={roundView === 'first-giver' ? 'first-giver' : roundView === 'first-receiver' ? 'first-receiver' : 'all'} />}
             {game === 'ultimatum' && ['first','second'].includes(roundView) && <SplitDecisionPattern session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '1a' : '1b'))}} game="ultimatum" showNames={showNames} page={trustPage} onPageChange={setTrustPage} />}
             {game === 'dictator' && ['first','second'].includes(roundView) && <SplitDecisionPattern session={{...session, closedRounds: session.closedRounds.filter(r => r === (roundView === 'first' ? '2a' : '2b'))}} game="dictator" showNames={showNames} page={trustPage} onPageChange={setTrustPage} />}

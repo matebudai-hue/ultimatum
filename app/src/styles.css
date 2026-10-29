@@ -2614,3 +2614,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:760px){#debrief-workspace{scroll-margin-top:220px}}
 .pool-sticky-live{top:calc(var(--trainer-sticky-height, 180px) + 4px)}
 @media(max-width:760px){.pool-sticky-live{top:calc(var(--trainer-sticky-height, 220px) + 4px)}}
+
+/* A tartalékjátékos adata látható, de elkülönül a résztvevői döntésektől. */
+.system-pair-badge{display:inline-block;padding:3px 6px;border:1px solid #d59c35;border-radius:5px;background:#fff4d6;color:#794500;font-size:10px;font-weight:850;line-height:1.2}
+.split-pattern-item.is-system-pair{position:relative;border-left:2px dashed #d59c35;padding-left:8px;background:linear-gradient(#fff9eb,#fff)}
+.split-pattern-item>.system-pair-badge{position:absolute;top:28px;left:50%;transform:translateX(-50%);z-index:3;max-width:95%;text-align:center}
+.trust-simple-pair.is-system-pair{border:2px dashed #d59c35;background:#fff9eb}
+.trust-simple-pair-head .system-pair-badge{margin-left:7px}
+.trust-point.is-system-pair circle{fill:#b97109;stroke:#fff0bd;stroke-width:5}
+/* A kiemelés és a mutató a kivetítőre másolt grafikonban is megmarad. */
+.pool-pattern-stack.has-highlight{overflow:visible}
+.pool-pattern-segment.is-highlighted{z-index:4;box-shadow:inset 0 0 0 3px #fff,0 0 0 3px #10213a;filter:brightness(1.1)}
+.pool-pattern-pointer{position:absolute;left:50%;top:50%;width:36px;height:44px;transform:translate(-3px,-3px);overflow:visible;pointer-events:none;filter:drop-shadow(0 2px 3px #0009);z-index:20}
+.standings-page-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;color:#52657b}.standings-page-controls strong{font-variant-numeric:tabular-nums;color:#10213a}.standings-page-controls span{font-size:13px}
