@@ -40,3 +40,14 @@ assert.equal(dom.window.document.querySelector('details')!.open,false);
 openPatternNote('note');assert.equal(dom.window.document.querySelector('details')!.open,true);
 openPatternNote('note');assert.equal(dom.window.document.querySelector('details')!.open,false);
 openPatternNote('missing');
+
+const failed={...round,success:false,minimumAmount:1000,startingPlayerWealth:{a:100,b:50,c:10}};
+assert.equal(poolMarkers(failed,'a').loss,false,'A failed minimum round must not flag everyone as a special loss');
+assert.equal(poolMarkers(failed,'a').wiped,true,'All starting wealth was lost');
+assert.equal(poolMarkers(failed,'b').wiped,false,'Partial loss is not a wipeout');
+assert.equal(poolMarkers(failed,'c').wiped,true);
+assert.equal(poolMarkers({...failed,startingPlayerWealth:undefined},'a').wiped,false,'Unknown starting wealth must not imply wipeout');
+assert.equal(poolMarkers({...failed,startingPlayerWealth:{a:0},contributions:{a:0}},'a').wiped,false,'Already zero is not newly wiped out');
+assert.equal(poolMarkers({...failed,status:'open'},'a').wiped,false);
+const failedHtml=renderToStaticMarkup(<PoolNotes session={{...session,reflections:[]}} rounds={[failed]} showNames={false}/>);
+assert.match(failedHtml,/Lenullázódott/);assert.doesNotMatch(failedHtml,/Bukó:/);

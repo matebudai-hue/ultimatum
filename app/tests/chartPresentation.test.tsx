@@ -43,7 +43,7 @@ for(const page of [0,1]) {
 // The projected snapshot must carry both the hover data and its visible pointer.
 const poolSource=compile('function PublicGoodsPatterns(','function renderPatternProjectionFromElement(');
 const Pool=new Function('PairComments','PoolNotes','pairComments','poolMarkers','openPatternNote','pairNoteId','poolNoteId','React','poolPlayerColor','playerName','formatCredits',poolSource+';return PublicGoodsPatterns;')(PairComments,PoolNotes,pairComments,poolMarkers,openPatternNote,pairNoteId,poolNoteId,React,()=> 'red',playerName,(n:number)=>n+' kr');
-const pool={players:[{id:'a',name:'Titkos Anna'},{id:'b',name:'Titkos Béla'}],groups:[{id:'g',name:'Balaton',memberIds:['a','b']}],publicGoodsRounds:[{id:'r',groupId:'g',roundNumber:1,status:'settled',memberIds:['a','b'],contributions:{a:100,b:200},totalContribution:300,startingGroupWealth:1000,startingPlayerWealth:{a:500,b:500}}]};
+const pool={players:[{id:'a',name:'Titkos Anna'},{id:'b',name:'Titkos Béla'}],groups:[{id:'g',name:'Balaton',memberIds:['a','b']}],publicGoodsRounds:[{id:'r',groupId:'g',roundNumber:1,status:'settled',success:true,payoutPerPlayer:100,memberIds:['a','b'],contributions:{a:100,b:200},totalContribution:300,startingGroupWealth:1000,startingPlayerWealth:{a:500,b:500}}]};
 const hover={groupId:'g',roundId:'r',roundLabel:'1. kör',playerId:'a',amount:100,ownPercent:20,potPercent:33.3};
 const html=renderToStaticMarkup(<Pool session={pool} showNames={false} selectedGroupId="g" onSelectGroup={()=>{}} hoveredSegment={hover} onHoverSegment={()=>{}}/>);
 const controller=new JSDOM('<style>.pool-pattern-pointer{width:36px;height:44px}</style><div id="patterns-stage-publicGoods">'+html+'</div>',{url:'http://localhost'});

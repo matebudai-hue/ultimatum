@@ -3744,7 +3744,7 @@ function PublicGoodsPatterns({
                   <div className="pool-round-markers">{round.memberIds.map((id,index)=> {
                     const markers=poolMarkers(round,id);
                     const commented=(session.reflections??[]).some(r=>r.playerId===id && r.decisionId===`decision:publicGoods:r${round.roundNumber}:${round.groupId}:${id}` && r.comment.trim());
-                    return markers.loss || markers.near || markers.large || commented ? <button type="button" className="pattern-note-trigger" key={id} title={displayPlayer(id)+' · részletek'} onClick={()=>openPatternNote(poolNoteId(round.id,id))} style={{borderLeft:'3px solid '+poolPlayerColor(Math.max(0,group.memberIds.indexOf(id)))}}>{group.memberIds.indexOf(id)+1}. {markers.loss?'− ':''}{markers.near?'≈ ':''}{markers.large?'◆ ':''}{commented?'💬':''}</button> : null;
+                    return markers.wiped || markers.loss || markers.near || markers.large || commented ? <button type="button" className="pattern-note-trigger" key={id} title={displayPlayer(id)+' · részletek'} onClick={()=>openPatternNote(poolNoteId(round.id,id))} style={{borderLeft:'3px solid '+poolPlayerColor(Math.max(0,group.memberIds.indexOf(id)))}}>{group.memberIds.indexOf(id)+1}. {markers.wiped?'0 ':''}{markers.loss?'− ':''}{markers.near?'≈ ':''}{markers.large?'◆ ':''}{commented?'💬':''}</button> : null;
                   })}</div>
                   <strong>{learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör'}</strong>
                   {gap !== undefined && (
