@@ -100,7 +100,8 @@ test('A közös kassza állapotsávja a rögzített vezérlés alatt marad', asy
   } finally { await context.close(); }
 });
 
-test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en', async ({ browser }) => {
+test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebase-en', async ({ browser }) => {
+  test.setTimeout(180_000);
   const trainerContext = await browser.newContext({
     ...devices['Desktop Safari'],
     browserName: undefined,
@@ -111,6 +112,7 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
   const trainer = await trainerContext.newPage();
   const iphoneA = await iphoneAContext.newPage();
   const iphoneB = await iphoneBContext.newPage();
+  for (const page of [trainer, iphoneA, iphoneB]) page.setDefaultTimeout(25_000);
 
   try {
     await trainer.goto('/?role=trainer');
@@ -161,8 +163,59 @@ test('iPhone Safari: Ultimátum elfogadás és elutasítás átmegy Firebase-en'
 
     const close1b = trainer.getByRole('button', { name: 'Kör lezárása és könyvelése' });
     await expect(close1b).toBeEnabled({ timeout: 25_000 });
+    await close1b.click();
 
-    console.log('IPHONE SAFARI ULTIMATUM ACCEPT/REJECT OK · game=' + code);
+    const actorFor = async (label: string) => {
+      await expect.poll(async () =>
+        await iphoneA.getByLabel(label, {exact:true}).count() + await iphoneB.getByLabel(label, {exact:true}).count(),
+      ).toBe(1);
+      return await iphoneA.getByLabel(label, {exact:true}).count() ? iphoneA : iphoneB;
+    };
+    const amountDecision = async (page: Page, label: string, button: string, amount: string) => {
+      // The formatted amount preview is also inside the label once a draft exists.
+      const input = page.getByLabel(label, {exact:false});
+      // Focus first: WebKit must finish switching the formatted saved value to
+      // its editable representation before select-all/replacement takes place.
+      await input.tap();
+      await input.fill(amount);
+      await expect(input).toHaveValue(amount);
+      page.once('dialog', dialog => dialog.accept());
+      await page.getByRole('button', {name:button,exact:true}).tap();
+    };
+    for (let round=0;round<4;round++) {
+      await trainer.getByRole('button',{name:'Következő kör indítása',exact:true}).click();
+      if (round<2) {
+        const dictator = await actorFor('A másik játékosnak adott kredit');
+        await amountDecision(dictator,'A másik játékosnak adott kredit','Döntés elküldése','20000');
+      } else {
+        const sender = await actorFor('Mennyit küldesz a másik játékosnak?');
+        await amountDecision(sender,'Mennyit küldesz a másik játékosnak?','Küldés','30000');
+        const returner = await actorFor('Mennyit adsz vissza?');
+        await amountDecision(returner,'Mennyit adsz vissza?','Visszaadás elküldése','45000');
+      }
+      const close = trainer.getByRole('button',{name:'Kör lezárása és könyvelése',exact:true});
+      await expect(close).toBeEnabled();
+      await close.click();
+    }
+    await trainer.getByRole('button',{name:'Első szakasz lezárása → csapatképzés',exact:true}).click();
+    await trainer.getByRole('button',{name:'Első kasszakör indítása',exact:true}).click();
+    await amountDecision(iphoneA,'Befizetés','Tét mentése','10000');
+    await expect(iphoneA.getByText(/Beérkezett:/)).toBeVisible();
+    await iphoneA.reload();
+    await expect(iphoneA.getByText(/Beérkezett:/)).toBeVisible();
+    await iphoneA.getByRole('button',{name:'Módosítom',exact:true}).tap();
+    await amountDecision(iphoneA,'Befizetés','Tét módosítása','15000');
+    await expect(iphoneA.getByText(/Beérkezett:.*15\s*000/)).toBeVisible();
+    await amountDecision(iphoneB,'Befizetés','Tét mentése','20000');
+    await expect(iphoneB.getByText(/Beérkezett:.*20\s*000/)).toBeVisible();
+    await expect(trainer.locator('.trainer-pulse .pulse-card').first().getByText('2/2',{exact:true})).toBeVisible();
+    await trainer.getByRole('button',{name:'Tétek lezárása',exact:true}).click();
+    await expect(iphoneA.getByText(/Tét lezárva:.*15\s*000/)).toBeVisible();
+    await trainer.getByRole('button',{name:'Bank elszámol',exact:true}).click();
+    await expect(iphoneA.getByText(/Visszakaptál:.*35\s*000/)).toBeVisible();
+    await expect(iphoneB.getByText(/Visszakaptál:.*35\s*000/)).toBeVisible();
+
+    console.log('IPHONE SAFARI SIX ROUNDS + POOL EDIT + RELOAD + EXACT PAYOUT OK · game=' + code);
   } finally {
     await Promise.all([
       trainerContext.close(),

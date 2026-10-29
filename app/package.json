@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/debriefGrouping.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/browserCompat.test.ts && tsx tests/technicalAudit.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsx tests/resilienceStress.test.ts && tsc --noEmit && tsx tests/auditFixes.test.ts && tsx tests/amountInput.test.tsx && tsx tests/publicGoodsUi.test.tsx && tsx tests/trainerIntervention.test.ts && tsx tests/flexibleLobby.test.ts && tsx tests/participantPatterns.test.tsx && tsx tests/poolPatternPrivacy.test.tsx && tsx tests/trustMatrixPrivacy.test.tsx",
+    "test": "tsx tests/flow.test.ts && tsx tests/firebaseProjection.test.ts && tsx tests/reconnect.test.ts && tsx tests/stateBudget.test.ts && tsx tests/debriefEngine.test.ts && tsx tests/debriefGrouping.test.ts && tsx tests/selfReportExport.test.ts && tsx tests/browserCompat.test.ts && tsx tests/technicalAudit.test.ts && tsx tests/projectionStory.test.ts && tsx tests/tenPlayerE2E.test.ts && tsx tests/twentySevenPlayerE2E.test.ts && tsx tests/resilienceStress.test.ts && tsc --noEmit && tsx tests/auditFixes.test.ts && tsx tests/amountInput.test.tsx && tsx tests/publicGoodsUi.test.tsx && tsx tests/trainerIntervention.test.ts && tsx tests/flexibleLobby.test.ts && tsx tests/participantPatterns.test.tsx && tsx tests/poolPatternPrivacy.test.tsx && tsx tests/trustMatrixPrivacy.test.tsx && tsx tests/commandContext.test.ts && tsx tests/sessionGuards.test.ts && tsx tests/legacyRuntime.test.ts && tsx tests/reopenedTaskUi.test.tsx && tsx tests/storageQuota.test.ts",
     "preview": "vite preview",
     "test:rules": "tsx tests/firebaseRules.test.ts",
     "test:projection": "tsx tests/firebaseProjection.test.ts",
@@ -40,6 +40,7 @@
     "@playwright/test": "latest"
   },
   "overrides": {
-    "@grpc/grpc-js": "1.14.6"
+    "@grpc/grpc-js": "1.14.6",
+    "re2js": "2.8.7"
   }
 }

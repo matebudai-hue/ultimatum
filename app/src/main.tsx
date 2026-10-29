@@ -39,7 +39,7 @@ import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
-import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage } from './browserCompat';
+import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage, removeStorage, storageKeys } from './browserCompat';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -97,10 +97,10 @@ function completeDemoRound(code: string) {
 
 function ensureTrainerDemo() {
   if (params.get('reset') === '1') {
-    localStorage.removeItem('kreditjatek_demo_code');
+    removeStorage('kreditjatek_demo_code');
   }
 
-  const stored = localStorage.getItem('kreditjatek_demo_code');
+  const stored = readStorage('kreditjatek_demo_code');
   const storedSession = stored ? gameStore.get(stored) : null;
   if (stored && storedSession) {
     storedSession.players.forEach((player) => gameStore.touchPlayer(stored, player.id));
@@ -117,7 +117,7 @@ function ensureTrainerDemo() {
     gameStore.nextRound(demo.code);
   }
 
-  localStorage.setItem('kreditjatek_demo_code', demo.code);
+  writeStorage('kreditjatek_demo_code', demo.code);
   return demo.code;
 }
 
@@ -268,8 +268,8 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
   const [error, setError] = useState('');
   const recentGames = useMemo(() => {
     try {
-      return Object.keys(localStorage).filter(key => key.startsWith('kreditjatek_session_')).map(key => {
-        try { return JSON.parse(localStorage.getItem(key) || 'null') as GameSession | null; } catch { return null; }
+      return storageKeys('kreditjatek_session_').map(key => {
+        try { return JSON.parse(readStorage(key) || 'null') as GameSession | null; } catch { return null; }
       }).filter((item): item is GameSession => Boolean(item?.code && item?.createdAt)).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,20);
     } catch { return []; }
   }, []);
@@ -588,7 +588,7 @@ function TrainerPulse({ session }: { session: GameSession }) {
       timeClass = seconds <= 5 ? 'danger-card' : seconds <= 10 ? 'warning' : 'time-active';
     } else {
       const roundProgress = gameStore.roundProgress(session);
-      timeValue = roundProgress.complete ? 'kész' : '30 mp';
+      timeValue = roundProgress.complete ? 'kész' : `${STRATEGIC_DECISION_SECONDS} mp`;
       timeLabel = roundProgress.complete ? 'minden döntés beérkezett' : 'játékosonként, a feladat megjelenésétől';
       timeClass = roundProgress.complete ? 'success' : 'neutral-card';
     }
@@ -609,7 +609,7 @@ function TrainerPulse({ session }: { session: GameSession }) {
     <div className="trainer-pulse">
       <div className="pulse-card primary-metric">
         <span>Készültség</span>
-        <strong>{ready}/{total}</strong>
+        <strong>{session.roundKey === 'lobby' && session.flexiblePlayerCount ? ready : `${ready}/${total}`}</strong>
         <small>{label}</small>
         <div className="metric-progress"><i style={{ width: progress + '%' }} /></div>
       </div>
@@ -2752,6 +2752,7 @@ function FirebaseSyncBanner() {
       const detail = (event as CustomEvent<{ status: 'ok' | 'error' | 'pending'; message?: string }>).detail;
       if (detail?.status) setSyncStatus(detail.status);
       if (detail?.status === 'error') setMessage(detail.message || 'Firebase szinkronhiba.');
+      if (detail?.status === 'ok') setMessage('');
     };
     window.addEventListener('kreditjatek-sync-status', handler);
     return () => window.removeEventListener('kreditjatek-sync-status', handler);
@@ -4768,11 +4769,14 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   const decisions = pairing ? decisionsFor(session, pairing) : [];
   const offerDecision = decisions.find((decision) => decision.type === 'ultimatum_offer');
   const responseDecision = decisions.find((decision) => decision.type === 'ultimatum_response');
+  const taskRevision = session.strategicTechnicalIssues
+    .filter(issue => issue.pairingId === pairing?.id && issue.playerId === playerId)
+    .map(issue => issue.resolvedAt ?? issue.detectedAt).join('|');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setSubmitting(false);
-  }, [session.roundKey, decisions.map((decision) => decision.id).join('|')]);
+  }, [session.roundKey, decisions.map((decision) => decision.id).join('|'), taskRevision]);
 
   useEffect(() => {
     if (!submitting) return;
@@ -4788,6 +4792,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     session.roundKey,
     playerId,
     pairing?.id,
+    taskRevision,
     decisions.map((decision) => decision.id).join('|'),
   ]);
 

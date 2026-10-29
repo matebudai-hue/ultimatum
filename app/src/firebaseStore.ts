@@ -12,6 +12,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { GameSession, StrategicRound } from './gameTypes';
+import { commandContext, assertCommandContext, type CommandContext } from './commandContext';
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { ensureFirebaseUser, firebaseAuth, firestore } from './firebaseClient';
 import { localSessionStore } from './sessionStore';
@@ -28,6 +29,7 @@ type CommandType =
 type PlayerCommand = {
   id: string;
   nonce: string;
+  context?: CommandContext;
   type: CommandType;
   payload?: Record<string, unknown>;
   createdAt: string;
@@ -293,6 +295,7 @@ const applyCommand = (
 ): { session: GameSession; affected: string[] } => {
   const before = localSessionStore.get(code);
   if (!before) throw new Error('A játék nem található.');
+  assertCommandContext(before, playerId, command.type, command.context, command.createdAt);
 
   if (command.type === 'ackStrategicTaskVisible') {
     const session = localSessionStore.ackStrategicTaskVisible(code, playerId, commandEventAt(command));
@@ -382,6 +385,8 @@ const processRemotePlayers = async (code: string) => {
         result.affected.forEach((id) => affected.add(id));
       } catch {
         // Duplikált, elavult vagy érvénytelen parancs: állapotot nem módosít.
+        // Küldjük vissza az aktuális feladatot akkor is, ha a telefon régi döntést küldött.
+        affected.add(playerId);
       }
 
       masterChanged = true;
@@ -403,17 +408,21 @@ const appendCommand = async (
   type: CommandType,
   payload?: Record<string, unknown>,
 ) => {
-  const user = await ensureFirebaseUser();
   const playerId = currentLocalPlayerId();
+  const view = playerId ? readPlayerProjection(code, playerId) : null;
+  const context = view ? commandContext(view, playerId) : undefined;
+  const createdAt = new Date().toISOString();
+  const user = await ensureFirebaseUser();
   if (!playerId) throw new Error('A résztvevő azonosítója hiányzik.');
 
   const key = makeUuid().replace(/-/g, '');
   const command: PlayerCommand = {
     id: key,
     nonce: makeUuid(),
+    context,
     type,
     payload,
-    createdAt: new Date().toISOString(),
+    createdAt,
     serverCreatedAt: serverTimestamp(),
   };
 
