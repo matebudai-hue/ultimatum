@@ -17,9 +17,19 @@ export const commandContext = (session: GameSession, playerId: string): CommandC
 });
 
 // Never interpret a delayed decision or visibility acknowledgement as a new task.
-export const assertCommandContext = (session: GameSession, playerId: string, type: string, context?: CommandContext) => {
+export const assertCommandContext = (session: GameSession, playerId: string, type: string, context?: CommandContext, legacyCreatedAt?: string) => {
   if (type === 'submitReflection') return;
   const current = commandContext(session, playerId);
+  // Already-open participant pages predate the context envelope. Preserve their
+  // queued decisions in the current task, but never carry a pre-round command
+  // or a pre-reopening acknowledgement into a fresh decision window.
+  if (!context && legacyCreatedAt) {
+    const sent = Date.parse(legacyCreatedAt);
+    const started = Date.parse(session.roundStartedAt ?? '');
+    const windowStart = Math.max(started, Date.parse(current.reopenedAt ?? session.roundStartedAt ?? ''));
+    if (Number.isFinite(sent) && Number.isFinite(windowStart) && sent >= windowStart && sent <= Date.now() + 5000 &&
+        (type === 'submitPublicGoods' ? session.roundKey === '4' : Boolean(current.pairingId))) return;
+  }
   if (!context || context.roundKey !== current.roundKey ||
       (type === 'submitPublicGoods'
         ? context.publicGoodsRoundNumber !== current.publicGoodsRoundNumber

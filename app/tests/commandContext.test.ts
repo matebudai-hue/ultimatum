@@ -13,6 +13,8 @@ let pair = session.pairings.find(p => p.roundKey === '1a')!;
 const oldContext = commandContext(session, pair.playerA);
 assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', oldContext));
 assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible'));
+assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', undefined, session.roundStartedAt));
+assert.throws(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', undefined, new Date(Date.parse(session.roundStartedAt!) - 1).toISOString()));
 session.strategicTechnicalIssues.push({pairingId:pair.id, playerId:pair.playerA, roundKey:'1a', role:'proposer', detectedAt:new Date().toISOString(), resolvedAt:new Date().toISOString(), resolution:'reopened'});
 assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', oldContext));
 assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', commandContext(session, pair.playerA)));
@@ -20,6 +22,12 @@ const reopenedView = buildParticipantProjection(session, pair.playerA);
 assert.deepEqual(commandContext(reopenedView, pair.playerA), commandContext(session, pair.playerA));
 assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', commandContext(reopenedView, pair.playerA)));
 assert.equal(buildParticipantProjection(session, pair.playerB).strategicTechnicalIssues.length,0,'The partner must not receive the private reopening history');
+const futureReopening = new Date(Date.now() + 1000).toISOString();
+const latestIssue = session.strategicTechnicalIssues[session.strategicTechnicalIssues.length - 1];
+const oldRevision = latestIssue.resolvedAt;
+latestIssue.resolvedAt = futureReopening;
+assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', undefined, session.roundStartedAt));
+latestIssue.resolvedAt = oldRevision;
 for (const amount of [undefined, NaN, Infinity, -1, 0.5, 100001]) {
   assert.throws(() => store.submitStrategicDecision(game.code, pair.playerA, { type: 'ultimatum_offer', amount }));
 }

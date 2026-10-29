@@ -295,7 +295,7 @@ const applyCommand = (
 ): { session: GameSession; affected: string[] } => {
   const before = localSessionStore.get(code);
   if (!before) throw new Error('A játék nem található.');
-  assertCommandContext(before, playerId, command.type, command.context);
+  assertCommandContext(before, playerId, command.type, command.context, command.createdAt);
 
   if (command.type === 'ackStrategicTaskVisible') {
     const session = localSessionStore.ackStrategicTaskVisible(code, playerId, commandEventAt(command));
