@@ -588,7 +588,7 @@ function TrainerPulse({ session }: { session: GameSession }) {
       timeClass = seconds <= 5 ? 'danger-card' : seconds <= 10 ? 'warning' : 'time-active';
     } else {
       const roundProgress = gameStore.roundProgress(session);
-      timeValue = roundProgress.complete ? 'kész' : '30 mp';
+      timeValue = roundProgress.complete ? 'kész' : `${STRATEGIC_DECISION_SECONDS} mp`;
       timeLabel = roundProgress.complete ? 'minden döntés beérkezett' : 'játékosonként, a feladat megjelenésétől';
       timeClass = roundProgress.complete ? 'success' : 'neutral-card';
     }
@@ -609,7 +609,7 @@ function TrainerPulse({ session }: { session: GameSession }) {
     <div className="trainer-pulse">
       <div className="pulse-card primary-metric">
         <span>Készültség</span>
-        <strong>{ready}/{total}</strong>
+        <strong>{session.roundKey === 'lobby' && session.flexiblePlayerCount ? ready : `${ready}/${total}`}</strong>
         <small>{label}</small>
         <div className="metric-progress"><i style={{ width: progress + '%' }} /></div>
       </div>
@@ -2752,6 +2752,7 @@ function FirebaseSyncBanner() {
       const detail = (event as CustomEvent<{ status: 'ok' | 'error' | 'pending'; message?: string }>).detail;
       if (detail?.status) setSyncStatus(detail.status);
       if (detail?.status === 'error') setMessage(detail.message || 'Firebase szinkronhiba.');
+      if (detail?.status === 'ok') setMessage('');
     };
     window.addEventListener('kreditjatek-sync-status', handler);
     return () => window.removeEventListener('kreditjatek-sync-status', handler);
@@ -4768,11 +4769,14 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   const decisions = pairing ? decisionsFor(session, pairing) : [];
   const offerDecision = decisions.find((decision) => decision.type === 'ultimatum_offer');
   const responseDecision = decisions.find((decision) => decision.type === 'ultimatum_response');
+  const taskRevision = session.strategicTechnicalIssues
+    .filter(issue => issue.pairingId === pairing?.id && issue.playerId === playerId)
+    .map(issue => issue.resolvedAt ?? issue.detectedAt).join('|');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setSubmitting(false);
-  }, [session.roundKey, decisions.map((decision) => decision.id).join('|')]);
+  }, [session.roundKey, decisions.map((decision) => decision.id).join('|'), taskRevision]);
 
   useEffect(() => {
     if (!submitting) return;
@@ -4788,6 +4792,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     session.roundKey,
     playerId,
     pairing?.id,
+    taskRevision,
     decisions.map((decision) => decision.id).join('|'),
   ]);
 

@@ -1,3 +1,4 @@
+import { makeUuid } from './browserCompat';
 import { Pairing, StrategicRound } from './gameTypes';
 
 export const STRATEGIC_ROUNDS: StrategicRound[] = ['1a', '1b', '2a', '2b', '3a', '3b'];
@@ -81,7 +82,7 @@ function orientedPairings(matchA: Edge[], matchB: Edge[], roundA: StrategicRound
       const playerA = color.get(x) === senderColor ? x : y;
       const playerB = playerA === x ? y : x;
       return {
-        id: crypto.randomUUID(),
+        id: makeUuid(),
         gameId,
         roundKey,
         playerA,

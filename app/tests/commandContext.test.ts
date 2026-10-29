@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { commandContext, assertCommandContext } from '../src/commandContext';
+const dom = new JSDOM('', { url: 'http://localhost/' });
+for (const key of ['window', 'document', 'localStorage', 'sessionStorage', 'CustomEvent', 'StorageEvent'] as const)
+  Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true });
+const { localSessionStore: store } = await import('../src/sessionStore');
+const game = store.create(100000, 2);
+store.join(game.code, 'a', 'A'); store.join(game.code, 'b', 'B');
+let session = store.startGame(game.code);
+let pair = session.pairings.find(p => p.roundKey === '1a')!;
+const oldContext = commandContext(session, pair.playerA);
+assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', oldContext));
+assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible'));
+session.strategicTechnicalIssues.push({pairingId:pair.id, playerId:pair.playerA, roundKey:'1a', role:'proposer', detectedAt:new Date().toISOString(), resolvedAt:new Date().toISOString(), resolution:'reopened'});
+assert.throws(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', oldContext));
+assert.doesNotThrow(() => assertCommandContext(session, pair.playerA, 'ackStrategicTaskVisible', commandContext(session, pair.playerA)));
+for (const amount of [undefined, NaN, Infinity, -1, 0.5, 100001]) {
+  assert.throws(() => store.submitStrategicDecision(game.code, pair.playerA, { type: 'ultimatum_offer', amount }));
+}
+store.submitStrategicDecision(game.code, pair.playerA, { type: 'ultimatum_offer', amount: 40000 });
+assert.throws(() => store.submitStrategicDecision(game.code, pair.playerB, { type: 'ultimatum_response' }));
+store.submitStrategicDecision(game.code, pair.playerB, { type: 'ultimatum_response', accepted: true });
+store.closeStrategicRound(game.code); session = store.nextRound(game.code);
+assert.throws(() => assertCommandContext(session, pair.playerA, 'submitStrategicDecision', oldContext));
+assert.throws(() => assertCommandContext(session, pair.playerA, 'markStrategicSubmitIntent', oldContext));
+session.roundKey = '4'; session.publicGoodsRoundNumber = 1;
+const poolContext = commandContext(session, 'a');
+assert.doesNotThrow(() => assertCommandContext(session, 'a', 'submitPublicGoods', poolContext));
+session.publicGoodsRoundNumber = 2;
+assert.throws(() => assertCommandContext(session, 'a', 'submitPublicGoods', poolContext));
+assert.doesNotThrow(() => assertCommandContext(session, 'a', 'submitReflection'));
+console.log('COMMAND CONTEXT AND INPUT VALIDATION TESTS OK');
+process.exit(0);

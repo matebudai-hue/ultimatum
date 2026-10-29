@@ -1,3 +1,4 @@
+import { makeUuid } from './browserCompat';
 import {
   Decision,
   GameSession,
@@ -143,7 +144,7 @@ const addDecision = (session: GameSession, decision: Omit<Decision, 'id' | 'subm
   if (exists) throw new Error('Ezt a döntést már beküldted.');
   session.decisions.push({
     ...decision,
-    id: crypto.randomUUID(),
+    id: makeUuid(),
     submittedAt: submittedAt ?? new Date().toISOString(),
     processedAt: new Date().toISOString(),
     timestampSource: submittedAt ? 'command_event' : 'trainer_clock',
@@ -185,7 +186,7 @@ const upsertPublicGoodsDecision = (
     }
   } else {
     session.decisions.push({
-      id: crypto.randomUUID(),
+      id: makeUuid(),
       playerId,
       roundKey: '4',
       type: 'public_goods_contribution',
@@ -456,7 +457,7 @@ const makeGroups = (session: GameSession, count: number): PublicGoodsGroup[] => 
   const players = shuffle(session.players.filter((player) => !player.isBot && player.active).map((player) => player.id));
   const safeCount = Math.max(1, Math.min(count, players.length || 1, 25, HUNGARIAN_GROUP_NAMES.length));
   const groups = Array.from({ length: safeCount }, (_, index) => ({
-    id: crypto.randomUUID(),
+    id: makeUuid(),
     name: HUNGARIAN_GROUP_NAMES[index],
     memberIds: [] as string[],
     nextMinimumMode: 'none' as MinimumMode,
@@ -471,7 +472,7 @@ const makeManualGroups = (session: GameSession, count: number): PublicGoodsGroup
     .map((player) => player.id);
   const safeCount = Math.max(1, Math.min(count, players.length || 1, 25, HUNGARIAN_GROUP_NAMES.length));
   const groups = Array.from({ length: safeCount }, (_, index) => ({
-    id: crypto.randomUUID(),
+    id: makeUuid(),
     name: HUNGARIAN_GROUP_NAMES[index],
     memberIds: [] as string[],
     nextMinimumMode: 'none' as MinimumMode,
@@ -527,7 +528,7 @@ const applyManualDelta = (
   const before = player.currentBalance;
   player.currentBalance += delta;
   session.transactions.push({
-    id: crypto.randomUUID(),
+    id: makeUuid(),
     playerId,
     roundKey,
     amount: delta,
@@ -731,6 +732,7 @@ export const localSessionStore = {
   startGame(code: string): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
+    if (session.roundKey !== 'lobby' || session.status !== 'lobby') throw new Error('Ez a játék már elindult.');
     if (session.flexiblePlayerCount && session.players.length < 2) throw new Error('Legalább két résztvevő szükséges.');
     if (!session.flexiblePlayerCount && session.players.length !== session.expectedPlayerCount) {
       throw new Error(`Még nincs bent mindenki: ${session.players.length}/${session.expectedPlayerCount}.`);
@@ -869,7 +871,7 @@ export const localSessionStore = {
     const max = pending.type === 'trust_return' ? (decisionsForPair(session, pairing.id).find((d) => d.type === 'trust_send')?.amount ?? 0) * 3 : session.startingCredit;
     if (isResponse ? typeof value !== 'boolean' : typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > max) throw new Error(isResponse ? 'Válassz elfogadást vagy elutasítást.' : `0 és ${max} közötti egész összeget adj meg.`);
     addDecision(session, { pairingId: pairing.id, playerId, roundKey: session.roundKey, type: pending.type, ...(isResponse ? { accepted: value as boolean } : { amount: value as number }), submissionSource: 'manual_correction' });
-    session.manualCorrections.push({ id: crypto.randomUUID(), kind: 'strategic_decision', playerId, roundKey: session.roundKey, pairingId: pairing.id, field: pending.type, beforeValue: null, afterValue: value, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
+    session.manualCorrections.push({ id: makeUuid(), kind: 'strategic_decision', playerId, roundKey: session.roundKey, pairingId: pairing.id, field: pending.type, beforeValue: null, afterValue: value, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
     for (const issue of session.strategicTechnicalIssues) if (issue.pairingId === pairing.id && issue.playerId === playerId && !issue.resolvedAt) { issue.resolvedAt = new Date().toISOString(); issue.resolution = 'decision_received'; }
     delete session.strategicSubmitIntentAt[strategicWindowKey(pairing.id, playerId)];
     autoBotDecisions(session, pairing.id);
@@ -888,7 +890,7 @@ export const localSessionStore = {
     round.contributions[playerId] = amount;
     round.totalContribution = Object.values(round.contributions).reduce((sum, n) => sum + n, 0);
     upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, amount, false, undefined, 'manual_correction');
-    session.manualCorrections.push({ id: crypto.randomUUID(), kind: 'public_goods_contribution', playerId, roundKey: '4', publicGoodsRound: round.roundNumber, field: 'contribution', beforeValue: null, afterValue: amount, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
+    session.manualCorrections.push({ id: makeUuid(), kind: 'public_goods_contribution', playerId, roundKey: '4', publicGoodsRound: round.roundNumber, field: 'contribution', beforeValue: null, afterValue: amount, note: 'Tréner által rögzített döntés', createdAt: new Date().toISOString() });
     write(session);
     return session;
   },
@@ -902,6 +904,7 @@ export const localSessionStore = {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
     if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) throw new Error('Most nincs egyéni döntési kör.');
+    if (session.closedRounds.includes(session.roundKey as StrategicRound)) throw new Error('Ez a kör már lezárult.');
 
     const pairingBeforeTimeout = this.getPairingForPlayer(session, playerId);
     if (pairingBeforeTimeout) {
@@ -949,12 +952,14 @@ export const localSessionStore = {
       if (!isA && !pairDecisions.some((d) => d.type === 'trust_send')) throw new Error('Várj a partnered döntésére.');
     }
 
-    if (payload.amount !== undefined) {
+    if (payload.type === 'ultimatum_response') {
+      if (typeof payload.accepted !== 'boolean') throw new Error('Válassz elfogadást vagy elutasítást.');
+    } else {
       const max = payload.type === 'trust_return'
         ? (pairDecisions.find((d) => d.type === 'trust_send')?.amount ?? 0) * 3
         : session.startingCredit;
-      if (!Number.isFinite(payload.amount) || payload.amount < 0 || payload.amount > max) {
-        throw new Error(`0 és ${max} közötti összeget adj meg.`);
+      if (typeof payload.amount !== 'number' || !Number.isSafeInteger(payload.amount) || payload.amount < 0 || payload.amount > max) {
+        throw new Error(`0 és ${max} közötti egész összeget adj meg.`);
       }
     }
 
@@ -1059,7 +1064,7 @@ export const localSessionStore = {
     const after = Math.round(newBalance);
     applyManualDelta(session, playerId, after - before, 'manual_balance_correction', session.roundKey);
     session.manualCorrections.push({
-      id: crypto.randomUUID(),
+      id: makeUuid(),
       kind: 'balance',
       playerId,
       roundKey: session.roundKey,
@@ -1137,7 +1142,7 @@ export const localSessionStore = {
 
     const afterValue = type === 'ultimatum_response' ? (decision.accepted ?? false) : (decision.amount ?? 0);
     session.manualCorrections.push({
-      id: crypto.randomUUID(),
+      id: makeUuid(),
       kind: 'strategic_decision',
       playerId,
       roundKey,
@@ -1207,7 +1212,7 @@ export const localSessionStore = {
     }
 
     session.manualCorrections.push({
-      id: crypto.randomUUID(),
+      id: makeUuid(),
       kind: 'public_goods_contribution',
       playerId,
       roundKey: '4',
@@ -1310,7 +1315,7 @@ export const localSessionStore = {
     for (const group of session.groups) {
       const wealth = groupWealth(session, group);
       session.publicGoodsRounds.push({
-        id: crypto.randomUUID(),
+        id: makeUuid(),
         roundNumber: nextRound,
         groupId: group.id,
         memberIds: [...group.memberIds],
@@ -1489,7 +1494,7 @@ export const localSessionStore = {
 
       if (after > before) {
         session.transactions.push({
-          id: crypto.randomUUID(),
+          id: makeUuid(),
           playerId: player.id,
           roundKey: '4',
           amount: after - before,

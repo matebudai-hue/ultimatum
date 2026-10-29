@@ -1,3 +1,4 @@
+import { makeUuid } from './browserCompat';
 import { Pairing, Player, PublicGoodsRound, RoundKey, Transaction } from './gameTypes';
 
 const average = (values: number[]): number =>
@@ -114,7 +115,7 @@ const makeTransactions = (
   });
 
 const makeTransaction = (player: Player, roundKey: RoundKey, amount: number, reason: string): Transaction => ({
-  id: crypto.randomUUID(),
+  id: makeUuid(),
   playerId: player.id,
   roundKey,
   amount,
