@@ -3974,6 +3974,9 @@ function renderPatternProjectionFromElement(game: PatternGame) {
   const doc = target.document;
   const gameLabel = PATTERN_GAME_OPTIONS.find((item) => item.id === game)?.label ?? '';
   doc.title = 'Kreditjáték – Mintázatok – ' + gameLabel;
+  const styleSources = Array.from(document.querySelectorAll('link[rel="stylesheet"],style'));
+  const styleSignature = styleSources.map(node => node instanceof HTMLLinkElement ? node.href : node.textContent ?? '').join('\n');
+  if (doc.getElementById('kredit-pattern-projection-style')?.getAttribute('data-source-style') !== styleSignature) {
   doc.head.replaceChildren();
 
   document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach((link) => {
@@ -3982,8 +3985,11 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     copy.href = link.href;
     doc.head.appendChild(copy);
   });
+  document.querySelectorAll('style').forEach((style) => doc.head.appendChild(doc.importNode(style, true)));
 
   const projectionStyle = doc.createElement('style');
+  projectionStyle.id = 'kredit-pattern-projection-style';
+  projectionStyle.setAttribute('data-source-style', styleSignature);
   projectionStyle.textContent = [
     'html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#f4f7fb}',
     'body{padding:22px 30px;display:flex;align-items:stretch}',
@@ -4006,6 +4012,7 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pool-pattern-legend span,.pool-pattern-minimum span{font-size:10px!important}'
   ].join('');
   doc.head.appendChild(projectionStyle);
+  }
   doc.body.replaceChildren(doc.importNode(source, true));
   return true;
 }
