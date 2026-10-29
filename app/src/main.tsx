@@ -37,7 +37,7 @@ import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
 import { renderCreditStandings, STANDINGS_PAGE_SIZE } from './creditStandings';
 import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
-import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
+import { buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
 import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage, removeStorage, storageKeys } from './browserCompat';
@@ -915,7 +915,7 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
 }
 
 type RulesProjectionGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
-type ProjectionMode = 'qr' | 'summary' | 'standings' | 'blank' | RulesProjectionGame;
+type ProjectionMode = 'qr' | 'standings' | 'blank' | RulesProjectionGame;
 
 const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short: string }[] = [
   { id: 'ultimatum', label: 'Ultimátumjáték', short: '1. játék' },
@@ -1232,108 +1232,6 @@ function renderBlankProjectionWindow() {
   return true;
 }
 
-function renderSummaryProjectionWindow(session: GameSession) {
-  const target = ensureProjectorWindow();
-  if (!target) return false;
-  projectorContentMode = 'summary';
-
-  const picture = buildGroupPicture(session);
-  const latestRoundNumber = session.publicGoodsRounds
-    .filter((round) => round.status === 'settled')
-    .reduce((max, round) => Math.max(max, round.roundNumber), 0);
-  const latestPool = picture.publicGoods.filter((round) => round.roundNumber === latestRoundNumber);
-
-  const doc = target.document;
-  doc.title = 'Kreditjáték – kivezetés';
-  doc.head.replaceChildren();
-  const style = doc.createElement('style');
-  style.textContent = `
-    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213a;background:#f6f8fb}
-    *{box-sizing:border-box}
-    html,body{width:100%;height:100%;margin:0;overflow:hidden}
-    body{background:linear-gradient(145deg,#fff 0%,#f5f7fb 58%,#edf2f7 100%);padding:34px 46px}
-    main{width:min(1380px,100%);height:100%;margin:auto;display:flex;flex-direction:column;justify-content:center}
-    .eyebrow{font-size:15px;font-weight:950;letter-spacing:.1em;text-transform:uppercase;color:#64748b}
-    h1{margin:6px 0 24px;font-size:clamp(46px,5vw,72px);line-height:1;letter-spacing:-.04em}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-    .card{background:#fff;border:1px solid #dbe3ed;border-radius:16px;padding:22px 24px;box-shadow:0 8px 28px rgba(15,23,42,.05)}
-    .card span{display:block;font-size:13px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
-    .card strong{display:block;margin-top:7px;font-size:clamp(30px,3vw,46px);line-height:1.05}
-    .card small{display:block;margin-top:8px;font-size:17px;line-height:1.35;color:#475569;font-weight:700}
-    .pool{grid-column:1/-1}
-    .pool-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-    .pool-chip{padding:10px 13px;border-radius:10px;background:#eef2f7;font-size:16px;font-weight:850;color:#334155}
-    .pool-chip.fail{background:#fff1f2;color:#9f1239}
-    .pool-chip.ok{background:#f0fdf4;color:#166534}
-  `;
-  doc.head.appendChild(style);
-
-  const main = doc.createElement('main');
-  const eyebrow = doc.createElement('div');
-  eyebrow.className = 'eyebrow';
-  eyebrow.textContent = 'Kreditjáték · csoportkép';
-  const title = doc.createElement('h1');
-  title.textContent = 'Mit mutatott a csoport?';
-  main.append(eyebrow, title);
-
-  const grid = doc.createElement('section');
-  grid.className = 'grid';
-
-  const addCard = (label: string, value: string, detail: string) => {
-    const card = doc.createElement('div');
-    card.className = 'card';
-    const l = doc.createElement('span');
-    l.textContent = label;
-    const v = doc.createElement('strong');
-    v.textContent = value;
-    const d = doc.createElement('small');
-    d.textContent = detail;
-    card.append(l, v, d);
-    grid.appendChild(card);
-  };
-
-  addCard(
-    'Ultimátum',
-    picture.ultimatum.averageOffer === null ? '–' : formatCredits(picture.ultimatum.averageOffer),
-    `átlagos ajánlat · ${picture.ultimatum.rejectedCount} valódi elutasítás`,
-  );
-  addCard(
-    'Diktátor',
-    picture.dictator.averageGiven === null ? '–' : formatCredits(picture.dictator.averageGiven),
-    'átlagos átadás',
-  );
-  addCard(
-    'Bizalom',
-    picture.trust.averageSent === null ? '–' : formatCredits(picture.trust.averageSent),
-    `átlag elküldve · átlag vissza ${picture.trust.averageReturned === null ? '–' : formatCredits(picture.trust.averageReturned)}`,
-  );
-
-  const pool = doc.createElement('div');
-  pool.className = 'card pool';
-  const poolLabel = doc.createElement('span');
-  poolLabel.textContent = latestRoundNumber > 0 ? `Közös kassza · ${latestRoundNumber}. kör` : 'Közös kassza';
-  const poolStrong = doc.createElement('strong');
-  poolStrong.textContent = latestPool.length ? 'Legutóbbi csoporteremények' : 'Még nincs lezárt kasszakör';
-  pool.append(poolLabel, poolStrong);
-
-  if (latestPool.length) {
-    const rows = doc.createElement('div');
-    rows.className = 'pool-row';
-    latestPool.forEach((round) => {
-      const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? 'Csoport';
-      const chip = doc.createElement('div');
-      chip.className = 'pool-chip ' + (round.success ? 'ok' : 'fail');
-      chip.textContent = `${groupName}: ${formatCredits(round.totalContribution)} ${round.success ? '✓' : '×'}`;
-      rows.appendChild(chip);
-    });
-    pool.appendChild(rows);
-  }
-  grid.appendChild(pool);
-  main.appendChild(grid);
-  doc.body.replaceChildren(main);
-  return true;
-}
-
 function renderStandingsProjectionWindow(session: GameSession, page=0, onPageChange?: (page:number)=>void) {
   const target=ensureProjectorWindow();
   if(!target) return false;
@@ -1382,7 +1280,6 @@ function TrainerCockpit({
     setExternalProjectionLabel(null);
     let opened = false;
     if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
-    else if (mode === 'summary') opened = renderSummaryProjectionWindow(session);
     else if (mode === 'standings') { setStandingsPage(0); opened = renderStandingsProjectionWindow(session,0,setStandingsPage); }
     else if (mode === 'blank') opened = renderBlankProjectionWindow();
     else opened = renderRulesProjectionWindow(session, mode);
@@ -1395,7 +1292,6 @@ function TrainerCockpit({
   useEffect(() => {
     if (!projectorWindow || projectorWindow.closed || projectorContentMode !== selectedProjectionMode) return;
     if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
-    else if (selectedProjectionMode === 'summary') renderSummaryProjectionWindow(session);
     else if (selectedProjectionMode === 'standings') renderStandingsProjectionWindow(session,standingsPage,setStandingsPage);
     else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
     else renderRulesProjectionWindow(session, selectedProjectionMode);
@@ -1542,7 +1438,6 @@ function TrainerCockpit({
                 <strong>
                   Aktuális: {externalProjectionLabel ?? (
                     selectedProjectionMode === 'qr' ? 'QR-kód' :
-                    selectedProjectionMode === 'summary' ? 'Kivezetés · csoportkép' :
                     selectedProjectionMode === 'standings' ? 'Végeredmény · kreditek játékonként' :
                     selectedProjectionMode === 'blank' ? 'Üres képernyő' :
                     RULES_PROJECTION_OPTIONS.find((option) => option.id === selectedProjectionMode)?.label ?? 'Játékszabály'
@@ -1565,7 +1460,6 @@ function TrainerCockpit({
                   {option.label}
                 </button>
               ))}
-              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'summary' ? 'active' : ''} onClick={() => projectMode('summary')}><BarChart3 size={15} />Kivezetés · csoportkép</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'standings' ? 'active' : ''} onClick={() => projectMode('standings')}><BarChart3 size={15} />Végeredmény</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
             </div>
@@ -3255,107 +3149,6 @@ function SelfReportMiniCard({
   );
 }
 
-function DebriefGroupView({ session }: { session: GameSession }) {
-  const picture = useMemo(() => buildGroupPicture(session), [session]);
-
-  return (
-    <div className="debrief-workspace-body">
-      <section className="debrief-group-block">
-        <header>
-          <h3>Ultimátum</h3>
-          <div>
-            <strong>{picture.ultimatum.averageOffer === null ? '–' : formatCredits(picture.ultimatum.averageOffer)}</strong>
-            <span>átlagos ajánlat</span>
-          </div>
-          <div>
-            <strong>{picture.ultimatum.rejectedCount}</strong>
-            <span>elutasítás</span>
-          </div>
-        </header>
-        <div className="anonymous-values">
-          {picture.ultimatum.offers.length === 0 ? <span>–</span> : picture.ultimatum.offers.map((item, index) => (
-            <span className={item.accepted ? 'accepted' : 'rejected'} key={index}>
-              {formatCredits(item.amount)} {item.accepted ? '✓' : '×'}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="debrief-group-block">
-        <header>
-          <h3>Diktátor</h3>
-          <div>
-            <strong>{picture.dictator.averageGiven === null ? '–' : formatCredits(picture.dictator.averageGiven)}</strong>
-            <span>átlagos átadás</span>
-          </div>
-        </header>
-        <div className="anonymous-values">
-          {picture.dictator.amounts.length === 0 ? <span>–</span> : picture.dictator.amounts.map((item, index) => (
-            <span key={index}>{formatCredits(item.amount)}</span>
-          ))}
-        </div>
-      </section>
-
-      <section className="debrief-group-block">
-        <header>
-          <h3>Bizalom</h3>
-          <div>
-            <strong>{picture.trust.averageSent === null ? '–' : formatCredits(picture.trust.averageSent)}</strong>
-            <span>átlag elküldve</span>
-          </div>
-          <div>
-            <strong>{picture.trust.averageReturned === null ? '–' : formatCredits(picture.trust.averageReturned)}</strong>
-            <span>átlag vissza</span>
-          </div>
-        </header>
-        <div className="anonymous-values trust-anonymous-values">
-          {picture.trust.pairs.length === 0 ? <span>–</span> : picture.trust.pairs.map((item, index) => (
-            <span key={index}>{formatCredits(item.sent)} → {formatCredits(item.returned)}</span>
-          ))}
-        </div>
-      </section>
-
-      <section className="debrief-group-block">
-        <header>
-          <h3>Közös kassza</h3>
-        </header>
-        {picture.publicGoods.length === 0 ? (
-          <div className="summary-empty">Még nincs elszámolt kasszakör.</div>
-        ) : (
-          <div className="debrief-pool-rounds">
-            {picture.publicGoods.map((round) => {
-              const groupName = session.groups.find((group) => group.id === round.groupId)?.name ?? 'Csoport';
-              return (
-                <div className="debrief-pool-round" key={round.groupId + '-' + round.roundNumber}>
-                  <div className="debrief-pool-round-head">
-                    <strong>{round.roundNumber}. kör · {groupName}</strong>
-                    <span>
-                      Kassza {formatCredits(round.totalContribution)}
-                      {round.success ? ' → bank után ' + formatCredits(round.doubledPot) : ' · minimum nem teljesült'}
-                    </span>
-                  </div>
-                  <div className="anonymous-values pool-anonymous-values">
-                    {round.contributions.map((item, index) => (
-                      <span key={index}>
-                        {formatCredits(item.amount)}
-                        {item.ownWealthPercent !== null ? ' · saját ' + item.ownWealthPercent + '%' : ''}
-                        {item.potPercent !== null ? ' · kassza ' + item.potPercent + '%' : ''}
-                        {' · nettó '}{signedCredits(item.netAmount)}
-                        {item.automated ? ' · BOT' : ''}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-
 type PatternGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
 
 const PATTERN_GAME_OPTIONS: Array<{ id: PatternGame; label: string }> = [
@@ -4395,7 +4188,7 @@ function DebriefWorkspace({
   onOpenChange: (open: boolean) => void;
 }) {
   const finalMode = session.roundKey === 'report';
-  const [tab, setTab] = useState<'group' | 'events' | 'participants' | 'patterns'>(finalMode ? 'group' : 'events');
+  const [tab, setTab] = useState<'events' | 'participants' | 'patterns'>('events');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
@@ -4405,7 +4198,7 @@ function DebriefWorkspace({
     session.publicGoodsRounds.some((round) => round.status === 'settled');
 
   useEffect(() => {
-    if (finalMode) setTab('group');
+    if (finalMode) setTab('events');
   }, [finalMode]);
 
   useEffect(() => {
@@ -4425,13 +4218,11 @@ function DebriefWorkspace({
   const content = hasData ? (
     <>
       <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
-        <button type="button" className={tab === 'group' ? 'active' : ''} onClick={() => setTab('group')}>Csoportkép</button>
         <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
         <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
         <button type="button" className={tab === 'patterns' ? 'active' : ''} onClick={() => setTab('patterns')}>Mintázatok</button>
       </div>
 
-      {tab === 'group' && <DebriefGroupView session={session} />}
       {tab === 'events' && <DebriefEventsView session={session} />}
       {tab === 'participants' && <DebriefParticipantsView session={session} />}
       {tab === 'patterns' && <DebriefPatternsView session={session} />}
@@ -4439,7 +4230,7 @@ function DebriefWorkspace({
   ) : (
     <div className="debrief-empty-state">
       <strong>Még nincs kivezetési adat.</strong>
-      <span>Az első lezárt kör után itt jelenik meg a csoportkép, az érdekes események és a résztvevői történet.</span>
+      <span>Az első lezárt kör után itt jelennek meg az érdekes események és a résztvevői történetek.</span>
     </div>
   );
 
@@ -4480,7 +4271,7 @@ function DebriefWorkspace({
         <div>
           <p className="eyebrow">Játék lezárva · tréneri nézet</p>
           <h2>Kivezetés</h2>
-          <p className="debrief-workspace-intro">Most ez a fő munkafelület: csoportkép, érdekes események és egyéni történetek.</p>
+          <p className="debrief-workspace-intro">Most ez a fő munkafelület: érdekes események, egyéni történetek és mintázatok.</p>
         </div>
         <div className="debrief-workspace-status">
           <b>Reflexió {reflectedPlayers}/{eligiblePlayers}</b>
