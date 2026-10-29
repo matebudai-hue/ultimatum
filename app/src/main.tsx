@@ -1334,11 +1334,11 @@ function renderSummaryProjectionWindow(session: GameSession) {
   return true;
 }
 
-function renderStandingsProjectionWindow(session: GameSession, page=0) {
+function renderStandingsProjectionWindow(session: GameSession, page=0, onPageChange?: (page:number)=>void) {
   const target=ensureProjectorWindow();
   if(!target) return false;
   projectorContentMode='standings';
-  return renderCreditStandings(target,session,page);
+  return renderCreditStandings(target,session,page,onPageChange);
 }
 
 function TrainerCockpit({
@@ -1383,7 +1383,7 @@ function TrainerCockpit({
     let opened = false;
     if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
     else if (mode === 'summary') opened = renderSummaryProjectionWindow(session);
-    else if (mode === 'standings') { setStandingsPage(0); opened = renderStandingsProjectionWindow(session,0); }
+    else if (mode === 'standings') { setStandingsPage(0); opened = renderStandingsProjectionWindow(session,0,setStandingsPage); }
     else if (mode === 'blank') opened = renderBlankProjectionWindow();
     else opened = renderRulesProjectionWindow(session, mode);
 
@@ -1396,7 +1396,7 @@ function TrainerCockpit({
     if (!projectorWindow || projectorWindow.closed || projectorContentMode !== selectedProjectionMode) return;
     if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
     else if (selectedProjectionMode === 'summary') renderSummaryProjectionWindow(session);
-    else if (selectedProjectionMode === 'standings') renderStandingsProjectionWindow(session,standingsPage);
+    else if (selectedProjectionMode === 'standings') renderStandingsProjectionWindow(session,standingsPage,setStandingsPage);
     else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
     else renderRulesProjectionWindow(session, selectedProjectionMode);
   }, [joinUrl, selectedProjectionMode, session, standingsPage]);

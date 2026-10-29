@@ -1,6 +1,6 @@
 import type {GameSession} from './gameTypes';
 
-export const STANDINGS_PAGE_SIZE = 10;
+export const STANDINGS_PAGE_SIZE = 20;
 
 export function buildCreditStandings(session: GameSession) {
   const rows = session.players.filter(player => !player.isBot).map(player => {
@@ -19,27 +19,28 @@ export function buildCreditStandings(session: GameSession) {
   return rows;
 }
 
-export function renderCreditStandings(target: Window, session: GameSession, page=0) {
+export function renderCreditStandings(target: Window, session: GameSession, page=0, onPageChange?: (page:number)=>void) {
   const rows = buildCreditStandings(session);
   const pages = Math.max(1,Math.ceil(rows.length/STANDINGS_PAGE_SIZE));
   const currentPage = Math.max(0,Math.min(pages-1,page));
   const adjustmentVisible = rows.some(row => row.adjustment !== 0);
   const doc=target.document;
-  doc.title='Kreditjáték – Végeredmény';
   doc.head.replaceChildren();
+  doc.title='Kreditjáték – Végeredmény';
   const style=doc.createElement('style');
   style.textContent=`
     *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
-    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#f1f5f9;color:#10213a;padding:3vh 3vw}
-    main{height:100%;display:flex;flex-direction:column;gap:2vh;max-width:1800px;margin:auto}
-    header{display:flex;align-items:end;justify-content:space-between;gap:20px}header p{margin:0;color:#52727c;font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    h1{font-size:clamp(30px,4vw,58px);line-height:1.05;margin:6px 0 0;letter-spacing:-.04em}header>strong{font-size:clamp(16px,1.8vw,26px);color:#267e7e}
-    .table-card{background:#fff;border:1px solid #dce5ec;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px #10213a09}
-    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:clamp(14px,1.55vw,24px);font-variant-numeric:tabular-nums}
-    th{background:#10213a;color:#fff;font-size:.78em;padding:12px 10px;text-align:right}td{padding:clamp(6px,1vh,12px) 10px;border-bottom:1px solid #e7edf2;text-align:right;white-space:nowrap}
-    th:first-child,td:first-child{width:5%;text-align:center;color:#708596}th:nth-child(2),td:nth-child(2){width:22%;text-align:left;overflow:hidden;text-overflow:ellipsis}th:nth-child(3),td:nth-child(3){width:18%;background:#e8f5f2;color:#105e59;font-weight:900;font-size:1.12em}
+    body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#f1f5f9;color:#10213a;padding:1.6vh 2vw}
+    main{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:1.2vh;max-width:1800px;margin:auto}
+    header{display:flex;align-items:end;justify-content:space-between;gap:20px}header p{margin:0;color:#52727c;font-size:clamp(9px,1.3vh,14px);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    h1{font-size:clamp(20px,3.8vh,42px);line-height:1.05;margin:4px 0 0;letter-spacing:-.04em}header>strong{font-size:clamp(12px,2vh,24px);color:#267e7e}
+    .table-card{min-height:0;background:#fff;border:1px solid #dce5ec;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px #10213a09}
+    table{width:100%;height:100%;border-collapse:collapse;table-layout:fixed;font-size:clamp(10px,min(1.45vw,2.05vh),22px);line-height:1.1;font-variant-numeric:tabular-nums}
+    thead{height:2.4em}th{background:#10213a;color:#fff;font-size:.78em;padding:3px 6px;text-align:right}td{padding:0 6px;border-bottom:1px solid #e7edf2;text-align:right;white-space:nowrap}
+    th:first-child,td:first-child{width:4%;text-align:center;color:#708596}th:nth-child(2),td:nth-child(2){width:19%;text-align:left;overflow:hidden;text-overflow:ellipsis}th:nth-child(3),td:nth-child(3){width:17%;background:#e8f5f2;color:#105e59;font-weight:900;font-size:1.06em}
     tbody tr:nth-child(even){background:#f8fafc}tbody tr:last-child td{border-bottom:0}.negative{color:#b03a36}.positive{color:#16806c}.rank{font-size:.8em;font-weight:900}
-    footer{margin-top:auto;display:flex;justify-content:space-between;gap:20px;color:#52657b;font-size:clamp(12px,1.05vw,17px);line-height:1.45}footer p{margin:0}footer strong{white-space:nowrap;color:#10213a}
+    footer{display:flex;align-items:center;justify-content:space-between;gap:20px;color:#52657b;font-size:clamp(9px,1.5vh,15px);line-height:1.25}footer p{margin:0;max-width:65%}footer strong{white-space:nowrap;color:#10213a}
+    .paging{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.paging button{font:inherit;font-weight:700;padding:5px 10px;border:1px solid #b8cbd3;border-radius:6px;background:#fff;color:#10213a;cursor:pointer}.paging button:disabled{opacity:.35;cursor:default}
     .empty{padding:40px;text-align:center;color:#64748b}
   `;
   doc.head.appendChild(style);
@@ -72,6 +73,14 @@ export function renderCreditStandings(target: Window, session: GameSession, page
   note.textContent='Minden érték kreditben. A játékok oszlopai a már könyvelt nettó eredményt mutatják. A közös kassza eredménye veszteség is lehet.';
   if(session.pairings.some(pair=>pair.playerA==='BOT'||pair.playerB==='BOT'))note.textContent+=' A tartalékjátékos nem gyűjt saját kreditet.';
   paging.textContent=(currentPage+1)+' / '+pages+' · Összesen '+format(rows.reduce((sum,row)=>sum+row.total,0))+' kredit';
-  footer.append(note,paging);main.appendChild(footer);doc.body.replaceChildren(main);
+  const controls=doc.createElement('div');controls.className='paging';
+  if(pages>1){
+    for(const [label,next] of [['Előző oldal',currentPage-1],['Következő oldal',currentPage+1]] as const){
+      const button=doc.createElement('button');button.type='button';button.textContent=label;button.disabled=next<0||next>=pages;
+      button.addEventListener('click',()=>{renderCreditStandings(target,session,next,onPageChange);onPageChange?.(next);});
+      controls.appendChild(button);
+    }
+  }
+  controls.appendChild(paging);footer.append(note,controls);main.appendChild(footer);doc.body.replaceChildren(main);
   return true;
 }
