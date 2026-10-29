@@ -31,7 +31,7 @@ const pool=renderToStaticMarkup(<PoolNotes session={poolSession} rounds={[round]
 assert.match(pool,/Kassza oka/);assert.match(pool,/Közel ugyanannyit/);assert.match(pool,/Kiemelkedő befizetés/);assert.doesNotMatch(pool,/Anna|Másik kasszakör/);
 const src=fs.readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');
 assert.doesNotMatch(src,/onClick=\{\(\) => setTab\('events'\)\}/);
-assert.match(src,/useState<'participants' \| 'patterns'>\('patterns'\)/);
+assert.match(src,/useState<'participants' \| 'patterns' \| 'journey'>\('patterns'\)/);
 console.log('PATTERN COMMENTS: author, pair, round, anonymity and pool marker boundaries PASS');
 
 const dom=new JSDOM('<details id="note"><summary>💬</summary><p>Komment</p></details>');

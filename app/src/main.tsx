@@ -1,3 +1,4 @@
+import {ParticipantJourneyPanel, renderJourneyProjection} from './ParticipantJourney';
 import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
 import { AmountInput, useAmountDraft, confirmAmount } from './AmountInput';
 import { publicGoodsPlayerPayout } from './gameEngine';
@@ -926,7 +927,7 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
 ];
 
 let projectorWindow: Window | null = null;
-let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | null = null;
+let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | 'journey' | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -1461,6 +1462,7 @@ function TrainerCockpit({
                   {option.label}
                 </button>
               ))}
+              <button type="button" onClick={()=>window.dispatchEvent(new Event('kreditjatek-open-journey'))}>Egyéni történet</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'standings' ? 'active' : ''} onClick={() => projectMode('standings')}><BarChart3 size={15} />Végeredmény</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
             </div>
@@ -4194,6 +4196,14 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
   );
 }
 
+function projectParticipantJourney(source: HTMLElement) {
+  const target=ensureProjectorWindow();
+  if(!target) return false;
+  projectorContentMode='journey';
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label',{detail:{label:'Egyéni történet'}}));
+  return renderJourneyProjection(target,source);
+}
+
 function DebriefWorkspace({
   session,
   open,
@@ -4204,7 +4214,12 @@ function DebriefWorkspace({
   onOpenChange: (open: boolean) => void;
 }) {
   const finalMode = session.roundKey === 'report';
-  const [tab, setTab] = useState<'participants' | 'patterns'>('patterns');
+  const [tab, setTab] = useState<'participants' | 'patterns' | 'journey'>('patterns');
+  useEffect(()=>{
+    const openJourney=()=>{onOpenChange(true);setTab('journey');};
+    window.addEventListener('kreditjatek-open-journey',openJourney);
+    return()=>window.removeEventListener('kreditjatek-open-journey',openJourney);
+  },[onOpenChange]);
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
@@ -4235,9 +4250,11 @@ function DebriefWorkspace({
     <>
       <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
         <button type="button" className={tab === 'patterns' ? 'active' : ''} onClick={() => setTab('patterns')}>Mintázatok</button>
+        <button type="button" className={tab === 'journey' ? 'active' : ''} onClick={() => setTab('journey')}>Egyéni történet</button>
         <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
       </div>
 
+      {tab === 'journey' && <ParticipantJourneyPanel session={session} onProject={projectParticipantJourney} isProjecting={()=>projectorContentMode==='journey' && !!projectorWindow && !projectorWindow.closed} />}
       {tab === 'participants' && <DebriefParticipantsView session={session} />}
       {tab === 'patterns' && <DebriefPatternsView session={session} />}
     </>
