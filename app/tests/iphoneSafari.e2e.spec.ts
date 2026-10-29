@@ -112,6 +112,7 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
   const trainer = await trainerContext.newPage();
   const iphoneA = await iphoneAContext.newPage();
   const iphoneB = await iphoneBContext.newPage();
+  for (const page of [trainer, iphoneA, iphoneB]) page.setDefaultTimeout(25_000);
 
   try {
     await trainer.goto('/?role=trainer');
@@ -171,7 +172,8 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
       return await iphoneA.getByLabel(label, {exact:true}).count() ? iphoneA : iphoneB;
     };
     const amountDecision = async (page: Page, label: string, button: string, amount: string) => {
-      await page.getByLabel(label, {exact:true}).fill(amount);
+      // The formatted amount preview is also inside the label once a draft exists.
+      await page.getByLabel(label, {exact:false}).fill(amount);
       page.once('dialog', dialog => dialog.accept());
       await page.getByRole('button', {name:button,exact:true}).tap();
     };

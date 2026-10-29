@@ -1,4 +1,4 @@
-import { makeUuid } from './browserCompat';
+import { makeUuid, readStorage, writeStorage } from './browserCompat';
 import {
   Decision,
   GameSession,
@@ -44,7 +44,7 @@ const makeCode = () => {
 };
 
 const read = (code: string): GameSession | null => {
-  const raw = localStorage.getItem(PREFIX + code);
+  const raw = readStorage(PREFIX + code);
   if (!raw) return null;
   const parsed = JSON.parse(raw) as GameSession;
   return {
@@ -64,7 +64,7 @@ const read = (code: string): GameSession | null => {
 };
 
 const write = (session: GameSession) => {
-  localStorage.setItem(PREFIX + session.code, JSON.stringify(session));
+  writeStorage(PREFIX + session.code, JSON.stringify(session));
   channel?.postMessage({ code: session.code });
   window.dispatchEvent(new CustomEvent('kreditjatek-store', { detail: session.code }));
 };

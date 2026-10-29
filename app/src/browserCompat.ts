@@ -25,27 +25,51 @@ export const makeUuid = () =>
     ? globalThis.crypto.randomUUID()
     : fallbackRandomId();
 
+// Keep the latest value available even when both browser storage quotas are full.
+// sessionStorage is a reload-safe spill area; an older localStorage value must
+// never take precedence over a newer value written there.
+const memoryStorage = new Map<string, string>();
+
+export const storageKeys = (prefix: string) => {
+  const keys = new Set(memoryStorage.keys());
+  for (const name of ['localStorage', 'sessionStorage'] as const) {
+    try { for (const key of Object.keys(window[name])) keys.add(key); } catch { /* Storage can be disabled. */ }
+  }
+  return [...keys].filter(key => key.startsWith(prefix));
+};
+
+export const removeStorage = (key: string) => {
+  memoryStorage.delete(key);
+  for (const name of ['localStorage', 'sessionStorage'] as const) {
+    try { window[name].removeItem(key); } catch { /* Best-effort cache removal. */ }
+  }
+};
+
 export const readStorage = (key: string) => {
+  if (memoryStorage.has(key)) return memoryStorage.get(key)!;
+  try {
+    const spill = window.sessionStorage.getItem(key);
+    if (spill !== null) return spill;
+  } catch { /* Continue with localStorage when sessionStorage is unavailable. */ }
   try {
     return window.localStorage.getItem(key);
   } catch {
-    try {
-      return window.sessionStorage.getItem(key);
-    } catch {
-      return null;
-    }
+    return null;
   }
 };
 
 export const writeStorage = (key: string, value: string) => {
   try {
     window.localStorage.setItem(key, value);
+    memoryStorage.delete(key);
+    try { window.sessionStorage.removeItem(key); } catch { /* Cache cleanup only. */ }
     return;
   } catch {
     try {
       window.sessionStorage.setItem(key, value);
+      memoryStorage.delete(key);
     } catch {
-      // A kliens Firebase-azonosítóval ettől még működhet az aktuális oldalletöltésben.
+      memoryStorage.set(key, value);
     }
   }
 };

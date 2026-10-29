@@ -39,7 +39,7 @@ import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildGroupPicture, buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
 import { buildDebriefEventGroups } from './debriefGrouping';
-import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage } from './browserCompat';
+import { formatCreditInput, makeUuid, parseCreditInput, readStorage, writeStorage, removeStorage, storageKeys } from './browserCompat';
 
 const formatCredits = (value: number) =>
   new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 0 }).format(value) + ' kr';
@@ -97,10 +97,10 @@ function completeDemoRound(code: string) {
 
 function ensureTrainerDemo() {
   if (params.get('reset') === '1') {
-    localStorage.removeItem('kreditjatek_demo_code');
+    removeStorage('kreditjatek_demo_code');
   }
 
-  const stored = localStorage.getItem('kreditjatek_demo_code');
+  const stored = readStorage('kreditjatek_demo_code');
   const storedSession = stored ? gameStore.get(stored) : null;
   if (stored && storedSession) {
     storedSession.players.forEach((player) => gameStore.touchPlayer(stored, player.id));
@@ -117,7 +117,7 @@ function ensureTrainerDemo() {
     gameStore.nextRound(demo.code);
   }
 
-  localStorage.setItem('kreditjatek_demo_code', demo.code);
+  writeStorage('kreditjatek_demo_code', demo.code);
   return demo.code;
 }
 
@@ -268,8 +268,8 @@ function TrainerStart({ onCreated, testMode = false }: { onCreated: (session: Ga
   const [error, setError] = useState('');
   const recentGames = useMemo(() => {
     try {
-      return Object.keys(localStorage).filter(key => key.startsWith('kreditjatek_session_')).map(key => {
-        try { return JSON.parse(localStorage.getItem(key) || 'null') as GameSession | null; } catch { return null; }
+      return storageKeys('kreditjatek_session_').map(key => {
+        try { return JSON.parse(readStorage(key) || 'null') as GameSession | null; } catch { return null; }
       }).filter((item): item is GameSession => Boolean(item?.code && item?.createdAt)).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,20);
     } catch { return []; }
   }, []);
