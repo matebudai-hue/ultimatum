@@ -1,3 +1,4 @@
+import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from '../src/patternNotes';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {transformSync} from 'esbuild';
@@ -9,7 +10,7 @@ const compile=(start:string,end:string)=>transformSync(source.slice(source.index
 const patternPairings=new Function(compile('function patternPairings(','function ParticipantPatterns(')+';return patternPairings;')();
 const decisionsFor=(s:any,p:any)=>s.decisions.filter((d:any)=>d.pairingId===p.id);
 const playerName=(s:any,id:string)=>id==='BOT'?'Rendszerjátékos':s.players.find((p:any)=>p.id===id)?.name ?? id;
-const create=(name:string,next:string)=>new Function('React','patternPairings','decisionsFor','playerName','formatCredits',compile('function '+name+'(','function '+next+'(')+';return '+name+';')(React,patternPairings,decisionsFor,playerName,(n:number)=>n+' kr');
+const create=(name:string,next:string)=>new Function('PairComments','PoolNotes','pairComments','poolMarkers','openPatternNote','pairNoteId','poolNoteId','React','patternPairings','decisionsFor','playerName','formatCredits',compile('function '+name+'(','function '+next+'(')+';return '+name+';')(PairComments,PoolNotes,pairComments,poolMarkers,openPatternNote,pairNoteId,poolNoteId,React,patternPairings,decisionsFor,playerName,(n:number)=>n+' kr');
 const Split=create('SplitDecisionPattern','TrustBarsPattern');
 const Trust=create('TrustBarsPattern','TrustMatrixPattern');
 const session:any={startingCredit:100000,players:[],closedRounds:['1a','2a','3a'],pairings:[],decisions:[]};
@@ -41,7 +42,7 @@ for(const page of [0,1]) {
 }
 // The projected snapshot must carry both the hover data and its visible pointer.
 const poolSource=compile('function PublicGoodsPatterns(','function renderPatternProjectionFromElement(');
-const Pool=new Function('React','poolPlayerColor','playerName','formatCredits',poolSource+';return PublicGoodsPatterns;')(React,()=> 'red',playerName,(n:number)=>n+' kr');
+const Pool=new Function('PairComments','PoolNotes','pairComments','poolMarkers','openPatternNote','pairNoteId','poolNoteId','React','poolPlayerColor','playerName','formatCredits',poolSource+';return PublicGoodsPatterns;')(PairComments,PoolNotes,pairComments,poolMarkers,openPatternNote,pairNoteId,poolNoteId,React,()=> 'red',playerName,(n:number)=>n+' kr');
 const pool={players:[{id:'a',name:'Titkos Anna'},{id:'b',name:'Titkos Béla'}],groups:[{id:'g',name:'Balaton',memberIds:['a','b']}],publicGoodsRounds:[{id:'r',groupId:'g',roundNumber:1,status:'settled',memberIds:['a','b'],contributions:{a:100,b:200},totalContribution:300,startingGroupWealth:1000,startingPlayerWealth:{a:500,b:500}}]};
 const hover={groupId:'g',roundId:'r',roundLabel:'1. kör',playerId:'a',amount:100,ownPercent:20,potPercent:33.3};
 const html=renderToStaticMarkup(<Pool session={pool} showNames={false} selectedGroupId="g" onSelectGroup={()=>{}} hoveredSegment={hover} onHoverSegment={()=>{}}/>);
@@ -59,3 +60,12 @@ assert.equal(projector.window.document.getElementById('kredit-pattern-projection
 assert.match(projector.window.document.body.textContent!,/100 kr/);
 assert.doesNotMatch(projector.window.document.body.textContent!,/Titkos/);
 console.log('CHART PRESENTATION: reserve pairs visible on every page, anonymous labels and projected hover pointer PASS');
+
+const sourceNote=controller.window.document.querySelector('details')!;
+assert.equal(sourceNote.open,false,'Notes are closed until the trainer opens one');
+sourceNote.open=true;
+const sourceNotes=controller.window.document.querySelector('.pattern-notes')!;
+sourceNotes.scrollTop=25;
+project('publicGoods');
+assert.equal(projector.window.document.querySelector('details')!.open,true,'Opened note is mirrored on the projector');
+assert.equal(projector.window.document.querySelector('.pattern-notes')!.scrollTop,25,'Comment scroll is mirrored');

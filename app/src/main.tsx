@@ -1,3 +1,4 @@
+import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
 import { AmountInput, useAmountDraft, confirmAmount } from './AmountInput';
 import { publicGoodsPlayerPayout } from './gameEngine';
 import React, { FormEvent, useEffect, useMemo, useState } from 'react';
@@ -3206,7 +3207,7 @@ function ParticipantPatterns({ session, game, showNames, roleFilter, page, onPag
     const amounts = game === 'ultimatum' ? `ajánlat ${main?.amount === undefined ? '–' : formatCredits(main.amount)} · ${response ? (response.accepted ? 'elfogadva' : 'elutasítva') : 'nincs válasz'}` : game === 'dictator' ? `átadás ${main?.amount === undefined ? '–' : formatCredits(main.amount)}` : `küldött ${main?.amount === undefined ? '–' : formatCredits(main.amount)} · vissza ${response?.amount === undefined ? '–' : formatCredits(response.amount)}`;
     return `${role} · ${amounts}${showNames ? ' · partner: ' + playerName(session, partner) : ''}${markers ? ' · ' + markers : ''}`;
   };
-  return <div className="participant-patterns"><p>A két körben rendszerint más a partner. A megjelölt döntések technikai vagy tréneri beavatkozással születtek.</p><div className="participant-pattern-grid"><strong>Résztvevő</strong><strong>1. kör · {rounds[0]}</strong><strong>2. kör · {rounds[1]}</strong>{filtered.slice(safePage * 8, safePage * 8 + 8).map(({player,index}) => <React.Fragment key={player.id}><span>{showNames ? player.name : `${index + 1}. résztvevő`}</span><span>{describe(player.id, rounds[0])}</span><span>{describe(player.id, rounds[1])}</span></React.Fragment>)}</div><div className="trust-flow-pager"><button className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>Előző</button><span>{safePage + 1} / {pages}</span><button className="secondary" disabled={safePage + 1 >= pages} onClick={() => onPageChange(safePage + 1)}>Következő</button></div></div>;
+  return <div className="participant-patterns"><p>A két körben rendszerint más a partner. A megjelölt döntések technikai vagy tréneri beavatkozással születtek.</p><div className="participant-pattern-grid"><strong>Résztvevő</strong><strong>1. kör · {rounds[0]}</strong><strong>2. kör · {rounds[1]}</strong>{filtered.slice(safePage * 8, safePage * 8 + 8).map(({player,index}) => <React.Fragment key={player.id}><span>{showNames ? player.name : `${index + 1}. résztvevő`}</span><span>{describe(player.id, rounds[0])}<PairComments session={session} pairs={session.pairings.filter(p=>p.roundKey===rounds[0] && (p.playerA===player.id || p.playerB===player.id))} showNames={showNames} /></span><span>{describe(player.id, rounds[1])}<PairComments session={session} pairs={session.pairings.filter(p=>p.roundKey===rounds[1] && (p.playerA===player.id || p.playerB===player.id))} showNames={showNames} /></span></React.Fragment>)}</div><div className="trust-flow-pager"><button className="secondary" disabled={safePage === 0} onClick={() => onPageChange(safePage - 1)}>Előző</button><span>{safePage + 1} / {pages}</span><button className="secondary" disabled={safePage + 1 >= pages} onClick={() => onPageChange(safePage + 1)}>Következő</button></div></div>;
 }
 
 function SplitDecisionPattern({
@@ -3254,7 +3255,7 @@ function SplitDecisionPattern({
   const visibleRows = [...humanRows.slice(safePage * 10, safePage * 10 + 10), ...systemRows];
 
   return (
-    <div className="split-pattern-chart">
+    <div className="pattern-with-notes"><div className="split-pattern-chart">
       <div className="split-pattern-y-axis">
         <span>{formatCredits(total)}</span>
         <span>{formatCredits(total / 2)}</span>
@@ -3268,7 +3269,7 @@ function SplitDecisionPattern({
           const status = game === 'ultimatum' ? (row.accepted ? 'Elfogadva' : 'Elutasítva') : 'Átadva';
           return (
             <div className={'split-pattern-item' + (row.system ? ' is-system-pair' : '')} key={row.pairing.id}>
-              <div className="split-pattern-value">{formatCredits(row.amount)}</div>
+              <div className="split-pattern-value">{formatCredits(row.amount)}{pairComments(session, row.pairing).length > 0 && <button type="button" className="pattern-note-trigger" title="Résztvevői komment" onClick={()=>openPatternNote(pairNoteId(row.pairing.id))}>💬</button>}</div>
               <div
                 className={'split-pattern-bar ' + (game === 'ultimatum' ? (row.accepted ? 'is-accepted' : 'is-rejected') : 'is-dictator')}
                 title={(showNames ? pairLabel + ' · ' : '') + formatCredits(row.amount) + ' · ' + status}
@@ -3299,7 +3300,7 @@ function SplitDecisionPattern({
         <span><i className="legend-kept" />Megtartott</span>
         {game === 'ultimatum' && <span><i className="legend-rejected" />Elutasított ajánlat</span>}
       </div>
-    </div>
+    </div><PairComments session={session} pairs={visibleRows.map(row=>row.pairing)} showNames={showNames} offset={safePage * 10} /></div>
   );
 }
 
@@ -3391,7 +3392,7 @@ function TrustBarsPattern({
           return (
             <article className={'trust-simple-pair' + (row.system ? ' is-system-pair' : '')} key={row.pairing.id}>
               <div className="trust-simple-pair-head">
-                <strong title={showNames ? pairText : undefined}>{pairText}{row.system && <span className="system-pair-badge">Tartalékjátékos</span>}</strong>
+                <strong title={showNames ? pairText : undefined}>{pairText}{pairComments(session, row.pairing).length > 0 && <button type="button" className="pattern-note-trigger" title="Résztvevői komment" onClick={()=>openPatternNote(pairNoteId(row.pairing.id))}>💬</button>}{row.system && <span className="system-pair-badge">Tartalékjátékos</span>}</strong>
                 <div className="trust-simple-story" aria-label={
                   formatAmount(row.sent) + ' kredit ment, ' +
                   formatAmount(row.multiplied) + ' kredit lett belőle, ' +
@@ -3434,7 +3435,7 @@ function TrustBarsPattern({
   );
 
   return (
-    <div className="trust-simple">
+    <div className="pattern-with-notes"><div className="trust-simple">
       <div className="trust-simple-legend" aria-label="Színjelmagyarázat">
         <span><i className="is-low" />0–49%</span>
         <span><i className="is-high" />50–100%</span>
@@ -3461,7 +3462,7 @@ function TrustBarsPattern({
           </div>
         </div>
       )}
-    </div>
+    </div><PairComments session={session} pairs={[...visibleA,...visibleB].map(row=>row.pairing)} showNames={showNames} offset={startIndex} /></div>
   );
 }
 
@@ -3498,7 +3499,7 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
   const bucketIndexes = new Map<string, number>();
 
   return (
-    <div className="trust-matrix-wrap">
+    <div className="pattern-with-notes"><div className="trust-matrix-wrap">
       <svg className="trust-matrix" viewBox="0 0 1000 650" role="img" aria-label="Bizalomjáték mátrix">
         <rect x="92" y="80" width="398" height="231" className="trust-quadrant q-tl" />
         <rect x="490" y="80" width="398" height="231" className="trust-quadrant q-tr" />
@@ -3536,7 +3537,7 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
           const label = showNames ? row.giver + ' → ' + row.receiver : row.system ? 'T' : String(index + 1);
           const labelOnLeft = showNames && px > 720;
           return (
-            <g key={row.pairing.id} className={'trust-point' + (row.system ? ' is-system-pair' : '')}>
+            <g key={row.pairing.id} tabIndex={pairComments(session,row.pairing).length ? 0 : undefined} role={pairComments(session,row.pairing).length ? 'button' : undefined} onClick={()=>openPatternNote(pairNoteId(row.pairing.id))} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPatternNote(pairNoteId(row.pairing.id));}}} className={'trust-point' + (row.system ? ' is-system-pair' : '')}>
               <title>{(row.system ? 'Tartalékjátékos · ' : '') + (showNames ? row.giver + ' → ' + row.receiver : (index + 1) + '. pár') + ' · küldött ' + (Math.round(row.sentPercent * 10) / 10) + '% · visszaadott ' + (Math.round(row.returnPercent * 10) / 10) + '%'}</title>
               <circle cx={px} cy={py} r={showNames ? 10 : 13} />
               <text
@@ -3545,14 +3546,14 @@ function TrustMatrixPattern({ session, showNames }: { session: GameSession; show
                 textAnchor={showNames ? (labelOnLeft ? 'end' : 'start') : 'middle'}
                 className={showNames ? 'trust-point-name' : 'trust-point-index'}
               >
-                {label}
+                {label}{pairComments(session, row.pairing).length > 0 ? " 💬" : ""}
               </text>
             </g>
           );
         })}
       </svg>
       {rows.some(row => row.system) && <div className="pattern-legend"><span className="system-pair-badge">T · Tartalékjátékossal játszott pár</span></div>}
-    </div>
+    </div><PairComments session={session} pairs={rows.map(row=>row.pairing)} showNames={showNames} /></div>
   );
 }
 
@@ -3619,7 +3620,7 @@ function PublicGoodsPatterns({
         </div>
       )}
 
-      <section className="pool-pattern-group">
+      <div className="pattern-with-notes"><section className="pool-pattern-group">
         <header>
           <div>
             <span>Saját körökhöz viszonyítva</span>
@@ -3740,6 +3741,11 @@ function PublicGoodsPatterns({
                       })}
                     </div>
                   </div>
+                  <div className="pool-round-markers">{round.memberIds.map((id,index)=> {
+                    const markers=poolMarkers(round,id);
+                    const commented=(session.reflections??[]).some(r=>r.playerId===id && r.decisionId===`decision:publicGoods:r${round.roundNumber}:${round.groupId}:${id}` && r.comment.trim());
+                    return markers.loss || markers.near || markers.large || commented ? <button type="button" className="pattern-note-trigger" key={id} title={displayPlayer(id)+' · részletek'} onClick={()=>openPatternNote(poolNoteId(round.id,id))} style={{borderLeft:'3px solid '+poolPlayerColor(Math.max(0,group.memberIds.indexOf(id)))}}>{group.memberIds.indexOf(id)+1}. {markers.loss?'− ':''}{markers.near?'≈ ':''}{markers.large?'◆ ':''}{commented?'💬':''}</button> : null;
+                  })}</div>
                   <strong>{learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör'}</strong>
                   {gap !== undefined && (
                     <small className={gap >= 0 ? 'is-over' : 'is-under'}>
@@ -3751,7 +3757,7 @@ function PublicGoodsPatterns({
             })}
           </div>
         </div>
-      </section>
+      </section><PoolNotes session={session} rounds={rounds} showNames={showNames} /></div>
     </div>
   );
 }
@@ -3808,6 +3814,8 @@ function renderPatternProjectionFromElement(game: PatternGame) {
   doc.head.appendChild(projectionStyle);
   }
   doc.body.replaceChildren(doc.importNode(source, true));
+  const sourceNotes=source.querySelectorAll('.pattern-notes');
+  doc.querySelectorAll('.pattern-notes').forEach((node,index)=>{node.scrollTop=sourceNotes[index]?.scrollTop??0;});
   return true;
 }
 
@@ -3843,6 +3851,14 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
     });
     return () => window.cancelAnimationFrame(id);
   }, [game, showNames, trustView, trustPage, selectedPoolGroupId, poolHover, roundView, session]);
+
+  useEffect(() => {
+    const stage=document.getElementById('patterns-stage-'+game);
+    const syncScroll=()=>{if(projectorWindow && !projectorWindow.closed && projectorContentMode==='patterns') renderPatternProjectionFromElement(game);};
+    stage?.addEventListener('scroll',syncScroll,true);
+    stage?.addEventListener('toggle',syncScroll,true);
+    return ()=>{stage?.removeEventListener('scroll',syncScroll,true);stage?.removeEventListener('toggle',syncScroll,true);};
+  },[game]);
 
   const project = () => {
     setProjectionError('');
@@ -4188,7 +4204,7 @@ function DebriefWorkspace({
   onOpenChange: (open: boolean) => void;
 }) {
   const finalMode = session.roundKey === 'report';
-  const [tab, setTab] = useState<'events' | 'participants' | 'patterns'>('events');
+  const [tab, setTab] = useState<'participants' | 'patterns'>('patterns');
   const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
@@ -4198,7 +4214,7 @@ function DebriefWorkspace({
     session.publicGoodsRounds.some((round) => round.status === 'settled');
 
   useEffect(() => {
-    if (finalMode) setTab('events');
+    if (finalMode) setTab('patterns');
   }, [finalMode]);
 
   useEffect(() => {
@@ -4218,19 +4234,17 @@ function DebriefWorkspace({
   const content = hasData ? (
     <>
       <div className="debrief-tabs" role="tablist" aria-label="Kivezetés nézetei">
-        <button type="button" className={tab === 'events' ? 'active' : ''} onClick={() => setTab('events')}>Érdekes események</button>
-        <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
         <button type="button" className={tab === 'patterns' ? 'active' : ''} onClick={() => setTab('patterns')}>Mintázatok</button>
+        <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
       </div>
 
-      {tab === 'events' && <DebriefEventsView session={session} />}
       {tab === 'participants' && <DebriefParticipantsView session={session} />}
       {tab === 'patterns' && <DebriefPatternsView session={session} />}
     </>
   ) : (
     <div className="debrief-empty-state">
       <strong>Még nincs kivezetési adat.</strong>
-      <span>Az első lezárt kör után itt jelennek meg az érdekes események és a résztvevői történetek.</span>
+      <span>Az első lezárt kör után itt jelennek meg a mintázatok és a résztvevői kommentek.</span>
     </div>
   );
 
@@ -4271,7 +4285,7 @@ function DebriefWorkspace({
         <div>
           <p className="eyebrow">Játék lezárva · tréneri nézet</p>
           <h2>Kivezetés</h2>
-          <p className="debrief-workspace-intro">Most ez a fő munkafelület: érdekes események, egyéni történetek és mintázatok.</p>
+          <p className="debrief-workspace-intro">Grafikonok, résztvevői kommentek és egyéni történetek.</p>
         </div>
         <div className="debrief-workspace-status">
           <b>Reflexió {reflectedPlayers}/{eligiblePlayers}</b>

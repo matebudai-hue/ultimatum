@@ -1,3 +1,4 @@
+import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from '../src/patternNotes';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {transformSync} from 'esbuild';
@@ -6,7 +7,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 const src = fs.readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');
 const fragment = src.slice(src.indexOf('function ParticipantPatterns('),src.indexOf('function SplitDecisionPattern('));
 const js = transformSync(fragment,{loader:'tsx',jsx:'transform'}).code;
-const view = new Function('React','decisionsFor','playerName','formatCredits',js+';return ParticipantPatterns;')(React,(s:any,p:any)=>s.decisions.filter((d:any)=>d.pairingId===p.id),(s:any,id:string)=>s.players.find((p:any)=>p.id===id)?.name ?? 'BOT',(n:number)=>String(n)+' kr');
+const view = new Function('PairComments','PoolNotes','pairComments','poolMarkers','openPatternNote','pairNoteId','poolNoteId','React','decisionsFor','playerName','formatCredits',js+';return ParticipantPatterns;')(PairComments,PoolNotes,pairComments,poolMarkers,openPatternNote,pairNoteId,poolNoteId,React,(s:any,p:any)=>s.decisions.filter((d:any)=>d.pairingId===p.id),(s:any,id:string)=>s.players.find((p:any)=>p.id===id)?.name ?? 'BOT',(n:number)=>String(n)+' kr');
 const session = {players:[{id:'a',name:'Alma'},{id:'b',name:'Béla'}],closedRounds:['2a','2b'],manualCorrections:[],pairings:[{id:'x',roundKey:'2a',playerA:'a',playerB:'b'},{id:'y',roundKey:'2b',playerA:'b',playerB:'a'}],decisions:[{pairingId:'x',type:'dictator_give',amount:1000},{pairingId:'y',type:'dictator_give',amount:2000,submissionSource:'manual_correction'}]};
 const render = (roleFilter:string,showNames:boolean) => renderToStaticMarkup(React.createElement(view,{session,game:'dictator',showNames,roleFilter,page:0,onPageChange:()=>{}}));
 const a = render('first-giver',true); assert.match(a,/Alma/); assert.doesNotMatch(a,/>Béla<\/span>/); assert.match(a,/döntő/); assert.match(a,/fogadó/); assert.match(a,/kézi rögzítés/);
