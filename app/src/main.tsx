@@ -1253,6 +1253,19 @@ function TrainerCockpit({
   debriefOpen?: boolean;
 }) {
   const compactDebrief = session.roundKey === 'report' || debriefOpen;
+  const [debriefStatusOpen, setDebriefStatusOpen] = useState(false);
+  const debriefStatusRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => { setDebriefStatusOpen(false); }, [compactDebrief]);
+  useEffect(() => {
+    if (!debriefStatusOpen) return;
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !debriefStatusRef.current?.contains(event.target)) setDebriefStatusOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setDebriefStatusOpen(false); } };
+    document.addEventListener('pointerdown', outside);
+    window.addEventListener('keydown', escape, true);
+    return () => { document.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', escape, true); };
+  }, [debriefStatusOpen]);
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
   const [standingsPage, setStandingsPage] = useState(0);
   const standingsPages = Math.max(1,Math.ceil(session.players.filter(player=>!player.isBot).length/STANDINGS_PAGE_SIZE));
@@ -1401,6 +1414,16 @@ function TrainerCockpit({
               {primaryIcon}{primaryLabel}
             </button>}
             <button className="toolbar-button debrief-toolbar-trigger" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
+            {compactDebrief && <div className="debrief-status-control" ref={debriefStatusRef}>
+              <button type="button" className={'toolbar-button' + (debriefStatusOpen ? ' is-active' : '')} aria-expanded={debriefStatusOpen} aria-controls="debrief-status-panel" onClick={() => setDebriefStatusOpen(open => !open)} title="Készültség, kapcsolat és idő megtekintése">Állapotok</button>
+              {debriefStatusOpen && <div id="debrief-status-panel" className="debrief-status-popover" role="region" aria-label="Játékállapotok">
+                <div className="debrief-status-heading"><strong>Játékállapotok</strong><button type="button" className="toolbar-button" onClick={() => setDebriefStatusOpen(false)} aria-label="Állapotok bezárása">Bezárás ×</button></div>
+                <GameTimeline session={session} />
+                <TrainerPulse session={session} />
+                <TrainerAttention session={session} />
+              </div>}
+            </div>}
+
             <button
               className={'toolbar-button ' + (projectionControlsOpen ? 'is-active' : '')}
               onClick={() => {

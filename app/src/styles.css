@@ -2641,3 +2641,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .cockpit.is-debrief .toolbar-button svg{width:14px;height:14px}
 .cockpit.is-debrief .sync-indicator{display:none}
 @media(max-width:760px){.cockpit.is-debrief .compact-controls{flex-wrap:wrap}.cockpit.is-debrief .compact-state-line>strong{font-size:12px}.cockpit.is-debrief .toolbar-button{font-size:10px;padding:0 5px}}
+
+.debrief-status-control{position:static;flex:0 0 auto}
+.debrief-status-popover{position:absolute;right:8px;top:calc(100% + 6px);z-index:150;width:min(860px,calc(100vw - 32px));max-height:70vh;overflow:auto;white-space:normal;background:#fff;color:var(--navy);border:1px solid #cbd7e4;border-radius:10px;box-shadow:0 12px 36px rgba(15,23,42,.22);text-align:left}
+.debrief-status-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.debrief-status-heading>strong{font-size:13px}
+.cockpit.is-debrief .debrief-status-heading .toolbar-button{color:var(--navy);border-color:#cbd7e4;background:#f1f5f9}
+.debrief-status-popover .trainer-pulse{border-radius:0;padding:8px}
+.debrief-status-popover .trainer-attention{margin:8px}
+@media(max-width:760px){.debrief-status-control{position:static}.debrief-status-popover{right:0;top:100%;width:min(860px,calc(100vw - 20px))}}
