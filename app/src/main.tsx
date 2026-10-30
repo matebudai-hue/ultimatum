@@ -1245,11 +1245,14 @@ function TrainerCockpit({
   session,
   joinUrl,
   onOpenDebrief,
+  debriefOpen = false,
 }: {
   session: GameSession;
   joinUrl: string;
   onOpenDebrief: () => void;
+  debriefOpen?: boolean;
 }) {
+  const compactDebrief = session.roundKey === 'report' || debriefOpen;
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
   const [standingsPage, setStandingsPage] = useState(0);
   const standingsPages = Math.max(1,Math.ceil(session.players.filter(player=>!player.isBot).length/STANDINGS_PAGE_SIZE));
@@ -1373,17 +1376,17 @@ function TrainerCockpit({
 
   return (
     <>
-    <section className="cockpit cockpit-v2 trainer-sticky" ref={stickyRef}>
+    <section className={'cockpit cockpit-v2 trainer-sticky' + (compactDebrief ? ' is-debrief' : '')} ref={stickyRef}>
       <FirebaseSyncBanner />
       <div className="command-deck">
         <div className="compact-command-bar">
           <div className="compact-state">
             <div className="compact-state-line">
-              <strong>{ROUND_LABELS[session.roundKey]}</strong>
-              <span className={'live-status ' + (session.status === 'active' ? 'is-live' : '')}>
+              <strong>{compactDebrief ? 'Kivezetés' : ROUND_LABELS[session.roundKey]}</strong>
+              {!compactDebrief && <span className={'live-status ' + (session.status === 'active' ? 'is-live' : '')}>
                 {session.status === 'active' ? 'ÉLŐ' : session.status === 'finished' ? 'LEZÁRVA' : 'ELŐKÉSZÍTÉS'}
-              </span>
-              <span className="compact-hint">{actionHint}</span>
+              </span>}
+              {!compactDebrief && <span className="compact-hint">{actionHint}</span>}
             </div>
           </div>
 
@@ -1394,9 +1397,9 @@ function TrainerCockpit({
               onClick={() => projectMode('qr')}
               title="QR-kód kivetítése külön ablakban"
             ><QrCode size={16} />QR</button>
-            <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
+            {!compactDebrief && <button className="compact-primary-action" disabled={primaryDisabled} onClick={primaryAction}>
               {primaryIcon}{primaryLabel}
-            </button>
+            </button>}
             <button className="toolbar-button debrief-toolbar-trigger" onClick={onOpenDebrief} title="Kivezetés megnyitása"><BarChart3 size={16} />Kivezetés</button>
             <button
               className={'toolbar-button ' + (projectionControlsOpen ? 'is-active' : '')}
@@ -1411,7 +1414,7 @@ function TrainerCockpit({
               <Monitor size={16} />Kivetítés
             </button>
             <button className="toolbar-button" onClick={() => downloadCsv(session)} title="Riport letöltése"><Download size={16} />Riport</button>
-            {canFinishGame(session) && (
+            {!compactDebrief && canFinishGame(session) && (
               <button
                 className="toolbar-button danger-action"
                 onClick={() => {
@@ -1428,8 +1431,7 @@ function TrainerCockpit({
         </div>
 
 
-        <GameTimeline session={session} />
-        <TrainerPulse session={session} />
+        {!compactDebrief && <><GameTimeline session={session} /><TrainerPulse session={session} /></>}
       </div>
     </section>
         {projectionControlsOpen && (
@@ -1473,7 +1475,7 @@ function TrainerCockpit({
           </div>
         )}
 
-    <TrainerAttention session={session} />
+    {!compactDebrief && <TrainerAttention session={session} />}
     <div id="projection-qr-source" style={{ display: 'none' }} aria-hidden="true">
       <QRCodeSVG value={joinUrl} size={620} level="M" includeMargin />
     </div>
@@ -4378,7 +4380,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
 
   return (
     <main className="shell trainer-shell">
-      <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} />
+      <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} debriefOpen={debriefOpen} />
       {testMode && <TestHarness session={session} />}
 
       {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}

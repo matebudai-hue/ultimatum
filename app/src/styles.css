@@ -2630,3 +2630,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 .pattern-with-notes{display:flex;align-items:stretch;gap:18px;min-width:0}.pattern-with-notes>:first-child{flex:1;min-width:0}.pattern-notes{flex:0 0 280px;max-width:32%;max-height:480px;overflow:auto;padding:14px;border-left:3px solid #0e7490;background:#f0f9ff;border-radius:8px;font-size:13px;overflow-wrap:anywhere}.pattern-notes>strong{display:block;margin-bottom:10px}.pattern-notes blockquote{margin:10px 0;padding:8px;border-bottom:1px solid #cbd5e1}.pattern-notes small{display:block;color:#475569;font-size:11px}.pattern-notes p{margin:5px 0;line-height:1.4}.pool-round-markers{display:flex;flex-direction:column;gap:3px;font-size:10px}.pool-round-markers span{border-left:4px solid;padding-left:4px}.participant-pattern-grid .pattern-notes{max-width:none;max-height:none;font-size:12px}.patterns-stage .pattern-with-notes{width:100%}@media(max-width:850px){.pattern-with-notes{flex-direction:column}.pattern-notes{flex-basis:auto;max-width:none;max-height:320px}}
 .pattern-notes{flex-basis:100px;max-width:100px;background:transparent;border:0;padding:3px;font-size:11px}.pattern-notes:has(details[open]){flex-basis:280px;max-width:32%;background:#f8fafc}.pattern-notes summary{cursor:pointer;color:#64748b;font-size:11px;padding:4px;list-style:none}.pattern-notes summary:hover,.pattern-notes summary:focus-visible{color:#0e7490;background:#e0f2fe}.pattern-note-content{padding:8px;border-left:2px solid #cbd5e1;font-size:13px}.pattern-note-trigger{border:0;background:transparent;color:#64748b;padding:2px 4px;font-size:11px;cursor:pointer;box-shadow:none}.pattern-note-trigger:hover,.pattern-note-trigger:focus-visible{background:#e0f2fe;color:#0e7490}.pool-round-markers{gap:1px;align-items:center}.participant-pattern-grid .pattern-notes:has(details[open]){max-width:none}@media(max-width:850px){.pattern-notes,.pattern-notes:has(details[open]){max-width:none;flex-basis:auto}}
+
+/* Kivezetéskor egy keskeny vezérlősor marad a játékállapot-kártyák helyén. */
+.cockpit.is-debrief{margin-bottom:6px;border-radius:7px}
+.cockpit.is-debrief .compact-command-bar{min-height:40px;padding:4px 8px;gap:6px 12px;flex-direction:row;align-items:center;flex-wrap:nowrap;border-radius:6px}
+.cockpit.is-debrief .compact-state{flex:0 0 auto}
+.cockpit.is-debrief .compact-state-line>strong{font-size:14px;letter-spacing:0}
+.cockpit.is-debrief .compact-controls{flex:1 1 auto;gap:4px}
+.cockpit.is-debrief .toolbar-button{min-height:28px;height:28px;padding:0 7px;font-size:11px}
+.cockpit.is-debrief .toolbar-button svg{width:14px;height:14px}
+.cockpit.is-debrief .sync-indicator{display:none}
+@media(max-width:760px){.cockpit.is-debrief .compact-controls{flex-wrap:wrap}.cockpit.is-debrief .compact-state-line>strong{font-size:12px}.cockpit.is-debrief .toolbar-button{font-size:10px;padding:0 5px}}
