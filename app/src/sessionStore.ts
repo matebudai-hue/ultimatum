@@ -59,6 +59,7 @@ const read = (code: string): GameSession | null => {
     pinnedDebriefEventIds: parsed.pinnedDebriefEventIds ?? [],
     debriefPhase: parsed.debriefPhase,
     reflections: parsed.reflections ?? [],
+    takeaways: parsed.takeaways ?? [],
     selfReport: parsed.selfReport ?? [],
   };
 };
@@ -1577,6 +1578,7 @@ export const localSessionStore = {
     code: string,
     playerId: string,
     items: Array<{ decisionId: string; comment: string }>,
+    takeaway?: string,
   ): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
@@ -1586,7 +1588,10 @@ export const localSessionStore = {
     const player = session.players.find((item) => item.id === playerId && !item.isBot);
     if (!player) throw new Error('A résztvevő nem található.');
 
-    if (!Array.isArray(items) || items.length < 1 || items.length > 3) {
+    if (takeaway !== undefined && typeof takeaway !== 'string') throw new Error('Érvénytelen tanulság.');
+    const takeawayText = takeaway?.trim();
+    if (takeawayText && takeawayText.length > 2000) throw new Error('A saját benyomás legfeljebb 2000 karakter lehet.');
+    if (!Array.isArray(items) || (items.length < 1 && !takeawayText) || items.length > 3) {
       throw new Error('Legalább 1, legfeljebb 3 döntést válassz.');
     }
 
@@ -1609,10 +1614,15 @@ export const localSessionStore = {
       ...reflections,
     ];
 
+    if (takeaway !== undefined) session.takeaways = [
+      ...(session.takeaways ?? []).filter(item => item.playerId !== playerId),
+      ...(takeawayText ? [{ playerId, text: takeawayText, submittedAt: now }] : []),
+    ];
+
     const eligiblePlayerIds = session.players
       .filter((item) => !item.isBot && !item.botControlled && buildSelfReport(session, item.id).length > 0)
       .map((item) => item.id);
-    const completed = new Set((session.reflections ?? []).map((item) => item.playerId));
+    const completed = new Set([...(session.reflections ?? []).map((item) => item.playerId), ...(session.takeaways ?? []).map(item => item.playerId)]);
     session.debriefPhase = eligiblePlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
     write(session);
     return session;

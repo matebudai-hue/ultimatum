@@ -106,6 +106,7 @@ export const buildSelfReportShareText = (
     learningStartWealth?: number;
     learningResult?: number;
   },
+  takeaway?: string,
 ): string => {
   const reflectionByDecision = new Map(reflections.map((item) => [item.decisionId, item]));
   const lines = [
@@ -140,7 +141,8 @@ export const buildSelfReportShareText = (
   }
 
   for (const item of report) {
-    lines.push(...selfReportItemText(item));
+    const gameTitle = {ultimatum:'Ultimátum',dictator:'Diktátor',trust:'Bizalom',publicGoods:'Közös kassza'}[item.game];
+    lines.push(gameTitle + ' · ' + item.roundLabel, ...selfReportItemText(item).slice(1));
     const reflection = reflectionByDecision.get(item.id);
     if (reflection) {
       lines.push(`Mi célból döntöttél így? ${reflection.comment}`);
@@ -148,5 +150,6 @@ export const buildSelfReportShareText = (
     lines.push('');
   }
 
+  if (takeaway?.trim()) lines.push('SAJÁT BENYOMÁSAIM, TANULSÁGAIM', takeaway.trim(), '');
   return lines.join('\n').trim();
 };

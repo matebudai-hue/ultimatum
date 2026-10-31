@@ -1,3 +1,6 @@
+import {ReflectionsView, StandingsView, renderReflectionProjection, type ReflectionEntry} from './DebriefExtras';
+import {PersonalReportDelivery} from './PersonalReportDelivery';
+import {TakeawayField} from './TakeawayField';
 import {ParticipantJourneyPanel, renderJourneyProjection} from './ParticipantJourney';
 import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
 import { AmountInput, useAmountDraft, confirmAmount } from './AmountInput';
@@ -37,7 +40,7 @@ import {
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { gameStore } from './store';
 import { canFinishGame } from './sessionStore';
-import { renderCreditStandings, STANDINGS_PAGE_SIZE } from './creditStandings';
+import { renderCreditStandings } from './creditStandings';
 import { downloadCsv, downloadTechnicalAudit, reportSummary } from './report';
 import { buildHighlightedEvents, buildInterestingEvents, buildSelfReport, InterestingEvent } from './debriefEngine';
 import { buildProjectionStory, ProjectionStory } from './projectionStory';
@@ -917,7 +920,7 @@ function CurrentRoundStatus({ session }: { session: GameSession }) {
 }
 
 type RulesProjectionGame = 'ultimatum' | 'dictator' | 'trust' | 'publicGoods';
-type ProjectionMode = 'qr' | 'standings' | 'blank' | RulesProjectionGame;
+type ProjectionMode = 'qr' | 'blank' | RulesProjectionGame;
 
 const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short: string }[] = [
   { id: 'ultimatum', label: 'Ultimátumjáték', short: '1. játék' },
@@ -927,7 +930,7 @@ const RULES_PROJECTION_OPTIONS: { id: RulesProjectionGame; label: string; short:
 ];
 
 let projectorWindow: Window | null = null;
-let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | 'journey' | null = null;
+let projectorContentMode: ProjectionMode | 'debrief' | 'patterns' | 'journey' | 'standings' | 'reflections' | null = null;
 
 function rulesProjectionGameForSession(session: GameSession): RulesProjectionGame {
   if (session.roundKey === '1a' || session.roundKey === '1b' || session.roundKey === 'lobby') return 'ultimatum';
@@ -1267,8 +1270,6 @@ function TrainerCockpit({
     return () => { document.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', escape, true); };
   }, [debriefStatusOpen]);
   const [projectionControlsOpen, setProjectionControlsOpen] = useState(false);
-  const [standingsPage, setStandingsPage] = useState(0);
-  const standingsPages = Math.max(1,Math.ceil(session.players.filter(player=>!player.isBot).length/STANDINGS_PAGE_SIZE));
   const [selectedProjectionMode, setSelectedProjectionMode] = useState<ProjectionMode>(() => rulesProjectionGameForSession(session));
   const [externalProjectionLabel, setExternalProjectionLabel] = useState<string | null>(null);
   const stickyRef = React.useRef<HTMLElement>(null);
@@ -1298,7 +1299,6 @@ function TrainerCockpit({
     setExternalProjectionLabel(null);
     let opened = false;
     if (mode === 'qr') opened = renderQrProjectionWindow(session, joinUrl);
-    else if (mode === 'standings') { setStandingsPage(0); opened = renderStandingsProjectionWindow(session,0,setStandingsPage); }
     else if (mode === 'blank') opened = renderBlankProjectionWindow();
     else opened = renderRulesProjectionWindow(session, mode);
 
@@ -1310,10 +1310,9 @@ function TrainerCockpit({
   useEffect(() => {
     if (!projectorWindow || projectorWindow.closed || projectorContentMode !== selectedProjectionMode) return;
     if (selectedProjectionMode === 'qr') renderQrProjectionWindow(session, joinUrl);
-    else if (selectedProjectionMode === 'standings') renderStandingsProjectionWindow(session,standingsPage,setStandingsPage);
     else if (selectedProjectionMode === 'blank') renderBlankProjectionWindow();
     else renderRulesProjectionWindow(session, selectedProjectionMode);
-  }, [joinUrl, selectedProjectionMode, session, standingsPage]);
+  }, [joinUrl, selectedProjectionMode, session]);
 
   const strategic = STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound);
   const strategicClosed = strategic && session.closedRounds.includes(session.roundKey as StrategicRound);
@@ -1465,7 +1464,6 @@ function TrainerCockpit({
                 <strong>
                   Aktuális: {externalProjectionLabel ?? (
                     selectedProjectionMode === 'qr' ? 'QR-kód' :
-                    selectedProjectionMode === 'standings' ? 'Végeredmény · kreditek játékonként' :
                     selectedProjectionMode === 'blank' ? 'Üres képernyő' :
                     RULES_PROJECTION_OPTIONS.find((option) => option.id === selectedProjectionMode)?.label ?? 'Játékszabály'
                   )}
@@ -1488,10 +1486,8 @@ function TrainerCockpit({
                 </button>
               ))}
               <button type="button" onClick={()=>window.dispatchEvent(new Event('kreditjatek-open-journey'))}>Egyéni történet</button>
-              <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'standings' ? 'active' : ''} onClick={() => projectMode('standings')}><BarChart3 size={15} />Végeredmény</button>
               <button type="button" className={!externalProjectionLabel && selectedProjectionMode === 'blank' ? 'active' : ''} onClick={() => projectMode('blank')}>Üres képernyő</button>
             </div>
-            {selectedProjectionMode === 'standings' && !externalProjectionLabel && <div className="standings-page-controls"><button type="button" className="secondary" disabled={standingsPage===0} onClick={()=>setStandingsPage(page=>Math.max(0,page-1))}>Előző oldal</button><strong>{Math.min(standingsPage+1,standingsPages)} / {standingsPages}</strong><button type="button" className="secondary" disabled={standingsPage+1>=standingsPages} onClick={()=>setStandingsPage(page=>page+1)}>Következő oldal</button><span>Végső kredit és nettó eredmények játékonként.</span></div>}
             <small>
               A projektorablakot egyszer húzd át a kivetítőre. Ezután minden váltást innen végzel; az ablak a helyén marad.
             </small>
@@ -4211,6 +4207,7 @@ function DebriefParticipantsView({ session }: { session: GameSession }) {
                 })}
               </div>
             )}
+            {(session.takeaways ?? []).find(item=>item.playerId===player.id)?.text && <div className="takeaway-trainer"><strong>Mit viszel magaddal?</strong><p>{(session.takeaways ?? []).find(item=>item.playerId===player.id)?.text}</p></div>}
             <div className="self-report-mini-grid">
               {report.map((item) => <SelfReportMiniCard item={item} key={item.id} />)}
             </div>
@@ -4229,6 +4226,17 @@ function projectParticipantJourney(source: HTMLElement) {
   return renderJourneyProjection(target,source);
 }
 
+function projectReflection(entry:ReflectionEntry,showNames:boolean,part:number) {
+  const target=ensureProjectorWindow();if(!target)return false;
+  projectorContentMode='reflections';
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label',{detail:{label:'Reflexiók'}}));
+  return renderReflectionProjection(target,entry,showNames,part);
+}
+function projectDebriefStandings(session:GameSession,page:number,onPageChange:(page:number)=>void) {
+  window.dispatchEvent(new CustomEvent('kreditjatek-projector-label',{detail:{label:'Végeredmény'}}));
+  return renderStandingsProjectionWindow(session,page,onPageChange);
+}
+
 function DebriefWorkspace({
   session,
   open,
@@ -4239,13 +4247,13 @@ function DebriefWorkspace({
   onOpenChange: (open: boolean) => void;
 }) {
   const finalMode = session.roundKey === 'report';
-  const [tab, setTab] = useState<'participants' | 'patterns' | 'journey'>('patterns');
+  const [tab, setTab] = useState<'participants' | 'patterns' | 'journey' | 'standings' | 'reflections'>('patterns');
   useEffect(()=>{
     const openJourney=()=>{onOpenChange(true);setTab('journey');};
     window.addEventListener('kreditjatek-open-journey',openJourney);
     return()=>window.removeEventListener('kreditjatek-open-journey',openJourney);
   },[onOpenChange]);
-  const reflectedPlayers = new Set((session.reflections ?? []).map((item) => item.playerId)).size;
+  const reflectedPlayers = new Set([...(session.reflections ?? []).map((item) => item.playerId), ...(session.takeaways ?? []).map(item => item.playerId)]).size;
   const eligiblePlayers = session.players.filter(
     (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
   ).length;
@@ -4277,8 +4285,12 @@ function DebriefWorkspace({
         <button type="button" className={tab === 'patterns' ? 'active' : ''} onClick={() => setTab('patterns')}>Mintázatok</button>
         <button type="button" className={tab === 'journey' ? 'active' : ''} onClick={() => setTab('journey')}>Egyéni történet</button>
         <button type="button" className={tab === 'participants' ? 'active' : ''} onClick={() => setTab('participants')}>Résztvevők</button>
+        <button type="button" className={tab === 'standings' ? 'active' : ''} onClick={() => setTab('standings')}>Végeredmény</button>
+        <button type="button" className={tab === 'reflections' ? 'active' : ''} onClick={() => setTab('reflections')}>Reflexiók</button>
       </div>
 
+      {tab === 'standings' && <StandingsView session={session} onProject={(page,onChange)=>projectDebriefStandings(session,page,onChange)} isProjecting={()=>projectorContentMode==='standings' && !!projectorWindow && !projectorWindow.closed} />}
+      {tab === 'reflections' && <ReflectionsView session={session} onProject={projectReflection} isProjecting={()=>projectorContentMode==='reflections' && !!projectorWindow && !projectorWindow.closed} />}
       {tab === 'journey' && <ParticipantJourneyPanel session={session} onProject={projectParticipantJourney} isProjecting={()=>projectorContentMode==='journey' && !!projectorWindow && !projectorWindow.closed} />}
       {tab === 'participants' && <DebriefParticipantsView session={session} />}
       {tab === 'patterns' && <DebriefPatternsView session={session} />}
@@ -5276,7 +5288,7 @@ function ParticipantStageRail({ session }: { session: GameSession }) {
 function participantRole(session: GameSession, playerId: string) {
   if (session.roundKey === 'lobby') return 'Várakozás a kezdésre';
   if (session.roundKey === 'report') {
-    const done = (session.reflections ?? []).some((item) => item.playerId === playerId);
+    const done = (session.reflections ?? []).some((item) => item.playerId === playerId) || (session.takeaways ?? []).some(item => item.playerId === playerId);
     return done ? 'Saját riport' : 'Saját reflexió';
   }
   if (session.roundKey === '4') {
@@ -5339,6 +5351,18 @@ function ParticipantReflectionPanel({
   playerId: string;
 }) {
   const ownReflections = (session.reflections ?? []).filter((item) => item.playerId === playerId);
+  const ownTakeaway = (session.takeaways ?? []).find(item => item.playerId === playerId);
+  const takeawayDraftKey = `kreditjatek_takeaway_${session.code}_${playerId}`;
+  const [takeaway,setTakeaway] = useState(() => readStorage(takeawayDraftKey) ?? ownTakeaway?.text ?? '');
+  const [savingTakeaway,setSavingTakeaway] = useState(false);
+  const [takeawayStatus,setTakeawayStatus] = useState('');
+  useEffect(() => { writeStorage(takeawayDraftKey,takeaway); }, [takeawayDraftKey,takeaway]);
+  useEffect(() => {
+    if (!savingTakeaway) return;
+    if ((ownTakeaway?.text ?? '') === takeaway.trim()) { setSavingTakeaway(false); setTakeawayStatus('A tanulságod mentve.'); return; }
+    const timeout=window.setTimeout(()=>{setSavingTakeaway(false);setTakeawayStatus('Még nem érkezett visszaigazolás. A szöveget ezen a telefonon megőriztük; próbáld újra a mentést.');},10000);
+    return()=>window.clearTimeout(timeout);
+  },[savingTakeaway,ownTakeaway?.text,takeaway]);
   const report = session.selfReport?.length ? session.selfReport : buildSelfReport(session, playerId);
   const [selected, setSelected] = useState<string[]>(() => ownReflections.map((item) => item.decisionId));
   const [comments, setComments] = useState<Record<string, string>>(() =>
@@ -5347,7 +5371,7 @@ function ParticipantReflectionPanel({
   const [submitError, setSubmitError] = useState('');
   const [sending, setSending] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
-  const submitted = ownReflections.length > 0;
+  const submitted = ownReflections.length > 0 || !!ownTakeaway;
   const playerName = session.players.find((player) => player.id === playerId)?.name ?? '';
   const currentPlayer = session.players.find((player) => player.id === playerId);
   const firstStage = session.firstStageFinalBalance[playerId] ?? currentPlayer?.currentBalance ?? 0;
@@ -5387,6 +5411,7 @@ function ParticipantReflectionPanel({
       learningStartWealth,
       learningResult,
     },
+    ownTakeaway?.text,
   );
 
   const printReport = () => {
@@ -5464,6 +5489,15 @@ function ParticipantReflectionPanel({
             );
           })}
         </div>
+        {ownTakeaway?.text && <section className="takeaway-saved"><h2>Mit viszel magaddal ebből a játékból?</h2><p>{ownTakeaway.text}</p></section>}
+        <TakeawayField value={takeaway} onChange={setTakeaway} disabled={savingTakeaway} />
+        <button type="button" className="secondary" disabled={savingTakeaway || (!takeaway.trim() && ownReflections.length===0)} onClick={()=>{
+          setSavingTakeaway(true);setTakeawayStatus('');
+          try { gameStore.submitReflection(session.code,playerId,ownReflections.map(item=>({decisionId:item.decisionId,comment:item.comment})),takeaway); }
+          catch(error) { setSavingTakeaway(false);setTakeawayStatus(error instanceof Error ? error.message : 'A mentés nem sikerült.'); }
+        }}>{savingTakeaway?'Mentés…':'Tanulság mentése'}</button>
+        {takeawayStatus && <p role="status">{takeawayStatus}</p>}
+        <PersonalReportDelivery text={reportShareText()} pendingChanges={takeaway.trim() !== (ownTakeaway?.text ?? '')} />
         <div className="self-report-export-actions">
           <button type="button" className="secondary" onClick={printReport}>PDF mentése</button>
           <button type="button" className="primary" onClick={() => void shareReport()}>Megosztás</button>
@@ -5485,8 +5519,8 @@ function ParticipantReflectionPanel({
 
   const submit = () => {
     setSubmitError('');
-    if (selected.length < 1 || selected.length > 3) {
-      setSubmitError('Válassz legalább 1, legfeljebb 3 döntést.');
+    if ((selected.length < 1 && !takeaway.trim()) || selected.length > 3) {
+      setSubmitError('Válassz 1–3 döntést, vagy írd le a saját benyomásodat.');
       return;
     }
     const items = selected.map((decisionId) => ({
@@ -5498,14 +5532,14 @@ function ParticipantReflectionPanel({
       return;
     }
     setSending(true);
-    gameStore.submitReflection(session.code, playerId, items);
+    try { gameStore.submitReflection(session.code, playerId, items, takeaway); } catch(error) { setSending(false);setSubmitError(error instanceof Error ? error.message : 'A mentés nem sikerült.'); }
   };
 
   return (
     <div className="participant-reflection">
       <p className="eyebrow">Játék vége · saját reflexió</p>
       <h1>Melyik döntésed volt számodra a legérdekesebb?</h1>
-      <p>Válassz legalább 1, legfeljebb 3 döntést. A kiválasztott döntéseknél írd le röviden, mi célból döntöttél így.</p>
+      <p>Kiemelhetsz legfeljebb 3 döntést, és leírhatod, mi célból döntöttél így. Legalul a játék egészéről is írhatsz.</p>
       <div className="reflection-selection-status">
         <strong>{selected.length}/3 kiválasztva</strong>
         <span>{selected.length === 3 ? 'Elérted a maximumot.' : 'Még választhatsz.'}</span>
@@ -5523,6 +5557,7 @@ function ParticipantReflectionPanel({
           />
         ))}
       </div>
+      <TakeawayField value={takeaway} onChange={setTakeaway} disabled={sending} />
       {submitError && <div className="error">{submitError}</div>}
       <button
         className="primary big participant-reflection-submit"
@@ -5533,6 +5568,7 @@ function ParticipantReflectionPanel({
         {sending ? 'Reflexió mentése…' : 'Reflexió elküldése'}
       </button>
       {sending && <p className="reflection-saving-note">A mentés után automatikusan megjelenik a saját riportod.</p>}
+      <PersonalReportDelivery text={reportShareText()} pendingChanges={selected.length > 0 || !!takeaway.trim()} />
     </div>
   );
 }

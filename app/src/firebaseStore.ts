@@ -337,7 +337,8 @@ const applyCommand = (
       comment: String(value.comment ?? ''),
     };
   });
-  const session = localSessionStore.submitReflection(code, playerId, items);
+  if (command.payload?.takeaway !== undefined && typeof command.payload.takeaway !== 'string') throw new Error('Érvénytelen tanulság.');
+  const session = localSessionStore.submitReflection(code, playerId, items, command.payload?.takeaway as string | undefined);
   return { session, affected: [playerId] };
 };
 
@@ -937,12 +938,12 @@ export const firebaseSessionStore = {
     return trainerMutation(code, () => session, allPlayers(session));
   },
 
-  submitReflection(code: string, playerId: string, items: Array<{ decisionId: string; comment: string }>) {
+  submitReflection(code: string, playerId: string, items: Array<{ decisionId: string; comment: string }>, takeaway?: string) {
     if (role() === 'player') {
-      void appendCommand(code, 'submitReflection', { items });
+      void appendCommand(code, 'submitReflection', { items, takeaway });
       return this.get(code) as GameSession;
     }
-    const session = localSessionStore.submitReflection(code, playerId, items);
+    const session = localSessionStore.submitReflection(code, playerId, items, takeaway);
     return trainerMutation(code, () => session, [playerId]);
   },
 

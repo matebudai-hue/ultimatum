@@ -196,6 +196,7 @@ export type GameSession = {
   pinnedDebriefEventIds?: string[];
   debriefPhase?: 'reflection' | 'complete';
   reflections?: ParticipantReflection[];
+  takeaways?: Array<{ playerId: string; text: string; submittedAt: string }>;
   selfReport?: ParticipantSelfReportItem[];
 };
 

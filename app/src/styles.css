@@ -2650,3 +2650,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .debrief-status-popover .trainer-pulse{border-radius:0;padding:8px}
 .debrief-status-popover .trainer-attention{margin:8px}
 @media(max-width:760px){.debrief-status-control{position:static}.debrief-status-popover{right:0;top:100%;width:min(860px,calc(100vw - 20px))}}
+
+.takeaway-field,.personal-report-delivery{margin:22px 0;padding:20px;border:1px solid #cbd7e4;border-radius:14px;background:#f5faf9}.takeaway-field h2,.personal-report-delivery h2{font-size:21px;margin:0 0 10px}.takeaway-field p,.personal-report-delivery p{line-height:1.5}.takeaway-field textarea{width:100%;border:1px solid #b9c9d5;border-radius:9px;padding:12px;font:inherit;resize:vertical;min-height:140px;background:#fff}.takeaway-field small,.personal-report-delivery small{display:block;line-height:1.5;color:#52657b;margin-top:8px}.personal-report-delivery input{max-width:420px}.takeaway-trainer{padding:14px;background:#f0f7f5;border-left:3px solid #168178}.takeaway-trainer p{white-space:pre-wrap;overflow-wrap:anywhere}
+.takeaway-saved{margin:20px 0;padding:16px;background:#f0f7f5;border-left:3px solid #168178}.takeaway-saved h2{font-size:18px}.takeaway-saved p{white-space:pre-wrap;overflow-wrap:anywhere}
