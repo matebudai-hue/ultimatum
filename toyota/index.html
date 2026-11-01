@@ -112,11 +112,11 @@ const demo=preview&&!route.has('occasion');
 const occasionLink=route.get('occasion')||(demo?'demo':null);
 const invitation=occasionLink||route.get('observe');
 let context=null, access='', classes=[], occasions=[], entries=[],classId='',occasionId='';
-const modeName=mode=>mode==='exam'?'Vizsga':'Gyakorlás';
-async function api(path, body, token=access){
+const modeName=mode=>mode==='exam'?'Vizsga':'Megfigyelés';
+async function api(path, body, token=access, method){
  const headers={apikey:publicKey,'Content-Type':'application/json'};
  if(token)headers.Authorization='Bearer '+token;
- const res=await fetch(apiRoot+path,{method:body===undefined?'GET':'POST',headers,body:body===undefined?undefined:JSON.stringify(body)});
+ const res=await fetch(apiRoot+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:JSON.stringify(body)});
  const raw=await res.text();
  const data=raw?JSON.parse(raw):null;
  if(!res.ok)throw Error(data?.message||data?.msg||data?.error_description||'Sikertelen kérés.');
@@ -172,6 +172,31 @@ function loginScreen(){
   await enter(await api('/auth/v1/verify',{token_hash:token,type:'signup'}));
  });
 }
+
+function parseRoster(text){
+ const names=[],contacts={};
+ for(const line of text.split(/\r?\n/)){
+  if(!line.trim())continue;
+  const parts=line.split(/[\t;,]/).map(v=>v.trim().replace(/^"|"$/g,''));
+  const name=parts[0], email=parts[1]||'';
+  if(!name||names.includes(name))throw Error('Minden név egyszer szerepeljen. Azonos nevű résztvevőknél adj megkülönböztető jelölést.');
+  if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw Error('Hibás e-mail-cím: '+name);
+  names.push(name);if(email)contacts[name]=email;
+ }
+ return {names,contacts};
+}
+function criterionMeans(cls,records){
+ const people=cls.roster.map(n=>records.filter(r=>r.seller===n)).filter(rows=>rows.length);
+ if(!people.length)return [];
+ return exams[cls.kind].items.map((it,i)=>({title:it.title,mean:people.reduce((sum,rows)=>sum+rows.reduce((a,r)=>a+r.scores[i],0)/rows.length,0)/people.length})).sort((a,b)=>b.mean-a.mean);
+}
+function groupReport(cls,occasion,records){
+ const rank=criterionMeans(cls,records);
+ const format=r=>r.title+' · '+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'/2';
+ const observed=new Set(records.map(r=>r.seller)).size;
+ return [cls.name,modeName(occasion.mode)+' · '+occasion.name,'Összesítés ideje: '+new Date().toLocaleString('hu-HU'),'Megfigyelt résztvevők: '+observed+'/'+cls.roster.length,'Beküldések: '+records.length,'',...(rank.length?['Legmagasabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9).map(format),'','Legalacsonyabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9).map(format),'','Minden szempont',...rank.map(format)]:['Még nincs beküldés.'])].join('\n');
+}
+
 async function dashboard(){
  classes=await api('/rest/v1/classes?select=*&order=created_at.desc');if(!classes.some(c=>c.id===classId))classId=classes[0]?.id||'';
  const cls=classes.find(c=>c.id===classId);
@@ -179,16 +204,31 @@ async function dashboard(){
  if(!occasions.some(a=>a.id===occasionId))occasionId=occasions[0]?.id||'';
  const occasion=occasions.find(a=>a.id===occasionId);
  entries=occasion?await readEntries(occasionId):[];
- $('app').innerHTML=`<div class="eyebrow">Toyota · Admin</div><h1>Osztályok</h1><section class="panel"><h2>Megfigyelői felület</h2>${occasion?`<p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><a href="./#occasion=${occasion.id}&preview=1" target="_blank" rel="noopener">Megnyitás megfigyelőként ↗</a>`:`<p>Próbáld ki a kitöltést mintanévsorral.</p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a>`}<p><button class="primary" id="showQr" ${occasion?'':'disabled'}>QR-kód kivetítése</button></p>${occasion?'':`<p>${cls?'Hozz létre egy gyakorló- vagy vizsgaalkalmat az osztályhoz.':'A közös QR-kódhoz először ments el egy osztályt névsorral, majd hozz létre hozzá egy alkalmat.'}</p>`}</section><div class="actions"><button id="refresh">Frissítés</button><button id="logout">Kilépés</button></div>
- <details class="panel" ${cls?'':'open'}><summary>Új osztály és névsor</summary><label>Osztály neve<input id="className"></label><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Névsor · soronként egy név, Excelből is bemásolható<textarea id="roster"></textarea></label><label>Névsor betöltése (TXT vagy egyoszlopos CSV)<input type="file" id="file" accept=".txt,.csv"></label><button class="primary" id="newClass">Osztály mentése</button></details>
- ${cls?`<div class="panel"><label>Osztály<select id="classes">${selectOptions(classes,classId)}</select></label><p>${exams[cls.kind].name} · ${cls.roster.length} fő</p><details ${occasion?'':'open'}><summary>Új alkalom</summary><label>Alkalom neve vagy dátuma<input id="occasionName" value="${new Date().toLocaleDateString('hu-HU')}"></label><label>Cél<select id="mode"><option value="practice">Gyakorlás</option><option value="exam">Vizsga</option></select></label><button id="newOcc">Alkalom létrehozása</button></details></div>`:''}
- ${occasion?`<div class="panel"><label>Alkalom<select id="occasions">${selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)}</select></label><h2>Közös QR-kód</h2><p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><canvas id="qr" style="width:min(100%,360px);image-rendering:pixelated" aria-label="Az alkalom QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p><button id="copyOcc">Közös link másolása</button> </div>${overview(cls,occasion,entries)}<div class="panel"><h2>Osztályszintű áttekintés</h2><p>Az osztály összes azonos célú alkalma együtt.</p><button id="allPractice">Összes gyakorlás</button> <button id="allExams">Összes vizsga</button><div id="allResults"></div></div>`:''}`;
+ $('app').innerHTML=`<div class="eyebrow">Toyota · Admin</div><h1>Osztályok</h1><div class="actions"><button id="refresh">Frissítés</button><button id="logout">Kilépés</button></div>
+ <details class="panel" ${cls?'':'open'}><summary>Új osztály</summary><label>Osztály neve<input id="className"></label><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Névsor · név és opcionális e-mail-cím, Excelből két oszlopban is bemásolható<textarea id="roster"></textarea></label><label>Névsor betöltése (TXT vagy CSV)<input type="file" id="file" accept=".txt,.csv"></label><label>Az első alkalom célja<select id="firstMode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><button class="primary" id="newClass">Osztály és QR-kód létrehozása</button></details>
+ ${cls?`<div class="panel"><label>Osztály<select id="classes">${selectOptions(classes,classId)}</select></label><p>${exams[cls.kind].name} · ${cls.roster.length} fő</p><details ${occasion?'':'open'}><summary>Új megfigyelés vagy vizsga</summary><label>Alkalom neve vagy dátuma<input id="occasionName" value="${new Date().toLocaleDateString('hu-HU')}"></label><label>Cél<select id="mode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><button id="newOcc">Alkalom létrehozása</button></details></div>`:''}
+<section class="panel"><h2>Megfigyelői felület</h2>${occasion?`<p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><a href="./#occasion=${occasion.id}&preview=1" target="_blank" rel="noopener">Megnyitás megfigyelőként ↗</a>`:`<p>Próbáld ki a kitöltést mintanévsorral.</p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a>`}<p><button class="primary" id="showQr" ${occasion?'':'disabled'}>QR-kód kivetítése</button></p>${occasion?'':`<p>${cls?'Hozz létre egy gyakorló- vagy vizsgaalkalmat az osztályhoz.':'A közös QR-kódhoz először ments el egy osztályt névsorral, majd hozz létre hozzá egy alkalmat.'}</p>`}</section> ${occasion?`<div class="panel"><label>Alkalom<select id="occasions">${selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)}</select></label><h2>Belépés a megfigyelőknek</h2><p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><canvas id="qr" style="width:min(100%,360px);image-rendering:pixelated" aria-label="Az alkalom QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p><button id="copyOcc">Közös link másolása</button> </div><div class="panel"><h2>Összesítés megosztása</h2><button id="mailSummary">Összesítés megnyitása e-mailben</button><p>A leveleződben kiválaszthatod a címzetteket és elküldheted a levelet.</p><details><summary>E-mail-címek megadása vagy módosítása</summary><label>Név és e-mail-cím, soronként<textarea id="contacts">${esc(cls.roster.map(n=>n+"\t"+(cls.contacts?.[n]||"")).join("\n"))}</textarea></label><button id="saveContacts">E-mail-címek mentése</button></details></div>${overview(cls,occasion,entries)}<div class="panel"><h2>Osztályszintű áttekintés</h2><p>Az osztály összes azonos célú alkalma együtt.</p><button id="allPractice">Összes megfigyelés</button> <button id="allExams">Összes vizsga</button><div id="allResults"></div></div>`:''}`;
  action('refresh',dashboard);action('logout',async()=>{try{await api('/auth/v1/logout',{});}finally{access='';location.replace('./#admin');location.reload();}});
  $('file').onchange=async()=>{if($('file').files[0])$('roster').value=await $('file').files[0].text();};
- action('newClass',async()=>{const name=$('className').value.trim(),roster=$('roster').value.split(/\r?\n/).map(n=>n.trim()).filter(Boolean);if(!name||!roster.length||new Set(roster).size!==roster.length)throw Error('Adj osztálynevet és egyedi neveket. Névazonosság esetén használj megkülönböztető jelölést.');
- const id=crypto.randomUUID();await api('/rest/v1/classes',{id,name,kind:$('kind').value,roster});classId=id;await dashboard();});
+ action('newClass',async()=>{
+ const name=$('className').value.trim(), parsed=parseRoster($('roster').value);
+ if(!name||!parsed.names.length)throw Error('Add meg az osztály nevét és a névsort.');
+ const result=await api('/rest/v1/rpc/create_observation_class',{class_name:name,class_kind:$('kind').value,names:parsed.names,emails:parsed.contacts,occasion_mode:$('firstMode').value});
+ classId=result.class_id;occasionId=result.occasion_id;await dashboard();
+ });
  if(cls){$('classes').onchange=e=>{classId=e.target.value;dashboard().catch(alertError);};action('newOcc',async()=>{const id=crypto.randomUUID();await api('/rest/v1/occasions',{id,class_id:classId,name:$('occasionName').value.trim(),mode:$('mode').value});occasionId=id;await dashboard();});}
  if(occasion){
+  action('saveContacts',async()=>{
+   const parsed=parseRoster($('contacts').value);
+   if(parsed.names.length!==cls.roster.length||parsed.names.some(n=>!cls.roster.includes(n)))throw Error('Az e-mail-címek mentésekor a névsor neveit tartsd meg.');
+   await api('/rest/v1/classes?id=eq.'+classId, {contacts:parsed.contacts},access,'PATCH');await dashboard();
+  });
+  action('mailSummary',async()=>{
+   const recipients=cls.roster.map(n=>cls.contacts?.[n]).filter(Boolean);
+   const subject=cls.name+' · '+modeName(occasion.mode)+' · '+occasion.name;
+   const body=groupReport(cls,occasion,entries);
+   location.href='mailto:?bcc='+encodeURIComponent(recipients.join(','))+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  });
   for(const [id,mode] of [['allPractice','practice'],['allExams','exam']]){
    action(id,async()=>{const matching=occasions.filter(a=>a.mode===mode);
     const sets=await Promise.all(matching.map(a=>readEntries(a.id)));
@@ -220,7 +260,7 @@ function overview(cls,occasion,records){
  const rank=items.map((it,i)=>({title:it.title,mean:sums[i]/observed})).sort((a,b)=>b.mean-a.mean);
  const level=r=>r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'/2';
  const ties=target=>rank.filter(r=>Math.abs(r.mean-target)<1e-9).map(r=>esc(r.title)).join(', ');
- return `<div class="panel"><h2>${modeName(occasion.mode)} · eredmények</h2><p>${observed}/${cls.roster.length} értékesítő · ${records.length} beküldés</p>${observed?`<p><b>Legmagasabb · ${level(rank[0])}</b><br>${ties(rank[0].mean)}</p><p><b>Legalacsonyabb · ${level(rank[19])}</b><br>${ties(rank[19].mean)}</p><details><summary>Mind a 20 szempont átlaga</summary><p>Minden megfigyelt értékesítő azonos súllyal szerepel.</p><ol>${rank.map(r=>`<li>${esc(r.title)} · ${level(r)}</li>`).join('')}</ol></details>`:'Még nincs beküldés.'}</div>${people.join('')}`;
+ return `<div class="panel"><h2>${modeName(occasion.mode)} · beérkezett eredmények</h2><p>Frissítve: ${new Date().toLocaleString("hu-HU")}</p><p>${observed}/${cls.roster.length} értékesítő · ${records.length} beküldés</p>${observed?`<p><b>Legmagasabb · ${level(rank[0])}</b><br>${ties(rank[0].mean)}</p><p><b>Legalacsonyabb · ${level(rank[19])}</b><br>${ties(rank[19].mean)}</p><details><summary>Mind a 20 szempont átlaga</summary><p>Minden megfigyelt értékesítő azonos súllyal szerepel.</p><ol>${rank.map(r=>`<li>${esc(r.title)} · ${level(r)}</li>`).join('')}</ol></details>`:'Még nincs beküldés.'}</div>${people.join('')}`;
 }
 
 const KEY=invitation?'toyota-invite-'+invitation:'toyota-observation-v1';
@@ -269,19 +309,19 @@ function render(){
  }bindFields();bottom();
 }
 function finish(){const missing=state.scores.findIndex(v=>v===null);if(missing!==-1){go(exam().groups.findIndex(g=>missing>=g.start&&missing<g.end));$('error').innerHTML=`<p class="error">Még ${20-count()} szempont hiányzik. Értékeld mind a 20-at az eredményhez.</p>`;$('card-'+missing).scrollIntoView({block:'center'});return;}state.date=new Date().toLocaleDateString('sv-SE');state.done=true;save();render();window.scrollTo(0,0);}
-function report(){return [...(context?[context.className,modeName(context.mode)+' · '+context.occasion]:[]),'TOYOTA – '+exam().name+' – Megfigyelés és visszajelzés',`Értékesítő: ${state.seller||'–'}`,`Megfigyelő: ${state.observer||'–'}`,`Dátum: ${state.date}`,`Eredmény: ${total()}/40 – ${context?.mode==='practice'?'Gyakorlás':total()>=25?'Megfelelt':'Nem felelt meg'}`,context?.mode==='practice'?'':'Megfelelési határ: 25 pont.',breakdown(),'',...exam().items.map((it,i)=>`${i+1}. ${it.title}: ${state.scores[i]}/2 – ${LABELS[state.scores[i]]}`),'','Konkrét megfigyelés / visszajelzés:',state.notes||'–'].join('\n');}
-function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">${exam().name} · Megfigyelés lezárva</div><div class="result ${score>=25?'pass':''}"><div>${esc(state.seller||'Az értékelés eredménye')}</div><h1>${score}<small> / 40 pont</small></h1><span class="badge">${context?.mode==='practice'?'Gyakorlás':score>=25?'Megfelelt':'Nem felelt meg'}</span>${breakdown()?`<p>${breakdown()}</p>`:''}<p ${context?.mode==='practice'?'hidden':''}>Megfelelési határ: 25 pont${score<25?` · Még ${25-score} pont szükséges.`:'.'}</p></div><p class="muted">${esc(state.date)} · Megfigyelő: ${esc(state.observer||'–')}</p><div class="noprint"><button class="primary" id="email" style="width:100%;margin-bottom:10px">Küldés e-mailben</button><p class="muted">A leveleződben megnyílik a teljes értékelés. Add meg a címzettet, majd küldd el. Ha nem nyílik meg, töltsd le az eredményt, és csatold a leveledhez.</p></div><div class="actions noprint"><button class="secondary" id="download">Eredmény letöltése</button><button class="secondary" id="print">Nyomtatás / PDF</button></div><div class="panel"><h2>Szempontonkénti eredmény</h2><ul class="rows">${exam().items.map((it,i)=>`<li><span><span class="num">${i+1}.</span> ${esc(it.title)}<br><small class="muted">${LABELS[state.scores[i]]}</small></span><b>${state.scores[i]} / 2</b></li>`).join('')}</ul></div><div class="panel"><h2>Konkrét visszajelzés</h2><p class="feedback">${esc(state.notes||'Nem került szöveges visszajelzés az értékeléshez.')}</p></div><div class="actions noprint"><button class="secondary" id="edit">Értékelés javítása</button><button class="primary" id="reset">Új megfigyelés</button></div><footer>Az új megfigyelés felülírja ezt a helyi értékelést. Előtte töltsd le, ha meg szeretnéd őrizni. A letöltés szövegfájlt készít; a Nyomtatás / PDF gomb a böngésző nyomtatási lehetőségeit nyitja meg.</footer>`;
+function report(){return [...(context?[context.className,modeName(context.mode)+' · '+context.occasion]:[]),'TOYOTA – '+exam().name+' – Megfigyelés és visszajelzés',`Értékesítő: ${state.seller||'–'}`,`Megfigyelő: ${state.observer||'–'}`,`Dátum: ${state.date}`,`Eredmény: ${total()}/40 – ${context?.mode==='practice'?'Gyakorlás':total()>=25?'Megfelelt':'Nem felelt meg'}`,context?.mode==='practice'?'':'Megfelelési határ: 25 pont.',breakdown(),state.sentAt?"Beküldés: "+new Date(state.sentAt).toLocaleString("hu-HU"):"",'',...exam().items.map((it,i)=>`${i+1}. ${it.title}: ${state.scores[i]}/2 – ${LABELS[state.scores[i]]}`),'','Konkrét megfigyelés / visszajelzés:',state.notes||'–'].join('\n');}
+function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">${exam().name} · Megfigyelés lezárva</div><div class="result ${score>=25?'pass':''}"><div>${esc(state.seller||'Az értékelés eredménye')}</div><h1>${score}<small> / 40 pont</small></h1><span class="badge">${context?.mode==='practice'?'Gyakorlás':score>=25?'Megfelelt':'Nem felelt meg'}</span>${breakdown()?`<p>${breakdown()}</p>`:''}<p ${context?.mode==='practice'?'hidden':''}>Megfelelési határ: 25 pont${score<25?` · Még ${25-score} pont szükséges.`:'.'}</p></div><p class="muted">${esc(state.date)} · Megfigyelő: ${esc(state.observer||'–')}</p><div class="noprint"><button class="primary" id="email" style="width:100%;margin-bottom:10px">Eredmény elküldése e-mailben · opcionális</button><p class="muted">A leveleződben megnyílik a teljes értékelés. Add meg a címzettet, majd küldd el. Ha nem nyílik meg, töltsd le az eredményt, és csatold a leveledhez.</p></div><div class="actions noprint"><button class="secondary" id="download">Eredmény letöltése</button><button class="secondary" id="print">Nyomtatás / PDF</button></div><div class="panel"><h2>Szempontonkénti eredmény</h2><ul class="rows">${exam().items.map((it,i)=>`<li><span><span class="num">${i+1}.</span> ${esc(it.title)}<br><small class="muted">${LABELS[state.scores[i]]}</small></span><b>${state.scores[i]} / 2</b></li>`).join('')}</ul></div><div class="panel"><h2>Konkrét visszajelzés</h2><p class="feedback">${esc(state.notes||'Nem került szöveges visszajelzés az értékeléshez.')}</p></div><div class="actions noprint"><button class="secondary" id="edit">Értékelés javítása</button><button class="primary" id="reset">Új megfigyelés</button></div><footer>Az új megfigyelés felülírja ezt a helyi értékelést. Előtte töltsd le, ha meg szeretnéd őrizni. A letöltés szövegfájlt készít; a Nyomtatás / PDF gomb a böngésző nyomtatási lehetőségeit nyitja meg.</footer>`;
  if(context){
   $('app').insertAdjacentHTML('afterbegin','<div class="panel noprint"><button class="primary" id="sendGroup"></button></div>');
-  $('sendGroup').textContent=state.sent?'Beküldve':'Beküldés az osztályhoz';
+  $('sendGroup').textContent=state.sent?'Beküldve'+(state.sentAt?' · '+new Date(state.sentAt).toLocaleString('hu-HU'):''):'Beküldés az osztályhoz';
   $('sendGroup').disabled=Boolean(state.sent);
   $('edit').hidden=Boolean(state.sent||state.startedSending);
   action('sendGroup',async()=>{
    if(preview){alert('Az előnézet végére értél. Az értékelés nem kerül az osztály eredményei közé.');return;}
    state.submission ||= crypto.randomUUID();state.startedSending=true;save();
    $('edit').hidden=true;
-   await api(occasionLink?'/rest/v1/rpc/submit_occasion':'/rest/v1/rpc/submit_observation',{...(occasionLink?{evaluator:state.observer.trim()}:{}),link:invitation,submission:state.submission,person:state.seller,marks:state.scores,feedback:state.notes});
-   state.sent=true;save();render();
+   const receipt=await api(occasionLink?'/rest/v1/rpc/submit_occasion_receipt':'/rest/v1/rpc/submit_observation',{...(occasionLink?{evaluator:state.observer.trim()}:{}),link:invitation,submission:state.submission,person:state.seller,marks:state.scores,feedback:state.notes});
+   state.sentAt=typeof receipt==="string"?receipt:null;state.sent=true;save();render();
   });
  }
  $('email').onclick=()=>{const subject='Toyota '+exam().name+' – '+(state.seller||'Értékelés')+' – '+state.date;window.location.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(report());};
@@ -289,3 +329,4 @@ function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">$
 }
 startApp();
 </script></body></html>
+
