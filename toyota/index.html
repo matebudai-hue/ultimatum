@@ -130,22 +130,99 @@ const occasionLink=route.get('occasion')||(demo?'demo':null);
 const invitation=occasionLink||route.get('observe');
 let context=null, access='', classes=[], occasions=[], entries=[],classId='',occasionId='';
 const modeName=mode=>mode==='exam'?'Vizsga':'Megfigyelés';
-async function api(path, body, token=access, method){
+const ADMIN_SESSION_KEY='toyota-admin-session-v1';
+let adminSession=null, sessionRenewal=null, sessionTimer=null, sessionEpoch=0;
+function storedSession(){
+ try{const s=JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY));return s&&typeof s.access_token==='string'&&typeof s.refresh_token==='string'&&Number.isFinite(s.expires_at)?s:null;}catch{return null;}
+}
+function clearAdminSession(){
+ sessionEpoch++;adminSession=null;access='';clearTimeout(sessionTimer);
+ try{localStorage.removeItem(ADMIN_SESSION_KEY);}catch{}
+}
+function rememberAdminSession(s){
+ adminSession={access_token:s.access_token,refresh_token:s.refresh_token,expires_at:s.expires_at||Math.floor(Date.now()/1000)+s.expires_in};
+ access=adminSession.access_token;
+ try{localStorage.setItem(ADMIN_SESSION_KEY,JSON.stringify(adminSession));}catch{throw Error('A böngésző nem engedi a tartós belépés mentését. Engedélyezd az oldal helyi adattárolását.');}
+ scheduleSessionRenewal();
+}
+function scheduleSessionRenewal(){
+ clearTimeout(sessionTimer);
+ if(!adminSession)return;
+ sessionTimer=setTimeout(()=>renewAdminSession().catch(()=>{if(adminSession)sessionTimer=setTimeout(scheduleSessionRenewal,30000);}),Math.max(1000,(adminSession.expires_at*1000-Date.now())-90000));
+}
+async function renewAdminSession(force=false){
+ if(sessionRenewal)return sessionRenewal;
+ const epoch=sessionEpoch;
+ const refresh=async()=>{
+  const latest=storedSession();
+  if(!latest){clearAdminSession();throw Error('Lépj be az adminfelületre.');}
+  if(!force&&latest.expires_at*1000>Date.now()+90000){adminSession=latest;access=latest.access_token;scheduleSessionRenewal();return;}
+  // Another tab may already have renewed the session while this tab waited for the lock.
+  if(force&&adminSession&&latest.access_token!==adminSession.access_token&&latest.expires_at*1000>Date.now()+90000){adminSession=latest;access=latest.access_token;scheduleSessionRenewal();return;}
+  try{
+   const s=await rawApi('/auth/v1/token?grant_type=refresh_token',{refresh_token:latest.refresh_token},'');
+   if(epoch!==sessionEpoch)return;
+   rememberAdminSession(s);
+  }catch(err){
+   if(epoch===sessionEpoch&&(err.status===400||err.status===401)){
+    const current=storedSession();
+    if(current?.refresh_token===latest.refresh_token)clearAdminSession();
+   }
+   throw err;
+  }
+ };
+ const run=typeof navigator!=='undefined'&&navigator.locks?navigator.locks.request('toyota-admin-session-refresh',refresh):refresh();
+ sessionRenewal=Promise.resolve(run).finally(()=>{sessionRenewal=null;});
+ return sessionRenewal;
+}
+async function rawApi(path,body,token,method){
  const headers={apikey:publicKey,'Content-Type':'application/json'};
  if(token)headers.Authorization='Bearer '+token;
  const res=await fetch(apiRoot+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:JSON.stringify(body)});
- const raw=await res.text();
- const data=raw?JSON.parse(raw):null;
- if(!res.ok)throw Error(data?.message||data?.msg||data?.error_description||'Sikertelen kérés.');
+ const raw=await res.text(),data=raw?JSON.parse(raw):null;
+ if(!res.ok){const error=Error(data?.message||data?.msg||data?.error_description||'Sikertelen kérés.');error.status=res.status;throw error;}
  return data;
 }
+async function api(path,body,token=access,method){
+ const adminRequest=!path.startsWith('/auth/')&&Boolean(token);
+ if(adminRequest&&adminSession){await renewAdminSession();token=access;}
+ try{return await rawApi(path,body,token,method);}
+ catch(err){
+  if(err.status!==401||!adminRequest||!adminSession)throw err;
+  await renewAdminSession(true);
+  return rawApi(path,body,access,method);
+ }
+}
+async function restoreAdmin(){
+ $('app').textContent='Adminfelület betöltése…';
+ adminSession=storedSession();
+ if(!adminSession){loginScreen();return;}
+ try{
+  access=adminSession.access_token;await renewAdminSession();
+  if(!await api('/rest/v1/rpc/toyota_admin_access',{})){clearAdminSession();loginScreen();return;}
+  await dashboard();
+ }catch(err){
+  if(!adminSession){loginScreen();return;}
+  $('app').innerHTML='<section class="panel"><h1>A kapcsolat megszakadt</h1><p>A mentett belépésed megvan. Próbáld meg újra a kapcsolódást.</p><button class="primary" id="retryAdmin">Újrapróbálás</button></section>';
+  $('retryAdmin').onclick=restoreAdmin;
+ }
+}
+window.addEventListener('storage',event=>{
+ if(event.key!==ADMIN_SESSION_KEY)return;
+ const saved=storedSession();
+ if(!saved){clearAdminSession();if(adminActive){adminActive=false;clearTimeout(refreshTimer);loginScreen();}}
+ else if(adminSession){adminSession=saved;access=saved.access_token;scheduleSessionRenewal();}
+});
+window.addEventListener('online',()=>{if(adminSession)renewAdminSession().catch(()=>{});});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&adminSession)renewAdminSession().catch(()=>{});});
+
 function alertError(err){alert('A művelet nem sikerült. '+err.message);}
 function action(id,fn){
  $(id).onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{await fn();}catch(err){alertError(err);}finally{b.disabled=false;}};
 }
 function selectOptions(rows,current){return rows.map(r=>`<option value="${esc(r.id)}" ${r.id===current?'selected':''}>${esc(r.name)}</option>`).join('');}
 async function startApp(){
- if(!invitation&&(route.has('admin')||new URLSearchParams(location.search).has('admin')||route.has('access_token'))){history.replaceState(null,'',location.pathname+'#admin');loginScreen();return;}
+ if(!invitation&&(route.has('admin')||new URLSearchParams(location.search).has('admin')||route.has('access_token'))){history.replaceState(null,'',location.pathname+'#admin');await restoreAdmin();return;}
  if(!invitation){render();return;}
  try{
   context=demo?{className:'Mintaosztály',occasion:'Bemutató alkalom',kind:route.get('kind')==='passenger'?'passenger':'fleet',mode:'practice',roster:['Minta Anna','Minta Péter']}:await api(occasionLink?'/rest/v1/rpc/occasion_context':'/rest/v1/rpc/observation_context',{link:invitation});
@@ -156,6 +233,7 @@ async function startApp(){
  }catch(err){$('app').textContent='A megfigyelés nem nyitható meg. '+err.message;}
 }
 function loginScreen(){
+ document.body.classList.remove('admin-mode');
  $('bottom').classList.add('hidden');
  $('app').innerHTML=`<h1>Adminbelépés</h1><div class="panel"><form id="adminForm"><label>E-mail<input id="mail" type="email" autocomplete="username" required></label><label>Jelszó<input id="pw" type="password" autocomplete="current-password" required></label><button class="primary" type="submit" id="login">Belépés</button></form><p id="authMsg" role="status"></p><details id="activation"><summary>Fiók aktiválása</summary><p>Ha már regisztráltál, erősítsd meg a címed a regisztrációs levélben. Ezután itt léphetsz be a megadott jelszóval.</p><button class="secondary" id="resend">Új megerősítő levél kérése</button><details><summary>A levélben lévő gomb nem működik</summary><p>Másold ki a legutóbbi levél megerősítő gombjának hivatkozását, és illeszd ide.</p><label>Megerősítő hivatkozás<input id="confirmUrl" type="password" autocomplete="off"></label><button id="verify">Cím megerősítése</button></details></details><details><summary>Első regisztráció</summary><p>Add meg fent az adminisztrátori e-mail-címed és a választott jelszót.</p><button id="register">Fiók létrehozása</button></details></div><a href="./">Megfigyelés indítása</a>`;
  const credentials=()=>({email:$('mail').value.trim(),password:$('pw').value});
@@ -174,7 +252,8 @@ function loginScreen(){
  }
  async function enter(session){
   access=session.access_token;
-  if(!await api('/rest/v1/rpc/toyota_admin_access',{})){access='';throw Error('Ehhez a fiókhoz nincs adminjog.');}
+  if(!await api('/rest/v1/rpc/toyota_admin_access',{})){clearAdminSession();throw Error('Ehhez a fiókhoz nincs adminjog.');}
+  rememberAdminSession(session);
   await dashboard();
  }
  authAction('login',async()=>{if(!$('adminForm').reportValidity())throw Error('Add meg az e-mail-címed és a jelszavad.');await enter(await api('/auth/v1/token?grant_type=password',credentials()));});
@@ -267,7 +346,7 @@ async function dashboard(){
  $('bottom').classList.add('hidden');
  $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<button class="secondary" id="newOcc">+ Új alkalom</button>':'')+'</div>'+(cls?'<div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Frissítve '+localStamp(refreshedAt)+' · automatikus frissítés 20 mp</span><button class="secondary" id="refresh">Frissítés</button></div>':'')+(occasion?'<div class="toolbar"><button class="primary" id="showQr">QR-kód kivetítése</button><a class="secondary" href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button class="secondary" id="copyOcc">Közös link másolása</button><button class="secondary" id="projectSummary">Összesítés kivetítése</button><button class="secondary" id="mailSummary">Összesítés e-mailben</button></div>':'')+(cls?'<nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
  $('newClass').onclick=()=>createClassDialog();
- action('logout',async()=>{adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{access='';location.replace('./#admin');location.reload();}});
+ action('logout',async()=>{adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{clearAdminSession();location.replace('./#admin');location.reload();}});
  if(cls){
  $('newOcc').onclick=()=>createOccasionDialog(cls);
  $('occasions').onchange=e=>{if(!leaveRoster()){e.target.value=occasionId;return;}rosterDirty=false;occasionId=e.target.value;dashboard().catch(alertError);};
@@ -429,5 +508,6 @@ function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">$
 }
 startApp();
 </script></body></html>
+
 
 
