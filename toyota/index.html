@@ -43,7 +43,59 @@ button:disabled{opacity:.45;cursor:default}.empty{padding:40px}
 .projection-names label{display:flex;align-items:center;gap:10px;cursor:pointer}
 .projection-names input{width:18px;height:18px;margin:0;accent-color:#287f70}
 .projection-names p{margin-bottom:0}
-.projection-scope{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 20px;background:#f3f6f2;border:1px solid #dce5dc;border-radius:12px}.projection-scope [hidden]{display:none!important}</style></head><body><header><div><span class="brand">TOYOTA</span><span class="tag">ÉRTÉKESÍTŐI MEGFIGYELÉS</span></div></header><main id="app"></main><div class="bottom" id="bottom"></div><script src="./qr.js"></script><script>
+.projection-scope{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:18px 20px;background:#f3f6f2;border:1px solid #dce5dc;border-radius:12px}.projection-scope [hidden]{display:none!important}body.admin-mode{background:#f4f5f3}
+body.admin-mode main{grid-template-columns:230px minmax(760px,1fr)}
+body.admin-mode header{border-top-width:3px;padding:14px 24px;border-bottom:1px solid #e2e5e0}
+body.admin-mode .admin-sidebar{height:calc(100vh - 55px);background:#fafbf9;padding:25px 16px;border-right-color:#e0e5df}
+.admin-sidebar>.eyebrow{font-size:10px;letter-spacing:1.4px}
+.admin-sidebar h2{font-size:20px}
+.admin-sidebar>.primary{padding:12px 16px;min-height:42px;font-size:14px}
+.admin-sidebar nav button{padding:12px 14px;font-size:14px}.admin-sidebar nav small{font-size:12px}
+.admin-sidebar nav button.selected{background:#eef2ed;box-shadow:inset 3px 0 #35594d}
+.admin-work{padding:26px 30px;max-width:1540px}
+.admin-heading{align-items:center}.admin-heading h1{font-size:29px;margin:7px 0 6px}
+.admin-heading .eyebrow{font-size:10px;letter-spacing:1.3px}
+body.admin-mode .primary{border-radius:8px;min-height:42px;padding:12px 17px;font-size:14px}
+body.admin-mode .secondary{border-radius:8px;min-height:40px;padding:11px 16px;font-size:14px;background:#e9ece7}
+.occasion-row{margin:18px 0 14px;gap:14px}.occasion-row label{font-size:11px;color:#66726b;min-width:330px}
+.occasion-row select{margin-top:5px;font-size:14px;border:1px solid #d3dbd3;border-radius:7px;background:#fff;padding:10px 12px;color:#293a30}
+#liveStatus{font-size:12px}.icon-refresh{font-size:22px!important;min-width:40px;padding:4px!important}
+.toolbar{align-items:center;gap:10px;margin:16px 0}.toolbar>.primary{background:#293e35}.toolbar>.secondary{background:#fff;border:1px solid #cfd9d0}
+.more-menu{position:relative;margin-left:auto;z-index:4}
+.more-menu summary{list-style:none;border:1px solid #d7ded5;background:#fff;border-radius:8px;padding:10px 14px;font-size:13px;color:#55625b;min-height:38px}
+.more-menu summary::-webkit-details-marker{display:none}
+.more-menu summary:after{content:'⌄';margin-left:12px}
+.more-menu[open] summary{background:#edf1eb;border-color:#bccabc}
+.more-menu>div{position:absolute;right:0;top:calc(100% + 7px);width:255px;background:#fff;border:1px solid #dce3d9;border-radius:10px;padding:6px;box-shadow:0 10px 30px #273a301a;display:grid;gap:2px}
+.more-menu button,.more-menu a{display:block;width:100%;border:0;background:transparent;border-radius:6px;padding:11px 12px;text-align:left;font:inherit;font-size:13px;color:#34473b;text-decoration:none;line-height:1.4}
+.more-menu button:hover,.more-menu a:hover{background:#f0f4ed}.more-menu .danger-action{color:#a42834;border-top:1px solid #edf0ea;border-radius:0;margin-top:4px}
+.admin-tabs{gap:26px;margin:21px 0 20px}.admin-tabs button{padding:12px 3px;font-size:14px;border-bottom-width:2px}
+body.admin-mode .panel{border-radius:12px;padding:20px 22px;border-color:#dfe4dc;box-shadow:0 2px 7px #293e3503}
+body.admin-mode h2{font-size:18px;letter-spacing:-.25px}
+.stats{gap:14px}.stats .panel{padding:17px 20px}.stats .panel>span{font-size:12px;color:#6e7a70}.stats .metric{font-size:30px;margin-top:8px}.stats .metric small{font-size:15px}
+.highlights{gap:16px;align-items:start}.highlights .strong{border-top:3px solid #427b68}.highlights .weak{border-top:3px solid #b47b4f}
+.topthree-list{list-style:none;padding:0;margin:15px 0 0}.topthree-list li{display:flex;justify-content:space-between;gap:20px;padding:12px 0;border-bottom:1px solid #eef1eb;font-size:14px;line-height:1.45;margin:0}
+.topthree-list li:last-child{border:0}.topthree-list li b{font-size:17px;font-weight:600;white-space:nowrap;color:#356653}.weak .topthree-list li b{color:#9f663c}.topthree-list li small{font-size:11px;color:#8a948a;font-weight:400}
+.ranking-more{border-top:1px solid #e6ebe1;margin:8px 0 0!important;padding-top:4px}.ranking-more summary{font-size:12px;color:#63755f;min-height:32px;padding:9px 0 4px}.ranking-more .topthree-list{margin-top:0}.ranking-more .topthree-list li{font-size:13px}.ranking-more .topthree-list li b{font-size:15px}
+.all-criteria summary{font-weight:600;font-size:14px;color:#435b49}.all-criteria .criteria{margin-top:20px}
+.summary-neutral{font-size:14px;color:#536d59;background:#f2f6ef!important}.summary-neutral p{font-size:13px;margin:7px 0 0}
+.waiting-state{text-align:center;padding:38px!important;color:#6b7c6c}.waiting-state h2{margin:15px 0 8px}.waiting-state p{font-size:14px;margin-bottom:0}.waiting-dot{width:10px;height:10px;border-radius:50%;background:#90ad8e;display:inline-block;box-shadow:0 0 0 7px #edf3e9}
+.projection-admin-panel{border-color:#b9cdbb!important;background:#f8fbf6!important;margin:12px 0 20px}
+.projection-admin-panel>.section-head{margin-bottom:17px}
+.compact-projector .projector-choices{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.compact-projector label{font-size:12px;color:#5b6f5b}
+.compact-projector select{font-size:14px;padding:10px 12px;border:1px solid #ccd8c8;border-radius:7px;margin:6px 0 0;background:#fff}
+.compact-projector .projector-switches{display:flex;align-items:center;gap:22px;border-top:1px solid #e1e9dc;margin-top:18px;padding-top:14px;flex-wrap:wrap}
+.projector-switches label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.projector-switches input{display:inline-block;width:16px;height:16px;margin:0;accent-color:#446e49}
+.projector-switches #projectionStatus{font-size:11px;color:#7a8c74}
+.projector-switches #openProjector{font-size:12px;margin-left:auto;color:#48674c}
+.compact-criterion{display:flex;align-items:flex-end;gap:12px;margin-top:16px}.compact-criterion label{flex:1}.compact-criterion .secondary{min-width:42px}
+.compact-projector .projection-pages{margin-top:16px}.compact-projector .projection-pages button{font-size:12px;padding:9px 14px}
+body.admin-mode .text-button{font-size:13px;color:#446b4d}.admin-dialog .text-button{color:#446b4d}
+body.admin-mode th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#7a867c}
+body.admin-mode td{font-size:13px;padding-top:13px;padding-bottom:13px}
+</style></head><body><header><div><span class="brand">TOYOTA</span><span class="tag">ÉRTÉKESÍTŐI MEGFIGYELÉS</span></div></header><main id="app"></main><div class="bottom" id="bottom"></div><script src="./qr.js"></script><script>
 'use strict';
 const fleetItems=[{"title": "Felkészülés a cégből és a partnerből", "help": "A beszélgetés alapján mennyire látszik, hogy ismeri a céget és a tárgyalópartnerét? Figyeld, használ-e konkrét, releváns információkat, és kapcsolja-e ezeket az ügyfél helyzetéhez."}, {"title": "Tudatos beszélgetési felkészülés", "help": "A beszélgetés alapján mennyire látszik az átgondolt felkészülés? Figyeld, vannak-e célzott kérdései, tudja-e, mit szeretne megtudni, és használ-e a helyzethez illő kapcsolódási pontokat."}, {"title": "Kapcsolatteremtés", "help": "Köszöntsd és szólítsd meg az ügyfelet. Figyelmed, testbeszéded és a beszélgetés kezdése igazodjon hozzá. Reagálj arra, amit mond és ahogyan jelen van."}, {"title": "Cél, menet és időkeret", "help": "Egyeztesd, mi a találkozó célja, hogyan fogtok haladni és mennyi időtök van. Kérdezd meg, ő mit szeretne elérni a beszélgetés végére."}, {"title": "Bemutatkozás és pozicionálás", "help": "Röviden mutasd be magadat, a márkakereskedést és a Toyota releváns értékeit. Derüljön ki, miben tudtok segíteni ennek az üzleti ügyfélnek."}, {"title": "Céghelyzet, kihívások és tervek", "help": "Ismerd meg a cég működését, kihívásait és terveit. Kérdezz rá, ezek hogyan befolyásolják az autóhasználatot és a flottával kapcsolatos döntéseket."}, {"title": "A flotta szerepe és használata", "help": "Tisztázd, kik, mire és milyen körülmények között használják az autókat. Ismerd meg a releváns összetételt és futásteljesítményt."}, {"title": "Üzemeltetés és finanszírozás", "help": "Kérdezz rá a jelenlegi flottaüzemeltetőre és finanszírozási konstrukcióra. Tudd meg, milyen szempontok alapján tartanák meg vagy változtatnának rajta."}, {"title": "Elégedettség és problémák", "help": "Kérj konkrét példákat arra, mi működik jól, mi hiányzik vagy okoz nehézséget a flottánál és a szolgáltatásoknál. Tisztázd a következményeket is."}, {"title": "Kötelező és választható elvárások", "help": "Különítsd el a kizáró feltételeket (KO kritériumokat) a „jó, ha van” igényektől. Ellenőrizd, mely szempontok a legfontosabbak az ügyfélnek."}, {"title": "Döntési folyamat és időzítés", "help": "Tisztázd a partnered szerepét, a további érintetteket, a döntés menetét és időzítését. Derüljön ki, mikorra tervezik az autók beszerzését."}, {"title": "Smart Talk és személyes kapcsolódás", "help": "Természetes kapaszkodóból indulva ismerd meg a partnert emberként is. Építs a válaszaira, saját tapasztalataira és számára fontos szempontokra. Tartsd tiszteletben a határait."}, {"title": "Aktív figyelem és továbbkérdezés", "help": "Használj nyitott kérdéseket, pontosíts és kérdezz tovább a válaszok alapján. Hagyj időt a megszólalásra. Jelezd vissza, mit értettél meg."}, {"title": "Ügyfélre szabott autóbemutatás", "help": "A feltárt prioritások alapján válaszd ki, mit és milyen sorrendben mutatsz meg. Mondd ki, melyik részlet hogyan kapcsolódik az ügyfél elmondott igényéhez."}, {"title": "Tulajdonságból ügyfélelőny", "help": "Mutasd meg, egy felszereltség vagy műszaki megoldás hogyan segíti a cég működését, illetve az autó használójának mindennapjait. Használj konkrét haszonérveket."}, {"title": "Bevonás és kipróbálás", "help": "Az ügyfél maga is próbáljon ki számára fontos részleteket. Hagyj teret a felfedezésnek, figyeld a reakcióit, és azokhoz igazítsd a bemutatás folytatását."}, {"title": "Élmény és érzések megfogalmazása", "help": "Konkrét kipróbálás után kérdezz rá a személyes élményére: például „Milyen érzés volt?” Hagyj csendet, majd a válaszából kiindulva kérdezz tovább."}, {"title": "Kérdések és bizonytalanságok kezelése", "help": "Szükség esetén pontosítsd az ügyfél kérdését, adj hiteles, releváns választ, és ellenőrizd, segített-e. Amit nem tudsz, annak konkrét utánajárást vállalj."}, {"title": "Összefoglalás és visszaellenőrzés", "help": "Kapcsold össze a fő igényeket a bemutatott megoldással. Jelezd a nyitott kérdéseket, és ellenőrizd az ügyféllel, hogy jól értetted-e a helyzetét."}, {"title": "Megállapodás a következő lépésről", "help": "Közösen rögzítsétek, ki, mit és mikorra tesz. Legyen egyértelmű, hogyan és mikor folytatjátok az egyeztetést."}];
 const fleetGroups=[{name:'Felkészülés',start:0,end:2},{name:'Indítás',start:2,end:5},{name:'Igényfeltárás',start:5,end:13},{name:'Bemutatás',start:13,end:18},{name:'Lezárás',start:18,end:20}];
@@ -334,13 +386,17 @@ function criterionChart(cls,records){
 function adminOverview(cls,occasion,records){
  const observed=new Set(records.map(r=>r.seller)).size,rank=criterionMeans(cls,records);
  const score=r=>r.scores.reduce((a,b)=>a+b,0);
- const strong=rank.length?rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9):[];
- const weak=rank.length?rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9):[];
- function highlight(title,rows,style){
- return '<section class="panel '+style+'"><h2>'+title+'</h2>'+(rows.length?'<b class="metric">'+rows[0].mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b><ul>'+rows.map(r=>'<li>'+esc(r.title)+'</li>').join('')+'</ul>':'<p>Az első beküldésre várunk.</p>')+'</section>';
+ const stats='<div class="stats"><section class="panel"><span>Megfigyelt résztvevők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+(occasion.mode==='exam'?'Megfelelt értékelések':'Értékelések átlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(records.reduce((sum,r)=>sum+score(r),0)/records.length).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div>';
+ if(!records.length)return stats+'<section class="panel waiting-state"><span class="waiting-dot"></span><h2>Várjuk az első értékelést</h2><p>Vetítsd ki a QR-kódot. A beérkezett eredmények itt automatikusan megjelennek.</p></section><button hidden id="seeResults">Eredmények</button>';
+ const equal=Math.abs(rank[0].mean-rank.at(-1).mean)<1e-9;
+ function highlight(title,items,style){
+ const displayed=items.slice(0,3),ties=items.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length-displayed.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length;
+ return '<section class="panel '+style+'"><h2>'+title+'</h2><ul class="topthree-list">'+displayed.map(r=>'<li><span>'+esc(r.title)+'</span><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b></li>').join('')+'</ul>'+(ties?'<p class="muted">+'+ties+' szempont azonos értékkel</p>':'')+(items.length>3?'<details class="ranking-more" id="ranking-'+style+'"><summary>További '+(items.length-3)+' szempont</summary><ul class="topthree-list">'+items.slice(3).map(r=>'<li><span>'+esc(r.title)+'</span><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b></li>').join('')+'</ul></details>':'')+'</section>';
  }
- return '<div class="stats"><section class="panel"><span>Megfigyelt értékesítők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+ (occasion.mode==='exam'?'Megfelelt értékelések':'Értékelések átlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(records.reduce((sum,r)=>sum+score(r),0)/records.length).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div><div class="highlights">'+highlight('Legmagasabb értékelés',strong,'strong')+highlight('Legalacsonyabb értékelés',weak,'weak')+'</div><section class="panel"><div class="section-head"><h2>Legutóbbi beküldések</h2><button class="secondary" id="seeResults">Minden eredmény</button></div>'+resultsTable(cls,occasion,[...records].sort((a,b)=>b.created_at.localeCompare(a.created_at)).slice(0,5),false)+'</section><section class="panel"><h2>A 20 szempont eredménye</h2>'+criterionChart(cls,records)+'</section>';
+ const highlights=equal?'<section class="panel summary-neutral"><b>Minden szempont átlaga azonos · '+rank[0].mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+' / 2</b><p>A részleteket a szempontok megoszlásában nézheted meg.</p></section>':'<div class="highlights">'+highlight('Erősségek',rank,'strong')+highlight('Fejlesztendők',[...rank].sort((a,b)=>a.mean-b.mean),'weak')+'</div>';
+ return stats+highlights+'<section class="panel"><div class="section-head"><h2>Legutóbbi beküldések</h2><button class="text-button" id="seeResults">Összes eredmény →</button></div>'+resultsTable(cls,occasion,[...records].sort((a,b)=>b.created_at.localeCompare(a.created_at)).slice(0,5),false)+'</section><details class="panel all-criteria" id="allCriteria"><summary>Mind a 20 szempont részletesen</summary>'+criterionChart(cls,records)+'</details>';
 }
+
 function resultsTable(cls,occasion,records,includeMissing=true){
  const rows=records.map(r=>{
  const total=r.scores.reduce((a,b)=>a+b,0);
@@ -369,7 +425,7 @@ async function dashboard(){
  if(request!==dashboardRequest)return;
  entries=loadedEntries;refreshedAt=new Date();if(cls&&occasion)feedProjection(cls,occasion,entries);
  $('bottom').classList.add('hidden');
- $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<div class="actions"><button class="secondary" id="newOcc">+ Új alkalom</button><button class="secondary" id="deleteClass">Osztály törlése</button></div>':'')+'</div>'+(cls?'<div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Frissítve '+localStamp(refreshedAt)+' · automatikus frissítés 20 mp</span><button class="secondary" id="refresh">Frissítés</button></div>':'')+(occasion?'<div class="toolbar"><button class="primary" id="showQr">QR-kód kivetítése</button><a class="secondary" href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button class="secondary" id="copyOcc">Közös link másolása</button><button class="secondary" id="projectSummary">Összesítés kivetítése</button><button class="secondary" id="mailSummary">Összesítés e-mailben</button></div>':'')+(cls?'<nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
+ $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<details class="more-menu class-menu"><summary>Osztály beállításai</summary><div><button id="newOcc">Új megfigyelés vagy vizsga</button><button id="deleteClass" class="danger-action">Osztály törlése</button></div></details>':'')+'</div>'+(cls?'<div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Automatikusan frissül · '+new Date(refreshedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})+'</span><button class="secondary icon-refresh" id="refresh" aria-label="Eredmények frissítése" title="Frissítés">↻</button></div>':'')+(occasion?'<div class="toolbar"><button class="primary" id="showQr">Csatlakozás · QR-kód</button><button class="secondary" id="projectSummary">Eredmények kivetítése</button><details class="more-menu"><summary>További műveletek</summary><div><a href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button id="copyOcc">Csatlakozási link másolása</button><button id="mailSummary">Összesítés e-mailben</button></div></details></div>':'')+(cls?'<nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
  $('newClass').onclick=()=>createClassDialog();
  action('logout',async()=>{adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{clearAdminSession();location.replace('./#admin');location.reload();}});
  if(cls){
@@ -417,7 +473,8 @@ function renderAdminContent(cls,occasion){
  }
  if(!occasion){content.innerHTML='<section class="panel"><h2>Hozz létre egy alkalmat</h2><p>A megfigyeléshez vagy vizsgához saját QR-kód és eredménylista tartozik.</p></section>';return;}
  if(adminTab==='overview'){
- content.innerHTML=adminOverview(cls,occasion,entries);
+ const chartOpen=Boolean($('allCriteria')?.open),strongOpen=Boolean($('ranking-strong')?.open),weakOpen=Boolean($('ranking-weak')?.open);
+ content.innerHTML=adminOverview(cls,occasion,entries);if($('allCriteria'))$('allCriteria').open=chartOpen;if($('ranking-strong'))$('ranking-strong').open=strongOpen;if($('ranking-weak'))$('ranking-weak').open=weakOpen;
  $('seeResults').onclick=()=>{adminTab='results';renderAdminContent(cls,occasion);};
  }else{
  content.innerHTML='<section class="panel"><div class="section-head"><h2>Egyéni eredmények</h2><select id="scope" aria-label="Eredmények köre"><option value="current">Aktuális alkalom</option><option value="practice">Az osztály összes megfigyelése</option><option value="exam">Az osztály összes vizsgája</option></select></div><p class="muted">Kattints az értékesítő nevére a megfigyelők értékeléseinek összehasonlításához.</p><div id="resultRecords">'+resultsTable(cls,occasion,entries)+'</div></section>';
@@ -473,7 +530,7 @@ function feedProjection(cls,occasion,records){
  if(!projectionSnapshot||projectionSettings.frozen||cls.id!==projectionSnapshot.classId||occasion.id!==projectionSnapshot.occasionId)return;
  projectionSnapshot=projectionData(cls,occasion,records);sendProjection();
  const status=$('projectionStatus');
- if(status)status.textContent=projectionSnapshot.submissions+' értékelés · frissítve '+projectionSnapshot.updated;
+ if(status)status.textContent=selectedProjectionData().submissions+' értékelés';
 }
 window.addEventListener('message',event=>{
  if(event.origin===location.origin&&event.source===projectorWindow&&event.data?.type==='toyota-projection-ready')sendProjection();
@@ -487,7 +544,7 @@ function openProjector(){
 function projectionControlPanel(title,body){
  document.getElementById('projectionControlPanel')?.remove();
  const panel=document.createElement('section');panel.id='projectionControlPanel';panel.className='panel projection-admin-panel';
- panel.innerHTML='<div class="section-head"><h2>'+esc(title)+'</h2><button class="secondary" id="hideProjectionControls">Vezérlő elrejtése</button></div>'+body;
+ panel.innerHTML='<div class="section-head"><h2>'+esc(title)+'</h2><button class="text-button" id="hideProjectionControls">Elrejtés</button></div>'+body;
  document.querySelector('.toolbar').after(panel);
  panel.querySelector('#hideProjectionControls').onclick=()=>panel.remove();
  return panel;
@@ -496,40 +553,31 @@ function projectionControls(cls,occasion){
  if(!projectionSnapshot||projectionSnapshot.classId!==cls.id||projectionSnapshot.occasionId!==occasion.id){
  projectionSettings.frozen=false;projectionSettings.showNames=false;projectionSettings.scope='class';projectionSettings.seller=cls.roster[0]||'';projectionSnapshot=projectionData(cls,occasion,entries);
  }else if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
- const dialog=projectionControlPanel('Kivetítés vezérlése · '+cls.name,
- '<p class="muted">'+esc(modeName(occasion.mode)+' · '+occasion.name)+'</p><div class="projection-controls"><div class="projection-scope"><label>Kinek az eredményét mutassuk?<select id="projectionScope"><option value="class" '+(projectionSettings.scope==='class'?'selected':'')+'>Teljes osztály összesítése</option><option value="person" '+(projectionSettings.scope==='person'?'selected':'')+'>Egy kiválasztott résztvevő</option></select></label><label id="projectionPersonLabel" '+(projectionSettings.scope==='class'?'hidden':'')+'>Résztvevő<select id="projectionPerson">'+projectionSnapshot.roster.map(name=>'<option '+(name===projectionSettings.seller?'selected':'')+'>'+esc(name)+'</option>').join('')+'</select></label></div><p class="muted">Az aktuális alkalom összes beküldése együtt szerepel. Szerepcsere után ugyanaz a QR-kód használható.</p><div class="projection-view-buttons">'+[
- ['highlights','01','Erősségek és fejlesztendők','A három legmagasabb és legalacsonyabb átlag'],
- ['single','02','Egy szempont','Leírás, átlag és a kapott pontok'],
- ['distribution','03','0–1–2 megoszlás','Hány ilyen értékelés érkezett szempontonként']
- ].map(([key,number,title,description])=>'<button data-projection-view="'+key+'" aria-pressed="'+(projectionSettings.view===key)+'"><span>'+number+'</span><b>'+title+'</b><small>'+description+'</small></button>').join('')+'</div><div id="projectionOptions"></div><div class="projection-output"><div><b>Külön kivetítőablak</b><p class="muted">Húzd át a kivetítőre, majd ott kapcsold be a teljes képernyőt.</p></div><button class="primary" id="openProjector">Kivetítő megnyitása</button></div><div class="projection-names"><label><input type="checkbox" id="projectionNames" '+(projectionSettings.showNames?'checked':'')+'> Nevek megjelenítése</label><p class="muted">Az egy szempontos nézetben az egyéni pontok és a megfigyelők neve is látszik.</p></div><div class="projection-freeze"><label><input type="checkbox" id="freezeProjection" '+(projectionSettings.frozen?'checked':'')+'> Eredmények kimerevítése</label><span class="muted" id="projectionStatus">'+projectionSnapshot.submissions+' értékelés · frissítve '+projectionSnapshot.updated+'</span></div><p class="muted">A kimerevítés alatt a nézetek és a szempontok továbbra is válthatók. A kivetítőablak a vezérlő elrejtése után is nyitva marad.</p></div>');
+ const panel=projectionControlPanel('Kivetítés','<div class="compact-projector"><div class="projector-choices"><label>Tartalom<select id="projectionView"><option value="highlights">Erősségek és fejlesztendők</option><option value="single">Egy szempont</option><option value="distribution">0–1–2 megoszlás</option></select></label><label>Kinek az eredménye?<select id="projectionAudience"><option value="-1">Teljes osztály</option><optgroup label="Résztvevők">'+projectionSnapshot.roster.map((name,i)=>'<option value="'+i+'">'+esc(name)+'</option>').join('')+'</optgroup></select></label></div><div id="projectionOptions"></div><div class="projector-switches"><label><input type="checkbox" id="projectionNames" '+(projectionSettings.showNames?'checked':'')+'> Nevek</label><label><input type="checkbox" id="freezeProjection" '+(projectionSettings.frozen?'checked':'')+'> Kimerevítés</label><span class="muted" id="projectionStatus"></span><button class="text-button" id="openProjector">Kivetítőablak megnyitása ↗</button></div></div>');
+ const status=()=>{panel.querySelector('#projectionStatus').textContent=(projectionSettings.frozen?'Kimerevítve · ':'')+selectedProjectionData().submissions+' értékelés';};
  const redraw=()=>{
- dialog.querySelector('#projectionPersonLabel').hidden=projectionSettings.scope!=='person';
- dialog.querySelectorAll('[data-projection-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.projectionView===projectionSettings.view));
- const options=dialog.querySelector('#projectionOptions');
+ panel.querySelector('#projectionView').value=projectionSettings.view;
+ panel.querySelector('#projectionAudience').value=projectionSettings.scope==='class'?'-1':String(projectionSnapshot.roster.indexOf(projectionSettings.seller));
+ const options=panel.querySelector('#projectionOptions');
  if(projectionSettings.view==='single'){
- options.innerHTML='<label>Megfigyelési szempont<select id="projectedCriterion">'+projectionSnapshot.items.map(it=>'<option value="'+it.index+'" '+(it.index===projectionSettings.selected?'selected':'')+'>'+String(it.index+1).padStart(2,'0')+' · '+esc(it.title)+'</option>').join('')+'</select></label><div class="projection-step"><button class="secondary" id="previousCriterion" '+(projectionSettings.selected===0?'disabled':'')+'>← Előző szempont</button><span>'+(projectionSettings.selected+1)+' / 20</span><button class="secondary" id="nextCriterion" '+(projectionSettings.selected===19?'disabled':'')+'>Következő szempont →</button></div>';
+ options.innerHTML='<div class="compact-criterion"><button class="secondary" id="previousCriterion" aria-label="Előző szempont" '+(projectionSettings.selected===0?'disabled':'')+'>←</button><label>Szempont<select id="projectedCriterion">'+projectionSnapshot.items.map(it=>'<option value="'+it.index+'" '+(it.index===projectionSettings.selected?'selected':'')+'>'+String(it.index+1).padStart(2,'0')+' · '+esc(it.title)+'</option>').join('')+'</select></label><button class="secondary" id="nextCriterion" aria-label="Következő szempont" '+(projectionSettings.selected===19?'disabled':'')+'>→</button></div>';
  options.querySelector('select').onchange=e=>{projectionSettings.selected=Number(e.target.value);redraw();sendProjection();};
  options.querySelector('#previousCriterion').onclick=()=>{projectionSettings.selected=Math.max(0,projectionSettings.selected-1);redraw();sendProjection();};
  options.querySelector('#nextCriterion').onclick=()=>{projectionSettings.selected=Math.min(19,projectionSettings.selected+1);redraw();sendProjection();};
  }else if(projectionSettings.view==='distribution'){
- options.innerHTML='<p class="muted">Tíz szempont egy képernyőn, az eredeti sorrendben.</p><div class="projection-pages"><button data-page="0" aria-pressed="'+(projectionSettings.page===0)+'">01–10. szempont</button><button data-page="1" aria-pressed="'+(projectionSettings.page===1)+'">11–20. szempont</button></div>';
+ options.innerHTML='<div class="projection-pages">'+[0,1].map(page=>'<button data-page="'+page+'" aria-pressed="'+(projectionSettings.page===page)+'">'+(page===0?'01–10. szempont':'11–20. szempont')+'</button>').join('')+'</div>';
  options.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{projectionSettings.page=Number(b.dataset.page);redraw();sendProjection();});
- }else{
- options.innerHTML='<div class="projection-explain"><b>A kiválasztott összesítés erősségei és fejlesztendő területei</b><p>A két oszlopban három-három szempont jelenik meg az átlagukkal. Azonos értékeknél a holtversenyt is jelöljük.</p></div>';
- }
+ }else options.innerHTML='';
+ status();
  };
- dialog.querySelectorAll('[data-projection-view]').forEach(b=>b.onclick=()=>{projectionSettings.view=b.dataset.projectionView;redraw();sendProjection();});
- dialog.querySelector('#projectionScope').onchange=e=>{projectionSettings.scope=e.target.value;if(!projectionSnapshot.roster.includes(projectionSettings.seller))projectionSettings.seller=projectionSnapshot.roster[0]||'';redraw();sendProjection();};
- dialog.querySelector('#projectionPerson').onchange=e=>{projectionSettings.seller=e.target.value;sendProjection();};
- dialog.querySelector('#openProjector').onclick=openProjector;
- dialog.querySelector('#projectionNames').onchange=e=>{projectionSettings.showNames=e.target.checked;sendProjection();};
- dialog.querySelector('#freezeProjection').onchange=e=>{
- projectionSettings.frozen=e.target.checked;
- if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
- sendProjection();dialog.querySelector('#projectionStatus').textContent=(projectionSettings.frozen?'Kimerevítve · ':'')+projectionSnapshot.submissions+' értékelés · '+projectionSnapshot.updated;
- };
+ panel.querySelector('#projectionView').onchange=e=>{projectionSettings.view=e.target.value;redraw();sendProjection();};
+ panel.querySelector('#projectionAudience').onchange=e=>{const index=Number(e.target.value);projectionSettings.scope=index<0?'class':'person';projectionSettings.seller=index<0?'':projectionSnapshot.roster[index];status();sendProjection();};
+ panel.querySelector('#projectionNames').onchange=e=>{projectionSettings.showNames=e.target.checked;sendProjection();};
+ panel.querySelector('#freezeProjection').onchange=e=>{projectionSettings.frozen=e.target.checked;if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);status();sendProjection();};
+ panel.querySelector('#openProjector').onclick=openProjector;
  redraw();sendProjection();openProjector();
 }
+
 function scheduleRefresh(){
  clearTimeout(refreshTimer);
  refreshTimer=setTimeout(async()=>{
@@ -537,7 +585,7 @@ function scheduleRefresh(){
  const target=occasionId,cls=classes.find(c=>c.id===classId),occasion=occasions.find(a=>a.id===target);
  if((!document.hidden||(projectorWindow&&!projectorWindow.closed))&&occasion){
  try{const loaded=await readEntries(target);if(target===occasionId){
- entries=loaded;refreshedAt=new Date();feedProjection(cls,occasion,entries);if($('liveStatus'))$('liveStatus').textContent='Frissítve '+localStamp(refreshedAt)+' · automatikus frissítés 20 mp';
+ entries=loaded;refreshedAt=new Date();feedProjection(cls,occasion,entries);if($('liveStatus'))$('liveStatus').textContent='Automatikusan frissül · '+new Date(refreshedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})+'';
  if(!document.querySelector('dialog[open]')&&adminTab==='overview')renderAdminContent(cls,occasion);
  if(!document.querySelector('dialog[open]')&&adminTab==='results'&&$('scope')?.value==='current')renderAdminContent(cls,occasion);
  }}catch(err){if($('liveStatus'))$('liveStatus').textContent='A frissítés nem sikerült. Próbáld a Frissítés gombbal.';}
@@ -629,6 +677,7 @@ function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">$
 }
 startApp();
 </script></body></html>
+
 
 
 
