@@ -40,3 +40,18 @@ footer{font-size:11px;color:var(--muted);line-height:1.65;margin-top:22px}
 @media(max-width:1250px){.admin-session-tools{flex-wrap:wrap;gap:10px}.occasion-row{min-width:100%}.occasion-row #liveStatus{margin-left:auto}.toolbar{width:100%}.toolbar>.more-menu{margin-left:auto}.overview-work{grid-template-columns:1fr}.highlights{grid-template-columns:1fr 1fr}.admin-work{padding:20px 24px}.stats .panel{padding:12px 15px}.stats .metric{font-size:28px}}
 @media(max-width:600px){main{padding:20px 16px 145px}.brand{gap:11px;font-size:12px}.brand-emblem{height:25px}.brand-copy{padding-left:11px}.brand small{font-size:9px}.tag{display:none}.fields{grid-template-columns:1fr}.card,.panel{padding:20px 17px}.card h3{font-size:18px}.nav{gap:5px}.nav button{font-size:11px;padding:8px 6px;flex:1 1 28%}.notice{font-size:12px}.scores{gap:7px}.score{font-size:11px;padding:10px 3px;min-height:82px}.score b{font-size:25px}.observer-context{font-size:11px;align-items:start;gap:18px}.observer-context b{font-size:13px}.criterion-jump{gap:10px}.criterion-jump select{font-size:13px}.bottom{padding:11px 16px calc(11px + env(safe-area-inset-bottom))}#occasionBanner{margin:12px 16px 0;font-size:11px}.admin-dialog{width:95vw;padding:20px}.toast{left:16px;right:16px;bottom:16px}}
 @media print{body>header,.bottom,.nav,.noprint,footer,.admin-sidebar,.toolbar,.admin-tabs{display:none!important}body{background:white}main{max-width:none!important;padding:0!important}.result{background:white;color:black;border:1px solid black;break-inside:avoid}.result h1 small{color:#444}.panel{break-inside:avoid}.admin-mode main{display:block;min-width:0}.admin-work{padding:0}}
+
+.stage-picker{display:none}
+@media(max-width:600px){
+body>header{padding:10px 16px}
+#occasionBanner{margin:10px 16px 0;padding:0 10px;line-height:1.5}
+main{padding-top:15px}
+.observer-context{padding:4px 0 12px;margin-bottom:16px}
+.observer-context small{font-size:10px}.observer-context b{font-size:13px}
+main>.eyebrow{font-size:10px}main>h1{font-size:26px;margin:7px 0 14px}
+.nav{display:none}
+.stage-picker{display:block;margin:0 0 13px;color:var(--muted);font-size:11px}
+.stage-picker select{font-size:13px;padding:9px 11px;margin:5px 0 0}
+.form-hint{display:none}
+.criterion-jump{margin-bottom:14px}.criterion-jump select{padding:9px 10px}
+}

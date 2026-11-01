@@ -1,3 +1,4 @@
+/* Toyota emblem and Toyota Type supplied by Toyota Europe DX Playbook, retrieved 2026-11-01. */
 @font-face{font-family:Toyota Type;src:url('./assets/ToyotaType-Regular.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
 @font-face{font-family:Toyota Type;src:url('./assets/ToyotaType-Semibold.woff2') format('woff2');font-style:normal;font-weight:600 900;font-display:swap}
 :root{--paper:#f7f5ef;--surface:#fff;--ink:#282830;--muted:#62676b;--line:#d4d6d5;--soft:#eeefec;--red:#d40605;--green:#216c55;--amber:#9a6129;--blue:#2359a2;--rose:#aa4757;--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;font-family:"Toyota Type","Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--paper);font-synthesis:none}
