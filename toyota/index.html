@@ -1,7 +1,24 @@
 <!doctype html>
 <html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#eb0a1e"><title>Toyota • Megfigyelés</title><style>
 :root{font-family:Arial,Helvetica,sans-serif;color:#202124;background:#f3f4f5;--red:#d9091c}*{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #155caa;outline-offset:3px}header{background:#fff;border-top:5px solid var(--red);padding:18px 20px}header>div{max-width:700px;margin:auto;display:flex;justify-content:space-between;align-items:center}.brand{font-size:22px;font-weight:900;letter-spacing:1px;color:var(--red)}.tag{font-size:12px;color:#555}main{max-width:740px;margin:auto;padding:24px 20px 135px}h1{font-size:30px;line-height:1.13;margin:10px 0 14px;letter-spacing:-1px}h2{font-size:23px;line-height:1.25}p{line-height:1.5}.muted{color:#60656b;font-size:14px}.eyebrow{font-size:12px;letter-spacing:1.6px;font-weight:bold;color:#686d72;text-transform:uppercase}.panel,.card{background:#fff;border:1px solid #dfe1e4;border-radius:16px;padding:20px;margin:16px 0}.card{scroll-margin-top:24px}.card h3{font-size:18px;line-height:1.35;margin:0 0 12px;display:flex;gap:12px}.num{color:var(--red);font-variant-numeric:tabular-nums}.notice{border-left:3px solid var(--red);background:#fff1f2;padding:12px 14px;font-size:14px;line-height:1.5}.fields{display:grid;gap:16px;grid-template-columns:1fr 1fr}label{display:block;font-weight:bold;font-size:14px}input,textarea{display:block;width:100%;border:1px solid #aeb3b9;border-radius:8px;background:#fff;color:#202124;padding:13px;margin-top:7px;font-size:16px}textarea{min-height:100px;resize:vertical}.scores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}.score{min-height:76px;border:1px solid #b8bdc3;border-radius:10px;background:#fff;color:#373b40;padding:10px 3px;font-size:12px;line-height:1.3}.score b{display:block;font-size:24px;margin-bottom:5px}.score[aria-pressed=true]{background:#202124;color:#fff;border:2px solid #202124;box-shadow:0 0 0 2px #fff,0 0 0 3px #202124}.score[aria-pressed=true] b:after{content:' ✓';font-size:15px}summary{cursor:pointer;font-size:14px;color:#555;padding:6px 0;min-height:36px}details p{font-size:15px;margin:8px 0}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.nav button{flex:1;border:1px solid #c7cbd0;border-radius:8px;min-height:44px;background:white;font-size:13px;padding:8px}.nav button[aria-current=step]{background:#202124;color:#fff;border-color:#202124}.primary,.secondary{border:0;border-radius:10px;padding:15px 20px;min-height:50px;font-weight:bold}.primary{background:var(--red);color:white}.secondary{background:#e9ebee;color:#202124}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions>*{flex:1}.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;padding:12px 20px calc(12px + env(safe-area-inset-bottom));z-index:2}.bottom>div{max-width:700px;margin:auto}.progress{height:5px;background:#e4e6e9;border-radius:9px;overflow:hidden;margin:8px 0 12px}.progress span{display:block;background:var(--red);height:100%}.status{font-size:12px;color:#646970;margin:8px 0 0}.result{background:#202124;color:white;padding:28px;border-radius:18px}.result h1{font-size:64px;margin:12px 0}.result h1 small{font-size:24px;color:#bec1c5}.badge{display:inline-block;padding:8px 12px;border-radius:7px;background:#fff;color:#202124;font-weight:bold}.result.pass .badge{background:#bce7cd;color:#113c25}.rows{list-style:none;padding:0}.rows li{padding:13px 0;border-bottom:1px solid #e3e5e7;display:flex;gap:12px;line-height:1.4}.rows li span{flex:1}.rows li b{white-space:nowrap}.error{color:#a50918;font-weight:bold}.hidden{display:none!important}.feedback{white-space:pre-wrap;overflow-wrap:anywhere}footer{font-size:12px;color:#6a6e73;margin-top:24px;line-height:1.5} @media(max-width:420px){main{padding:20px 14px 145px}.fields{grid-template-columns:1fr}.card{padding:17px 14px}.nav button{font-size:12px;padding:7px 4px}h1{font-size:28px}}@media print{header,.bottom,.nav,.noprint,footer{display:none!important}body{background:white}main{padding:0;max-width:none}.panel,.result{break-inside:avoid}.result{background:white;color:black;border:2px solid black}.result h1 small{color:black}}
-select{display:block;width:100%;padding:.7rem;font:inherit;margin:.4rem 0 1rem} .panel details{margin:1rem 0} #occasionBanner{text-align:center} </style></head><body><header><div><span class="brand">TOYOTA</span><span class="tag">ÉRTÉKESÍTŐI MEGFIGYELÉS</span></div></header><main id="app"></main><div class="bottom" id="bottom"></div><script src="./qr.js"></script><script>
+select{display:block;width:100%;padding:.7rem;font:inherit;margin:.4rem 0 1rem} .panel details{margin:1rem 0} #occasionBanner{text-align:center} body.admin-mode header>div{max-width:none}
+body.admin-mode main{max-width:none;padding:0 0 40px;display:grid;grid-template-columns:250px minmax(760px,1fr);min-width:1050px}
+.admin-sidebar{background:#fff;border-right:1px solid #dfe1e4;padding:28px 18px;position:sticky;top:0;height:calc(100vh - 64px);overflow:auto;display:flex;flex-direction:column;gap:14px}
+.admin-sidebar h2{margin:0}.admin-sidebar nav{flex:1}.admin-sidebar nav button{display:block;width:100%;text-align:left;border:0;background:transparent;border-radius:9px;padding:14px 12px;margin:6px 0;color:#30343a}.admin-sidebar nav button.selected{background:#fff0f1;box-shadow:inset 3px 0 var(--red)}.admin-sidebar nav small{display:block;color:#656a71;margin-top:5px}
+.admin-work{padding:30px 36px;max-width:1800px;width:100%;margin:auto;align-self:start}
+.admin-heading,.section-head,.dialog-head{display:flex;justify-content:space-between;gap:24px;align-items:center}.admin-heading h1{font-size:32px}.section-head h2{margin:0}.section-head select{max-width:340px}
+.occasion-row{display:flex;align-items:center;gap:18px;margin:16px 0}.occasion-row label{min-width:300px}.occasion-row select{margin-bottom:0}.occasion-row #liveStatus{margin-left:auto}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}.toolbar a{text-decoration:none;display:inline-flex;align-items:center;font-size:14px}
+.admin-tabs{display:flex;gap:28px;border-bottom:1px solid #d6d9dd;margin:26px 0 24px}.admin-tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:14px 4px;font-weight:bold;color:#6a7078}.admin-tabs button[aria-current=page]{color:#202124;border-color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.stats .panel{margin-top:0}.metric{display:block;font-size:38px;margin-top:12px;font-variant-numeric:tabular-nums}.metric small{font-size:18px;color:#737981}
+.highlights{display:grid;grid-template-columns:1fr 1fr;gap:18px}.highlights .panel{margin-top:0}.strong{border-top:4px solid #19734d}.weak{border-top:4px solid #c77518}.highlights li{line-height:1.5;margin-bottom:6px}
+.table-scroll{overflow:auto}.admin-mode table,.admin-dialog table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}.admin-mode th,.admin-mode td,.admin-dialog th,.admin-dialog td{padding:14px 12px;border-bottom:1px solid #e4e6e9;vertical-align:top}.admin-mode thead,.admin-dialog thead{background:#f6f7f8}.admin-mode td input{margin:0;font-size:14px;padding:10px}.admin-dialog table td{min-width:180px}.admin-dialog table th{min-width:230px}
+.text-button{border:0;background:none;color:#ad0918;padding:0;text-align:left;font:inherit;font-weight:bold}.pill{display:inline-block;border-radius:20px;padding:5px 10px;font-size:12px;white-space:nowrap}.pill.ok{background:#e0f2e8;color:#145839}.pill.low{background:#ffe7e9;color:#9c1725}
+.criteria{display:grid;gap:14px;margin-top:22px}.criterion{display:grid;grid-template-columns:minmax(250px,1fr) minmax(160px,1fr) 50px;gap:20px;align-items:center;font-size:14px}.criterion b{text-align:right}.bar{height:12px;background:#edf0f2;border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:#d9091c;border-radius:8px}
+.admin-dialog{border:1px solid #d5d9df;border-radius:18px;padding:26px;max-width:1100px;width:85vw;max-height:90vh;overflow:auto}.admin-dialog::backdrop{background:rgba(15,22,31,.55)}.admin-dialog h2{margin:0}.admin-dialog textarea{min-height:160px}
+.projection{width:94vw;max-width:1500px;text-align:center}.projection canvas{width:min(65vh,650px);image-rendering:pixelated}.projection .criteria{text-align:left}.projection .criterion{font-size:20px;grid-template-columns:minmax(380px,1fr) 1fr 65px}.projection .bar{height:18px}
+button:disabled{opacity:.45;cursor:default}.empty{padding:40px}
+</style></head><body><header><div><span class="brand">TOYOTA</span><span class="tag">ÉRTÉKESÍTŐI MEGFIGYELÉS</span></div></header><main id="app"></main><div class="bottom" id="bottom"></div><script src="./qr.js"></script><script>
 'use strict';
 const fleetItems=[{"title": "Felkészülés a cégből és a partnerből", "help": "A beszélgetés alapján mennyire látszik, hogy ismeri a céget és a tárgyalópartnerét? Figyeld, használ-e konkrét, releváns információkat, és kapcsolja-e ezeket az ügyfél helyzetéhez."}, {"title": "Tudatos beszélgetési felkészülés", "help": "A beszélgetés alapján mennyire látszik az átgondolt felkészülés? Figyeld, vannak-e célzott kérdései, tudja-e, mit szeretne megtudni, és használ-e a helyzethez illő kapcsolódási pontokat."}, {"title": "Kapcsolatteremtés", "help": "Köszöntsd és szólítsd meg az ügyfelet. Figyelmed, testbeszéded és a beszélgetés kezdése igazodjon hozzá. Reagálj arra, amit mond és ahogyan jelen van."}, {"title": "Cél, menet és időkeret", "help": "Egyeztesd, mi a találkozó célja, hogyan fogtok haladni és mennyi időtök van. Kérdezd meg, ő mit szeretne elérni a beszélgetés végére."}, {"title": "Bemutatkozás és pozicionálás", "help": "Röviden mutasd be magadat, a márkakereskedést és a Toyota releváns értékeit. Derüljön ki, miben tudtok segíteni ennek az üzleti ügyfélnek."}, {"title": "Céghelyzet, kihívások és tervek", "help": "Ismerd meg a cég működését, kihívásait és terveit. Kérdezz rá, ezek hogyan befolyásolják az autóhasználatot és a flottával kapcsolatos döntéseket."}, {"title": "A flotta szerepe és használata", "help": "Tisztázd, kik, mire és milyen körülmények között használják az autókat. Ismerd meg a releváns összetételt és futásteljesítményt."}, {"title": "Üzemeltetés és finanszírozás", "help": "Kérdezz rá a jelenlegi flottaüzemeltetőre és finanszírozási konstrukcióra. Tudd meg, milyen szempontok alapján tartanák meg vagy változtatnának rajta."}, {"title": "Elégedettség és problémák", "help": "Kérj konkrét példákat arra, mi működik jól, mi hiányzik vagy okoz nehézséget a flottánál és a szolgáltatásoknál. Tisztázd a következményeket is."}, {"title": "Kötelező és választható elvárások", "help": "Különítsd el a kizáró feltételeket (KO kritériumokat) a „jó, ha van” igényektől. Ellenőrizd, mely szempontok a legfontosabbak az ügyfélnek."}, {"title": "Döntési folyamat és időzítés", "help": "Tisztázd a partnered szerepét, a további érintetteket, a döntés menetét és időzítését. Derüljön ki, mikorra tervezik az autók beszerzését."}, {"title": "Smart Talk és személyes kapcsolódás", "help": "Természetes kapaszkodóból indulva ismerd meg a partnert emberként is. Építs a válaszaira, saját tapasztalataira és számára fontos szempontokra. Tartsd tiszteletben a határait."}, {"title": "Aktív figyelem és továbbkérdezés", "help": "Használj nyitott kérdéseket, pontosíts és kérdezz tovább a válaszok alapján. Hagyj időt a megszólalásra. Jelezd vissza, mit értettél meg."}, {"title": "Ügyfélre szabott autóbemutatás", "help": "A feltárt prioritások alapján válaszd ki, mit és milyen sorrendben mutatsz meg. Mondd ki, melyik részlet hogyan kapcsolódik az ügyfél elmondott igényéhez."}, {"title": "Tulajdonságból ügyfélelőny", "help": "Mutasd meg, egy felszereltség vagy műszaki megoldás hogyan segíti a cég működését, illetve az autó használójának mindennapjait. Használj konkrét haszonérveket."}, {"title": "Bevonás és kipróbálás", "help": "Az ügyfél maga is próbáljon ki számára fontos részleteket. Hagyj teret a felfedezésnek, figyeld a reakcióit, és azokhoz igazítsd a bemutatás folytatását."}, {"title": "Élmény és érzések megfogalmazása", "help": "Konkrét kipróbálás után kérdezz rá a személyes élményére: például „Milyen érzés volt?” Hagyj csendet, majd a válaszából kiindulva kérdezz tovább."}, {"title": "Kérdések és bizonytalanságok kezelése", "help": "Szükség esetén pontosítsd az ügyfél kérdését, adj hiteles, releváns választ, és ellenőrizd, segített-e. Amit nem tudsz, annak konkrét utánajárást vállalj."}, {"title": "Összefoglalás és visszaellenőrzés", "help": "Kapcsold össze a fő igényeket a bemutatott megoldással. Jelezd a nyitott kérdéseket, és ellenőrizd az ügyféllel, hogy jól értetted-e a helyzetét."}, {"title": "Megállapodás a következő lépésről", "help": "Közösen rögzítsétek, ki, mit és mikorra tesz. Legyen egyértelmű, hogyan és mikor folytatjátok az egyeztetést."}];
 const fleetGroups=[{name:'Felkészülés',start:0,end:2},{name:'Indítás',start:2,end:5},{name:'Igényfeltárás',start:5,end:13},{name:'Bemutatás',start:13,end:18},{name:'Lezárás',start:18,end:20}];
@@ -197,54 +214,137 @@ function groupReport(cls,occasion,records){
  return [cls.name,modeName(occasion.mode)+' · '+occasion.name,'Összesítés ideje: '+new Date().toLocaleString('hu-HU'),'Megfigyelt résztvevők: '+observed+'/'+cls.roster.length,'Beküldések: '+records.length,'',...(rank.length?['Legmagasabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9).map(format),'','Legalacsonyabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9).map(format),'','Minden szempont',...rank.map(format)]:['Még nincs beküldés.'])].join('\n');
 }
 
-async function dashboard(){
- classes=await api('/rest/v1/classes?select=*&order=created_at.desc');if(!classes.some(c=>c.id===classId))classId=classes[0]?.id||'';
- const cls=classes.find(c=>c.id===classId);
- occasions=cls?await api('/rest/v1/occasions?class_id=eq.'+classId+'&order=created_at.desc'):[];
- if(!occasions.some(a=>a.id===occasionId))occasionId=occasions[0]?.id||'';
- const occasion=occasions.find(a=>a.id===occasionId);
- entries=occasion?await readEntries(occasionId):[];
- $('app').innerHTML=`<div class="eyebrow">Toyota · Admin</div><h1>Osztályok</h1><div class="actions"><button id="refresh">Frissítés</button><button id="logout">Kilépés</button></div>
- <details class="panel" ${cls?'':'open'}><summary>Új osztály</summary><label>Osztály neve<input id="className"></label><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Névsor · név és opcionális e-mail-cím, Excelből két oszlopban is bemásolható<textarea id="roster"></textarea></label><label>Névsor betöltése (TXT vagy CSV)<input type="file" id="file" accept=".txt,.csv"></label><label>Az első alkalom célja<select id="firstMode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><button class="primary" id="newClass">Osztály és QR-kód létrehozása</button></details>
- ${cls?`<div class="panel"><label>Osztály<select id="classes">${selectOptions(classes,classId)}</select></label><p>${exams[cls.kind].name} · ${cls.roster.length} fő</p><details ${occasion?'':'open'}><summary>Új megfigyelés vagy vizsga</summary><label>Alkalom neve vagy dátuma<input id="occasionName" value="${new Date().toLocaleDateString('hu-HU')}"></label><label>Cél<select id="mode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><button id="newOcc">Alkalom létrehozása</button></details></div>`:''}
-<section class="panel"><h2>Megfigyelői felület</h2>${occasion?`<p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><a href="./#occasion=${occasion.id}&preview=1" target="_blank" rel="noopener">Megnyitás megfigyelőként ↗</a>`:`<p>Próbáld ki a kitöltést mintanévsorral.</p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a>`}<p><button class="primary" id="showQr" ${occasion?'':'disabled'}>QR-kód kivetítése</button></p>${occasion?'':`<p>${cls?'Hozz létre egy gyakorló- vagy vizsgaalkalmat az osztályhoz.':'A közös QR-kódhoz először ments el egy osztályt névsorral, majd hozz létre hozzá egy alkalmat.'}</p>`}</section> ${occasion?`<div class="panel"><label>Alkalom<select id="occasions">${selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)}</select></label><h2>Belépés a megfigyelőknek</h2><p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><canvas id="qr" style="width:min(100%,360px);image-rendering:pixelated" aria-label="Az alkalom QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p><button id="copyOcc">Közös link másolása</button> </div><div class="panel"><h2>Összesítés megosztása</h2><button id="mailSummary">Összesítés megnyitása e-mailben</button><p>A leveleződben kiválaszthatod a címzetteket és elküldheted a levelet.</p><details><summary>E-mail-címek megadása vagy módosítása</summary><label>Név és e-mail-cím, soronként<textarea id="contacts">${esc(cls.roster.map(n=>n+"\t"+(cls.contacts?.[n]||"")).join("\n"))}</textarea></label><button id="saveContacts">E-mail-címek mentése</button></details></div>${overview(cls,occasion,entries)}<div class="panel"><h2>Osztályszintű áttekintés</h2><p>Az osztály összes azonos célú alkalma együtt.</p><button id="allPractice">Összes megfigyelés</button> <button id="allExams">Összes vizsga</button><div id="allResults"></div></div>`:''}`;
- action('refresh',dashboard);action('logout',async()=>{try{await api('/auth/v1/logout',{});}finally{access='';location.replace('./#admin');location.reload();}});
- $('file').onchange=async()=>{if($('file').files[0])$('roster').value=await $('file').files[0].text();};
- action('newClass',async()=>{
- const name=$('className').value.trim(), parsed=parseRoster($('roster').value);
- if(!name||!parsed.names.length)throw Error('Add meg az osztály nevét és a névsort.');
- const result=await api('/rest/v1/rpc/create_observation_class',{class_name:name,class_kind:$('kind').value,names:parsed.names,emails:parsed.contacts,occasion_mode:$('firstMode').value});
- classId=result.class_id;occasionId=result.occasion_id;await dashboard();
- });
- if(cls){$('classes').onchange=e=>{classId=e.target.value;dashboard().catch(alertError);};action('newOcc',async()=>{const id=crypto.randomUUID();await api('/rest/v1/occasions',{id,class_id:classId,name:$('occasionName').value.trim(),mode:$('mode').value});occasionId=id;await dashboard();});}
- if(occasion){
-  action('saveContacts',async()=>{
-   const parsed=parseRoster($('contacts').value);
-   if(parsed.names.length!==cls.roster.length||parsed.names.some(n=>!cls.roster.includes(n)))throw Error('Az e-mail-címek mentésekor a névsor neveit tartsd meg.');
-   await api('/rest/v1/classes?id=eq.'+classId, {contacts:parsed.contacts},access,'PATCH');await dashboard();
-  });
-  action('mailSummary',async()=>{
-   const recipients=cls.roster.map(n=>cls.contacts?.[n]).filter(Boolean);
-   const subject=cls.name+' · '+modeName(occasion.mode)+' · '+occasion.name;
-   const body=groupReport(cls,occasion,entries);
-   location.href='mailto:?bcc='+encodeURIComponent(recipients.join(','))+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  });
-  for(const [id,mode] of [['allPractice','practice'],['allExams','exam']]){
-   action(id,async()=>{const matching=occasions.filter(a=>a.mode===mode);
-    const sets=await Promise.all(matching.map(a=>readEntries(a.id)));
-    $('allResults').innerHTML=overview(cls,{mode},sets.flat());
-   });
-  }
-  $('occasions').onchange=e=>{occasionId=e.target.value;dashboard().catch(alertError);};
-  const link=location.href.split('#')[0]+'#occasion='+occasion.id;
-  const qr=new ToyotaQRCode(-1,0);qr.addData(link);qr.make();
-  const canvas=$('qr'), n=qr.getModuleCount();canvas.width=canvas.height=(n+8)*12;
-  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#000';
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(qr.isDark(y,x))ctx.fillRect((x+4)*12,(y+4)*12,12,12);
-  action('copyOcc',async()=>{try{await navigator.clipboard.writeText(link);$('copyOcc').textContent='Kimásolva';}catch{prompt('Másold ki a linket:',link);}});
-  action('showQr',async()=>{const d=document.createElement('dialog');d.innerHTML='<h2>'+esc(cls.name)+' · '+modeName(occasion.mode)+'</h2><p>'+esc(occasion.name)+'</p><img alt="Közös QR-kód" style="width:min(75vw,65vh);image-rendering:pixelated" src="'+canvas.toDataURL()+'"><p><button>Bezárás</button></p>';document.body.append(d);d.querySelector('button').onclick=()=>d.close();d.onclose=()=>d.remove();d.showModal();});
- }
+let adminTab='overview', refreshTimer=null, dashboardRequest=0, adminActive=false, refreshedAt=null, rosterDirty=false;
+function leaveRoster(){return !rosterDirty||confirm('A névsor módosításai még nincsenek mentve. Elhagyod ezt a nézetet?');}
+function localStamp(value){return new Date(value).toLocaleString('hu-HU',{timeZone:'Europe/Budapest'});}
+function modal(title,body){
+ const dialog=document.createElement('dialog');dialog.className='admin-dialog';
+ dialog.innerHTML='<div class="dialog-head"><h2>'+esc(title)+'</h2><button class="secondary" data-close>Bezárás</button></div>'+body;
+ document.body.append(dialog);dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();dialog.showModal();return dialog;
 }
+function criterionChart(cls,records){
+ const rank=criterionMeans(cls,records);
+ if(!rank.length)return '<p class="empty">A szempontok összesítése az első beküldés után jelenik meg.</p>';
+ return '<p class="muted">Átlag 0–2 pont között · minden megfigyelt értékesítő azonos súllyal szerepel</p><div class="criteria">'+rank.map((r,i)=>'<div class="criterion"><span>'+esc(r.title)+'</span><div class="bar"><i style="width:'+r.mean*50+'%"></i></div><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'</b></div>').join('')+'</div>';
+}
+function adminOverview(cls,occasion,records){
+ const observed=new Set(records.map(r=>r.seller)).size,rank=criterionMeans(cls,records);
+ const score=r=>r.scores.reduce((a,b)=>a+b,0);
+ const strong=rank.length?rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9):[];
+ const weak=rank.length?rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9):[];
+ function highlight(title,rows,style){
+ return '<section class="panel '+style+'"><h2>'+title+'</h2>'+(rows.length?'<b class="metric">'+rows[0].mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b><ul>'+rows.map(r=>'<li>'+esc(r.title)+'</li>').join('')+'</ul>':'<p>Az első beküldésre várunk.</p>')+'</section>';
+ }
+ return '<div class="stats"><section class="panel"><span>Megfigyelt értékesítők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+ (occasion.mode==='exam'?'Megfelelt értékelések':'Értékelések átlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(records.reduce((sum,r)=>sum+score(r),0)/records.length).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div><div class="highlights">'+highlight('Legmagasabb értékelés',strong,'strong')+highlight('Legalacsonyabb értékelés',weak,'weak')+'</div><section class="panel"><div class="section-head"><h2>Legutóbbi beküldések</h2><button class="secondary" id="seeResults">Minden eredmény</button></div>'+resultsTable(cls,occasion,[...records].sort((a,b)=>b.created_at.localeCompare(a.created_at)).slice(0,5),false)+'</section><section class="panel"><h2>A 20 szempont eredménye</h2>'+criterionChart(cls,records)+'</section>';
+}
+function resultsTable(cls,occasion,records,includeMissing=true){
+ const rows=records.map(r=>{
+ const total=r.scores.reduce((a,b)=>a+b,0);
+ return '<tr><td><button class="text-button" data-person="'+esc(r.seller)+'">'+esc(r.seller)+'</button></td><td>'+esc(r.observers.name)+'</td><td><b>'+total+'/40</b></td><td>'+(occasion.mode==='exam'?'<span class="pill '+(total>=25?'ok':'low')+'">'+(total>=25?'Megfelelt':'Nem felelt meg')+'</span>':'Megfigyelés')+'</td><td>'+localStamp(r.created_at)+'</td></tr>';
+ });
+ if(includeMissing)for(const name of cls.roster)if(!records.some(r=>r.seller===name))rows.push('<tr><td>'+esc(name)+'</td><td colspan="4" class="muted">Még nincs beküldés</td></tr>');
+ return '<div class="table-scroll"><table><thead><tr><th>Értékesítő</th><th>Megfigyelő</th><th>Pontszám</th><th>Eredmény</th><th>Beküldés időpontja</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+}
+function showPerson(cls,occasion,name,records){
+ const rows=records.filter(r=>r.seller===name),items=exams[cls.kind].items;
+ const heads=rows.map(r=>'<th>'+esc(r.observers.name)+'<br><small>'+localStamp(r.created_at)+'</small></th>').join('');
+ modal(name+' · értékelések összehasonlítása','<div class="table-scroll"><table><thead><tr><th>Szempont</th>'+heads+'</tr></thead><tbody>'+items.map((it,i)=>'<tr><th>'+esc(it.title)+'</th>'+rows.map(r=>'<td>'+r.scores[i]+' / 2<br><small>'+LABELS[r.scores[i]]+'</small></td>').join('')+'</tr>').join('')+'<tr><th>Összesen</th>'+rows.map(r=>{const n=r.scores.reduce((a,b)=>a+b,0);return '<td><b>'+n+'/40</b>'+(occasion.mode==='exam'?'<br>'+(n>=25?'Megfelelt':'Nem felelt meg'):'')+'</td>';}).join('')+'</tr><tr><th>Szöveges visszajelzés</th>'+rows.map(r=>'<td class="feedback">'+esc(r.notes||'—')+'</td>').join('')+'</tr></tbody></table></div>');
+}
+async function dashboard(){
+ adminActive=true;document.body.classList.add('admin-mode');
+ const request=++dashboardRequest;
+ const loaded=await api('/rest/v1/classes?select=*&order=created_at.desc');
+ if(request!==dashboardRequest)return;
+ classes=loaded;if(!classes.some(c=>c.id===classId))classId=classes[0]?.id||'';
+ const cls=classes.find(c=>c.id===classId);
+ const loadedOcc=cls?await api('/rest/v1/occasions?class_id=eq.'+classId+'&order=created_at.desc'):[];
+ if(request!==dashboardRequest)return;
+ occasions=loadedOcc;if(!occasions.some(a=>a.id===occasionId))occasionId=occasions[0]?.id||'';
+ const occasion=occasions.find(a=>a.id===occasionId);
+ const loadedEntries=occasion?await readEntries(occasionId):[];
+ if(request!==dashboardRequest)return;
+ entries=loadedEntries;refreshedAt=new Date();
+ $('bottom').classList.add('hidden');
+ $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<button class="secondary" id="newOcc">+ Új alkalom</button>':'')+'</div>'+(cls?'<div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Frissítve '+localStamp(refreshedAt)+' · automatikus frissítés 20 mp</span><button class="secondary" id="refresh">Frissítés</button></div>':'')+(occasion?'<div class="toolbar"><button class="primary" id="showQr">QR-kód kivetítése</button><a class="secondary" href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button class="secondary" id="copyOcc">Közös link másolása</button><button class="secondary" id="projectSummary">Összesítés kivetítése</button><button class="secondary" id="mailSummary">Összesítés e-mailben</button></div>':'')+(cls?'<nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
+ $('newClass').onclick=()=>createClassDialog();
+ action('logout',async()=>{adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{access='';location.replace('./#admin');location.reload();}});
+ if(cls){
+ $('newOcc').onclick=()=>createOccasionDialog(cls);
+ $('occasions').onchange=e=>{if(!leaveRoster()){e.target.value=occasionId;return;}rosterDirty=false;occasionId=e.target.value;dashboard().catch(alertError);};
+ action('refresh',async()=>{if(leaveRoster()){rosterDirty=false;await dashboard();}});
+ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(!leaveRoster())return;rosterDirty=false;adminTab=b.dataset.tab;renderAdminContent(cls,occasion);});
+ renderAdminContent(cls,occasion);
+ }
+ document.querySelectorAll('[data-class]').forEach(b=>b.onclick=()=>{if(!leaveRoster())return;rosterDirty=false;classId=b.dataset.class;occasionId='';adminTab='overview';dashboard().catch(alertError);});
+ if(occasion){
+ const link=location.origin+location.pathname+'#occasion='+occasion.id;
+ $('showQr').onclick=()=>{const d=modal(cls.name+' · '+modeName(occasion.mode),'<p>'+esc(occasion.name)+'</p><canvas id="projectQr" aria-label="Az alkalom közös QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p>');d.classList.add('projection');drawQr(d.querySelector('canvas'),link);};
+ action('copyOcc',async()=>{try{await navigator.clipboard.writeText(link);$('copyOcc').textContent='Kimásolva';}catch{prompt('Másold ki a linket:',link);}});
+ $('projectSummary').onclick=()=>{const d=modal(cls.name+' · '+modeName(occasion.mode)+' · '+occasion.name,'<p>'+new Set(entries.map(r=>r.seller)).size+'/'+cls.roster.length+' értékesítő · '+entries.length+' beküldés</p>'+criterionChart(cls,entries));d.classList.add('projection');};
+ $('mailSummary').onclick=()=>emailSummary(cls,occasion,entries);
+ }
+ scheduleRefresh();
+}
+function drawQr(canvas,link){
+ const qr=new ToyotaQRCode(-1,0);qr.addData(link);qr.make();const n=qr.getModuleCount();
+ canvas.width=canvas.height=(n+8)*12;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#000';
+ for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(qr.isDark(y,x))ctx.fillRect((x+4)*12,(y+4)*12,12,12);
+}
+function emailSummary(cls,occasion,records){
+ const recipients=cls.roster.map(n=>cls.contacts?.[n]).filter(Boolean),subject=cls.name+' · '+modeName(occasion.mode)+' · '+occasion.name;
+ const body=groupReport(cls,occasion,records);
+ const dialog=modal('Összesítés küldése','<p>'+recipients.length+' címzett. A címek titkos másolatba kerülnek.</p><label>A levél szövege<textarea id="mailBody" rows="14"></textarea></label><p><button class="primary" id="openMail">Megnyitás a levelezőben</button></p>');
+ dialog.querySelector('textarea').value=body;
+ dialog.querySelector('#openMail').onclick=()=>{location.href='mailto:?bcc='+encodeURIComponent(recipients.join(','))+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(dialog.querySelector('textarea').value);};
+}
+function renderAdminContent(cls,occasion){
+ document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===adminTab?'page':'false'));
+ const content=$('adminContent');
+ if(adminTab==='roster'){
+ content.innerHTML='<section class="panel"><div class="section-head"><h2>Névsor · '+cls.roster.length+' fő</h2><button class="secondary" id="pasteRoster">Névsor beillesztése</button></div><p class="muted">A név módosítása a korábbi értékeléseknél is érvényesül.</p><div class="table-scroll"><table><thead><tr><th>Név</th><th>E-mail-cím</th></tr></thead><tbody id="rosterRows"></tbody></table></div><p><button class="secondary" id="addPerson">+ Résztvevő</button> <button class="primary" id="saveRoster">Névsor mentése</button></p></section>';
+ let draft=cls.roster.map(name=>({original:name,name,email:cls.contacts?.[name]||''}));
+ const draw=()=>{$('rosterRows').innerHTML=draft.map((p,i)=>'<tr><td><input aria-label="Név '+(i+1)+'" data-name="'+i+'" value="'+esc(p.name)+'"></td><td><input aria-label="E-mail '+(i+1)+'" type="email" data-email="'+i+'" value="'+esc(p.email)+'"></td></tr>').join('');document.querySelectorAll('[data-name]').forEach(el=>el.oninput=()=>{draft[Number(el.dataset.name)].name=el.value;rosterDirty=true;});document.querySelectorAll('[data-email]').forEach(el=>el.oninput=()=>{draft[Number(el.dataset.email)].email=el.value;rosterDirty=true;});};
+ draw();$('addPerson').onclick=()=>{draft.push({original:null,name:'',email:''});rosterDirty=true;draw();};
+ $('pasteRoster').onclick=()=>{const d=modal('Névsor beillesztése','<p>Soronként egy név és opcionális e-mail-cím. Excelből két oszlopot is bemásolhatsz. A már meglévő nevekhez tartozó e-mail-címek frissülnek.</p><textarea id="pasteText" rows="10"></textarea><p><button class="primary" id="applyPaste">Beillesztés</button></p>');d.querySelector('#applyPaste').onclick=()=>{try{const p=parseRoster(d.querySelector('textarea').value);for(const name of p.names){const existing=draft.find(x=>x.name===name);if(existing)existing.email=p.contacts[name]||'';else draft.push({original:null,name,email:p.contacts[name]||''});}rosterDirty=true;draw();d.close();}catch(e){alertError(e);}};};
+ action('saveRoster',async()=>{const parsed=parseRoster(draft.map(p=>p.name.trim()+String.fromCharCode(9)+p.email.trim()).join(String.fromCharCode(10)));if(parsed.names.length!==draft.length)throw Error('Minden résztvevőnek adj nevet.');
+ await api('/rest/v1/rpc/update_class_roster',{target:cls.id,changes:draft.map(p=>({original:p.original,name:p.name.trim(),email:p.email.trim()}))});rosterDirty=false;await dashboard();});
+ return;
+ }
+ if(!occasion){content.innerHTML='<section class="panel"><h2>Hozz létre egy alkalmat</h2><p>A megfigyeléshez vagy vizsgához saját QR-kód és eredménylista tartozik.</p></section>';return;}
+ if(adminTab==='overview'){
+ content.innerHTML=adminOverview(cls,occasion,entries);
+ $('seeResults').onclick=()=>{adminTab='results';renderAdminContent(cls,occasion);};
+ }else{
+ content.innerHTML='<section class="panel"><div class="section-head"><h2>Egyéni eredmények</h2><select id="scope" aria-label="Eredmények köre"><option value="current">Aktuális alkalom</option><option value="practice">Az osztály összes megfigyelése</option><option value="exam">Az osztály összes vizsgája</option></select></div><p class="muted">Kattints az értékesítő nevére a megfigyelők értékeléseinek összehasonlításához.</p><div id="resultRecords">'+resultsTable(cls,occasion,entries)+'</div></section>';
+ $('scope').onchange=async e=>{const scope=e.target.value,selectedClass=classId,selectedOccasion=occasionId;try{const records=scope==='current'?entries:(await Promise.all(occasions.filter(a=>a.mode===scope).map(a=>readEntries(a.id)))).flat();if(!$('resultRecords')||selectedClass!==classId||selectedOccasion!==occasionId||$('scope')?.value!==scope)return;$('resultRecords').innerHTML=resultsTable(cls,{mode:scope==='current'?occasion.mode:scope},records);bindPeople(cls,{mode:scope==='current'?occasion.mode:scope},records);}catch(err){alertError(err);}};
+ }
+ bindPeople(cls,occasion,entries);
+}
+function bindPeople(cls,occasion,records){document.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>showPerson(cls,occasion,b.dataset.person,records));}
+function createClassDialog(){
+ const d=modal('Új osztály','<label>Osztály neve<input id="className" placeholder="Például Toyota · november"></label><div class="fields"><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Első alkalom<select id="firstMode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label></div><label>Névsor<textarea id="roster" rows="8" placeholder="Név és opcionális e-mail-cím · soronként egy résztvevő"></textarea></label><p class="muted">Excelből két oszlop is beilleszthető.</p><label>Vagy TXT / CSV feltöltése<input id="file" type="file" accept=".txt,.csv"></label><p><button class="primary" id="saveClass">Osztály és QR-kód létrehozása</button></p>');
+ d.querySelector('#file').onchange=async e=>{if(e.target.files[0])d.querySelector('#roster').value=await e.target.files[0].text();};
+ action('saveClass',async()=>{const name=$('className').value.trim(),p=parseRoster($('roster').value);if(!name||!p.names.length)throw Error('Adj nevet az osztálynak és illeszd be a névsort.');const result=await api('/rest/v1/rpc/create_observation_class',{class_name:name,class_kind:$('kind').value,names:p.names,emails:p.contacts,occasion_mode:$('firstMode').value});classId=result.class_id;occasionId=result.occasion_id;adminTab='overview';d.close();await dashboard();});
+}
+function createOccasionDialog(cls){
+ const d=modal('Új alkalom · '+cls.name,'<label>Alkalom neve vagy dátuma<input id="occasionName" value="'+new Date().toLocaleDateString('hu-HU')+'"></label><label>Cél<select id="mode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><p><button class="primary" id="saveOcc">Alkalom és QR-kód létrehozása</button></p>');
+ action('saveOcc',async()=>{const id=crypto.randomUUID();await api('/rest/v1/occasions',{id,class_id:cls.id,name:$('occasionName').value.trim(),mode:$('mode').value});occasionId=id;adminTab='overview';d.close();await dashboard();});
+}
+function scheduleRefresh(){
+ clearTimeout(refreshTimer);
+ refreshTimer=setTimeout(async()=>{
+ if(!adminActive)return;
+ const target=occasionId,cls=classes.find(c=>c.id===classId),occasion=occasions.find(a=>a.id===target);
+ if(!document.hidden&&occasion){
+ try{const loaded=await readEntries(target);if(target===occasionId){
+ entries=loaded;refreshedAt=new Date();if($('liveStatus'))$('liveStatus').textContent='Frissítve '+localStamp(refreshedAt)+' · automatikus frissítés 20 mp';
+ if(!document.querySelector('dialog[open]')&&adminTab==='overview')renderAdminContent(cls,occasion);
+ if(!document.querySelector('dialog[open]')&&adminTab==='results'&&$('scope')?.value==='current')renderAdminContent(cls,occasion);
+ }}catch(err){if($('liveStatus'))$('liveStatus').textContent='A frissítés nem sikerült. Próbáld a Frissítés gombbal.';}
+ }scheduleRefresh();
+ },20000);
+}
+
 async function readEntries(id){
  const all=[];for(let offset=0;;offset+=500){const page=await api('/rest/v1/observations?select=*,observers!inner(occasion_id,name)&observers.occasion_id=eq.'+id+'&order=created_at,id&limit=500&offset='+offset);all.push(...page);if(page.length<500)return all;}
 }
@@ -329,4 +429,5 @@ function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">$
 }
 startApp();
 </script></body></html>
+
 
