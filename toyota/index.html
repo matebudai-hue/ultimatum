@@ -474,16 +474,24 @@ function openProjector(){
  if(!projectorWindow){alert('A böngésző blokkolta az új ablakot. Engedélyezd az oldal felugró ablakait, majd kattints újra.');return;}
  sendProjection();
 }
+function projectionControlPanel(title,body){
+ document.getElementById('projectionControlPanel')?.remove();
+ const panel=document.createElement('section');panel.id='projectionControlPanel';panel.className='panel projection-admin-panel';
+ panel.innerHTML='<div class="section-head"><h2>'+esc(title)+'</h2><button class="secondary" id="hideProjectionControls">Vezérlő elrejtése</button></div>'+body;
+ document.querySelector('.toolbar').after(panel);
+ panel.querySelector('#hideProjectionControls').onclick=()=>panel.remove();
+ return panel;
+}
 function projectionControls(cls,occasion){
  if(!projectionSnapshot||projectionSnapshot.classId!==cls.id||projectionSnapshot.occasionId!==occasion.id){
  projectionSettings.frozen=false;projectionSettings.showNames=false;projectionSnapshot=projectionData(cls,occasion,entries);
  }else if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
- const dialog=modal('Kivetítés · '+cls.name,
+ const dialog=projectionControlPanel('Kivetítés vezérlése · '+cls.name,
  '<p class="muted">'+esc(modeName(occasion.mode)+' · '+occasion.name)+'</p><div class="projection-controls"><div class="projection-view-buttons">'+[
  ['highlights','01','Erősségek és fejlesztendők','A három legmagasabb és legalacsonyabb átlag'],
  ['single','02','Egy szempont','Leírás, osztályátlag és a kapott pontok'],
  ['distribution','03','0–1–2 megoszlás','Hány ilyen értékelés érkezett szempontonként']
- ].map(([key,number,title,description])=>'<button data-projection-view="'+key+'" aria-pressed="'+(projectionSettings.view===key)+'"><span>'+number+'</span><b>'+title+'</b><small>'+description+'</small></button>').join('')+'</div><div id="projectionOptions"></div><div class="projection-output"><div><b>Külön kivetítőablak</b><p class="muted">Húzd át a kivetítőre, majd ott kapcsold be a teljes képernyőt.</p></div><button class="primary" id="openProjector">Kivetítő megnyitása</button></div><div class="projection-names"><label><input type="checkbox" id="projectionNames" '+(projectionSettings.showNames?'checked':'')+'> Nevek megjelenítése</label><p class="muted">Az egy szempontos nézetben az egyéni pontok és a megfigyelők neve is látszik.</p></div><div class="projection-freeze"><label><input type="checkbox" id="freezeProjection" '+(projectionSettings.frozen?'checked':'')+'> Eredmények kimerevítése</label><span class="muted" id="projectionStatus">'+projectionSnapshot.submissions+' értékelés · frissítve '+projectionSnapshot.updated+'</span></div><p class="muted">A kimerevítés alatt a nézetek és a szempontok továbbra is válthatók. A kivetítőablak a vezérlő bezárása után is nyitva marad.</p></div>');
+ ].map(([key,number,title,description])=>'<button data-projection-view="'+key+'" aria-pressed="'+(projectionSettings.view===key)+'"><span>'+number+'</span><b>'+title+'</b><small>'+description+'</small></button>').join('')+'</div><div id="projectionOptions"></div><div class="projection-output"><div><b>Külön kivetítőablak</b><p class="muted">Húzd át a kivetítőre, majd ott kapcsold be a teljes képernyőt.</p></div><button class="primary" id="openProjector">Kivetítő megnyitása</button></div><div class="projection-names"><label><input type="checkbox" id="projectionNames" '+(projectionSettings.showNames?'checked':'')+'> Nevek megjelenítése</label><p class="muted">Az egy szempontos nézetben az egyéni pontok és a megfigyelők neve is látszik.</p></div><div class="projection-freeze"><label><input type="checkbox" id="freezeProjection" '+(projectionSettings.frozen?'checked':'')+'> Eredmények kimerevítése</label><span class="muted" id="projectionStatus">'+projectionSnapshot.submissions+' értékelés · frissítve '+projectionSnapshot.updated+'</span></div><p class="muted">A kimerevítés alatt a nézetek és a szempontok továbbra is válthatók. A kivetítőablak a vezérlő elrejtése után is nyitva marad.</p></div>');
  const redraw=()=>{
  dialog.querySelectorAll('[data-projection-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.projectionView===projectionSettings.view));
  const options=dialog.querySelector('#projectionOptions');
@@ -507,9 +515,8 @@ function projectionControls(cls,occasion){
  if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
  sendProjection();dialog.querySelector('#projectionStatus').textContent=(projectionSettings.frozen?'Kimerevítve · ':'')+projectionSnapshot.submissions+' értékelés · '+projectionSnapshot.updated;
  };
- redraw();sendProjection();
+ redraw();sendProjection();openProjector();
 }
-
 function scheduleRefresh(){
  clearTimeout(refreshTimer);
  refreshTimer=setTimeout(async()=>{
