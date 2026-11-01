@@ -107,7 +107,9 @@ const LABELS=['Nem látható','Részben látható','Rendben van'];
 const apiRoot='https://wmhyreahavyslxcqlqli.supabase.co';
 const publicKey='sb_publishable_xq4-rTjl3DDakZyX1ysSwA_dbpC1Dhk';
 const route=new URLSearchParams(location.hash.slice(1));
-const occasionLink=route.get('occasion');
+const preview=route.has('preview');
+const demo=preview&&!route.has('occasion');
+const occasionLink=route.get('occasion')||(demo?'demo':null);
 const invitation=occasionLink||route.get('observe');
 let context=null, access='', classes=[], occasions=[], entries=[],classId='',occasionId='';
 const modeName=mode=>mode==='exam'?'Vizsga':'Gyakorlás';
@@ -129,7 +131,7 @@ async function startApp(){
  if(!invitation&&(route.has('admin')||new URLSearchParams(location.search).has('admin')||route.has('access_token'))){history.replaceState(null,'',location.pathname+'#admin');loginScreen();return;}
  if(!invitation){render();return;}
  try{
-  context=await api(occasionLink?'/rest/v1/rpc/occasion_context':'/rest/v1/rpc/observation_context',{link:invitation});
+  context=demo?{className:'Mintaosztály',occasion:'Bemutató alkalom',kind:route.get('kind')==='passenger'?'passenger':'fleet',mode:'practice',roster:['Minta Anna','Minta Péter']}:await api(occasionLink?'/rest/v1/rpc/occasion_context':'/rest/v1/rpc/observation_context',{link:invitation});
   if(!context)throw Error('Ez a meghívó nem érvényes.');
   if(!state.type)state=fresh(context.kind);
   state.observer=context.observer||state.observer;
@@ -177,10 +179,10 @@ async function dashboard(){
  if(!occasions.some(a=>a.id===occasionId))occasionId=occasions[0]?.id||'';
  const occasion=occasions.find(a=>a.id===occasionId);
  entries=occasion?await readEntries(occasionId):[];
- $('app').innerHTML=`<div class="eyebrow">Toyota · Admin</div><h1>Osztályok</h1><div class="actions"><button id="refresh">Frissítés</button><button id="logout">Kilépés</button></div>
+ $('app').innerHTML=`<div class="eyebrow">Toyota · Admin</div><h1>Osztályok</h1><section class="panel"><h2>Megfigyelői felület</h2>${occasion?`<p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><a href="./#occasion=${occasion.id}&preview=1" target="_blank" rel="noopener">Megnyitás megfigyelőként ↗</a>`:`<p>Próbáld ki a kitöltést mintanévsorral.</p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a>`}<p><button class="primary" id="showQr" ${occasion?'':'disabled'}>QR-kód kivetítése</button></p>${occasion?'':`<p>${cls?'Hozz létre egy gyakorló- vagy vizsgaalkalmat az osztályhoz.':'A közös QR-kódhoz először ments el egy osztályt névsorral, majd hozz létre hozzá egy alkalmat.'}</p>`}</section><div class="actions"><button id="refresh">Frissítés</button><button id="logout">Kilépés</button></div>
  <details class="panel" ${cls?'':'open'}><summary>Új osztály és névsor</summary><label>Osztály neve<input id="className"></label><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Névsor · soronként egy név, Excelből is bemásolható<textarea id="roster"></textarea></label><label>Névsor betöltése (TXT vagy egyoszlopos CSV)<input type="file" id="file" accept=".txt,.csv"></label><button class="primary" id="newClass">Osztály mentése</button></details>
  ${cls?`<div class="panel"><label>Osztály<select id="classes">${selectOptions(classes,classId)}</select></label><p>${exams[cls.kind].name} · ${cls.roster.length} fő</p><details ${occasion?'':'open'}><summary>Új alkalom</summary><label>Alkalom neve vagy dátuma<input id="occasionName" value="${new Date().toLocaleDateString('hu-HU')}"></label><label>Cél<select id="mode"><option value="practice">Gyakorlás</option><option value="exam">Vizsga</option></select></label><button id="newOcc">Alkalom létrehozása</button></details></div>`:''}
- ${occasion?`<div class="panel"><label>Alkalom<select id="occasions">${selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)}</select></label><h2>Közös QR-kód</h2><p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><canvas id="qr" style="width:min(100%,360px);image-rendering:pixelated" aria-label="Az alkalom QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p><button id="copyOcc">Közös link másolása</button> <button id="showQr">QR-kód kivetítése</button></div>${overview(cls,occasion,entries)}<div class="panel"><h2>Osztályszintű áttekintés</h2><p>Az osztály összes azonos célú alkalma együtt.</p><button id="allPractice">Összes gyakorlás</button> <button id="allExams">Összes vizsga</button><div id="allResults"></div></div>`:''}`;
+ ${occasion?`<div class="panel"><label>Alkalom<select id="occasions">${selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)}</select></label><h2>Közös QR-kód</h2><p>${esc(cls.name)} · ${modeName(occasion.mode)} · ${esc(occasion.name)}</p><canvas id="qr" style="width:min(100%,360px);image-rendering:pixelated" aria-label="Az alkalom QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p><button id="copyOcc">Közös link másolása</button> </div>${overview(cls,occasion,entries)}<div class="panel"><h2>Osztályszintű áttekintés</h2><p>Az osztály összes azonos célú alkalma együtt.</p><button id="allPractice">Összes gyakorlás</button> <button id="allExams">Összes vizsga</button><div id="allResults"></div></div>`:''}`;
  action('refresh',dashboard);action('logout',async()=>{try{await api('/auth/v1/logout',{});}finally{access='';location.replace('./#admin');location.reload();}});
  $('file').onchange=async()=>{if($('file').files[0])$('roster').value=await $('file').files[0].text();};
  action('newClass',async()=>{const name=$('className').value.trim(),roster=$('roster').value.split(/\r?\n/).map(n=>n.trim()).filter(Boolean);if(!name||!roster.length||new Set(roster).size!==roster.length)throw Error('Adj osztálynevet és egyedi neveket. Névazonosság esetén használj megkülönböztető jelölést.');
@@ -227,14 +229,14 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function fresh(type=null){return {type,scores:Array(20).fill(null),seller:'',observer:'',date:new Date().toLocaleDateString('sv-SE'),notes:'',step:-1,done:false};}
 function valid(s){return s&&Array.isArray(s.scores)&&s.scores.length===20&&s.scores.every(v=>v===null||[0,1,2].includes(v))&&['seller','observer','date','notes'].every(k=>typeof s[k]==='string')&&Number.isInteger(s.step)&&s.step>=-1&&(s.type==null||Object.hasOwn(exams,s.type))&&s.step<(exams[s.type]?.groups.length||5)&&typeof s.done==='boolean';}
 let state=fresh(),storageOK=true;
-try{const saved=JSON.parse(localStorage.getItem(KEY));if(valid(saved)){
+try{const saved=preview?null:JSON.parse(localStorage.getItem(KEY));if(valid(saved)){
  if(!Object.hasOwn(saved,'type'))saved.type='fleet';
  state=saved;
  }}catch{storageOK=false;}
 if(state.done&&state.scores.includes(null))state.done=false;
 function count(){return state.scores.filter(v=>v!==null).length;}
 function total(){return state.scores.reduce((a,b)=>a+(b??0),0);}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch{storageOK=false;}const el=$('save');if(el)el.textContent=storageOK?'Automatikusan mentve ezen az eszközön.':'A böngésző nem engedi a mentést. A lap bezárása előtt töltsd le az eredményt.';}
+function save(){if(preview)return;try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch{storageOK=false;}const el=$('save');if(el)el.textContent=storageOK?'Automatikusan mentve ezen az eszközön.':'A böngésző nem engedi a mentést. A lap bezárása előtt töltsd le az eredményt.';}
 function go(step){if(occasionLink&&step>=0&&!state.observer.trim()){alert("Add meg a saját neved.");return;}if(context&&step>=0&&!context.roster.includes(state.seller)){alert("Válassz értékesítőt a névsorból.");return;}state.step=step;state.done=false;save();render();window.scrollTo(0,0);}
 function field(k,label,type='text'){return `<label>${label}<input id="${k}" type="${type}" value="${esc(state[k])}" maxlength="120"></label>`;}
 function bindFields(){for(const k of ['seller','observer','notes'])if($(k))$(k).addEventListener('input',e=>{state[k]=e.target.value;save();});}
@@ -254,7 +256,7 @@ function render(){
  document.querySelector('#occasionBanner')?.remove();
  if(context){
   const b=document.createElement('div');b.id='occasionBanner';b.className='notice';
-  b.textContent=[context.className,modeName(context.mode),context.occasion,state.observer?'Megfigyelő: '+state.observer:''].join(' · ');
+  b.textContent=[...(preview?['Megfigyelői előnézet']:[]),context.className,modeName(context.mode),context.occasion,state.observer?'Megfigyelő: '+state.observer:''].join(' · ');
   $('app').before(b);
  }
  if(choosing||!state.type){$('bottom').classList.add('hidden');choose();return;}
@@ -275,6 +277,7 @@ function result(){const score=total();$('app').innerHTML=`<div class="eyebrow">$
   $('sendGroup').disabled=Boolean(state.sent);
   $('edit').hidden=Boolean(state.sent||state.startedSending);
   action('sendGroup',async()=>{
+   if(preview){alert('Az előnézet végére értél. Az értékelés nem kerül az osztály eredményei közé.');return;}
    state.submission ||= crypto.randomUUID();state.startedSending=true;save();
    $('edit').hidden=true;
    await api(occasionLink?'/rest/v1/rpc/submit_occasion':'/rest/v1/rpc/submit_observation',{...(occasionLink?{evaluator:state.observer.trim()}:{}),link:invitation,submission:state.submission,person:state.seller,marks:state.scores,feedback:state.notes});
