@@ -126,7 +126,7 @@ function action(id,fn){
 }
 function selectOptions(rows,current){return rows.map(r=>`<option value="${esc(r.id)}" ${r.id===current?'selected':''}>${esc(r.name)}</option>`).join('');}
 async function startApp(){
- if(route.has('admin')){loginScreen();return;}
+ if(!invitation&&(route.has('admin')||new URLSearchParams(location.search).has('admin')||route.has('access_token'))){history.replaceState(null,'',location.pathname+'#admin');loginScreen();return;}
  if(!invitation){render();return;}
  try{
   context=await api(occasionLink?'/rest/v1/rpc/occasion_context':'/rest/v1/rpc/observation_context',{link:invitation});
@@ -138,10 +138,37 @@ async function startApp(){
 }
 function loginScreen(){
  $('bottom').classList.add('hidden');
- $('app').innerHTML='<h1>Osztályok</h1><div class="panel"><label>E-mail<input id="mail" type="email" autocomplete="username"></label><label>Jelszó<input id="pw" type="password" autocomplete="current-password"></label><div class="actions"><button class="primary" id="login">Adminbelépés</button><button class="secondary" id="register">Első belépés · fiók létrehozása</button></div><p id="authMsg" role="status"></p></div><a href="./">Megfigyelés indítása</a>';
+ $('app').innerHTML=`<h1>Adminbelépés</h1><div class="panel"><form id="adminForm"><label>E-mail<input id="mail" type="email" autocomplete="username" required></label><label>Jelszó<input id="pw" type="password" autocomplete="current-password" required></label><button class="primary" type="submit" id="login">Belépés</button></form><p id="authMsg" role="status"></p><details id="activation"><summary>Fiók aktiválása</summary><p>Ha már regisztráltál, erősítsd meg a címed a regisztrációs levélben. Ezután itt léphetsz be a megadott jelszóval.</p><button class="secondary" id="resend">Új megerősítő levél kérése</button><details><summary>A levélben lévő gomb nem működik</summary><p>Másold ki a legutóbbi levél megerősítő gombjának hivatkozását, és illeszd ide.</p><label>Megerősítő hivatkozás<input id="confirmUrl" type="password" autocomplete="off"></label><button id="verify">Cím megerősítése</button></details></details><details><summary>Első regisztráció</summary><p>Add meg fent az adminisztrátori e-mail-címed és a választott jelszót.</p><button id="register">Fiók létrehozása</button></details></div><a href="./">Megfigyelés indítása</a>`;
  const credentials=()=>({email:$('mail').value.trim(),password:$('pw').value});
- action('register',async()=>{await api('/auth/v1/signup',credentials());$('authMsg').textContent='Erősítsd meg az e-mail-címed a kapott levélben, majd itt lépj be.';});
- action('login',async()=>{const s=await api('/auth/v1/token?grant_type=password',credentials());access=s.access_token;if(!await api('/rest/v1/rpc/toyota_admin_access',{})){access='';throw Error('Ehhez a fiókhoz nincs adminjog.');}await dashboard();});
+ const redirect='?redirect_to='+encodeURIComponent(location.href.split('#')[0]+'?admin=1');
+ function authAction(id,fn){
+  $(id).onclick=async e=>{
+   e.preventDefault();const b=e.currentTarget;b.disabled=true;$('authMsg').textContent='Egy pillanat…';
+   try{await fn();}
+   catch(err){
+    const msg=err.message;
+    if(/rate limit|too many|after \d+ seconds/i.test(msg))$('authMsg').textContent='A levélküldés átmenetileg korlátozott. Használd a legutóbbi megerősítő levelet, vagy próbáld meg később.';
+    else if(/not confirmed|invalid login credentials/i.test(msg)){$('activation').open=true;$('authMsg').textContent='A belépés nem sikerült. Ellenőrizd a jelszót, és ha még nem tetted, erősítsd meg az e-mail-címed.';}
+    else $('authMsg').textContent=msg;
+   }finally{b.disabled=false;}
+  };
+ }
+ async function enter(session){
+  access=session.access_token;
+  if(!await api('/rest/v1/rpc/toyota_admin_access',{})){access='';throw Error('Ehhez a fiókhoz nincs adminjog.');}
+  await dashboard();
+ }
+ authAction('login',async()=>{if(!$('adminForm').reportValidity())throw Error('Add meg az e-mail-címed és a jelszavad.');await enter(await api('/auth/v1/token?grant_type=password',credentials()));});
+ $('adminForm').onsubmit=e=>{e.preventDefault();$('login').click();};
+ authAction('register',async()=>{if(!$('adminForm').reportValidity())throw Error('Add meg az e-mail-címed és a jelszavad.');await api('/auth/v1/signup'+redirect,credentials());$('activation').open=true;$('authMsg').textContent='A következő lépés az e-mail-címed megerősítése. Ellenőrizd a levélszemét mappát is.';});
+ authAction('resend',async()=>{if(!$('mail').reportValidity())throw Error('Add meg az adminisztrátori e-mail-címed.');await api('/auth/v1/resend'+redirect,{type:'signup',email:credentials().email});$('authMsg').textContent='Megerősítő levél kérve. A legújabb levél hivatkozását használd.';});
+ authAction('verify',async()=>{
+  let u;try{u=new URL($('confirmUrl').value.trim());}catch{throw Error('A levélben lévő megerősítő gomb teljes hivatkozását illeszd be.');}
+  const token=u.searchParams.get('token');
+  if(u.origin!==apiRoot||u.pathname!=='/auth/v1/verify'||!token||u.searchParams.get('type')!=='signup')throw Error('Ez nem a Toyota-projekt regisztrációs hivatkozása.');
+  $('confirmUrl').value='';
+  await enter(await api('/auth/v1/verify',{token_hash:token,type:'signup'}));
+ });
 }
 async function dashboard(){
  classes=await api('/rest/v1/classes?select=*&order=created_at.desc');if(!classes.some(c=>c.id===classId))classId=classes[0]?.id||'';
