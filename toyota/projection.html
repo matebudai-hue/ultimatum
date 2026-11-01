@@ -50,7 +50,7 @@ function distribution(data){
 }
 function single(data){
  const r=data.items[data.selected];
- return '<div class="single"><section class="card criterion-info"><span class="number">SZEMPONT '+String(r.index+1).padStart(2,'0')+' / 20</span><h2>'+safe(r.title)+'</h2><p>'+safe(r.help)+'</p></section><section class="card single-score"><div class="eyebrow">Osztályátlag</div><div class="value">'+number(r.mean)+'<small> / 2</small></div>'+segments(r.counts)+'<div class="single-counts">'+r.counts.map((n,i)=>'<div><span><i class="dot '+(['zero','one','two'][i])+'"></i>'+safe(['Nem látható','Részben látható','Rendben van'][i])+'</span><b>'+n+'</b></div>').join('')+'</div></section></div>';
+ return '<div class="single"><section class="card criterion-info"><span class="number">SZEMPONT '+String(r.index+1).padStart(2,'0')+' / 20</span><h2>'+safe(r.title)+'</h2><p>'+safe(r.help)+'</p></section><section class="card single-score"><div class="eyebrow">'+(data.scope==='person'?'Egyéni átlag':'Osztályátlag')+'</div><div class="value">'+number(r.mean)+'<small> / 2</small></div>'+segments(r.counts)+'<div class="single-counts">'+r.counts.map((n,i)=>'<div><span><i class="dot '+(['zero','one','two'][i])+'"></i>'+safe(['Nem látható','Részben látható','Rendben van'][i])+'</span><b>'+n+'</b></div>').join('')+'</div></section></div>';
 }
 function namesPanel(data){
  if(!data.showNames||!Array.isArray(data.namedRecords)||!data.namedRecords.length)return '';
@@ -60,7 +60,7 @@ function namesPanel(data){
 function render(data){
  const titles={highlights:'Erősségek és fejlesztendők',single:'Egy szempont közelebbről',distribution:'Milyen pontok érkeztek?'};
  const body=data.submissions?(data.view==='single'?single(data):data.view==='distribution'?distribution(data):highlights(data)):'<section class="card empty"><h2>Még nincs beküldött értékelés</h2><p>Az összesítés az első beküldés után jelenik meg.</p></section>';
- screen.innerHTML='<header class="top"><div class="brand"><b>TOYOTA</b><span>KÖZÖS EREDMÉNYEK</span></div><div class="context"><strong>'+safe(data.className)+'</strong><br>'+safe(data.kind)+' · '+safe(data.mode)+' · '+safe(data.occasion)+'</div></header><div class="heading"><div><div class="eyebrow">'+(data.view==='distribution'?'Szempontok '+(data.page*10+1)+'–'+Math.min(data.page*10+10,20)+' / 20':'Az osztály eredményei')+'</div><h1>'+titles[data.view]+'</h1></div><div class="meta"><span><b>'+data.observed+' / '+data.people+'</b> értékesítő</span><span><b>'+data.submissions+'</b> értékelés</span></div></div><div class="main">'+body+namesPanel(data)+'</div><footer class="footer"><span>Átlagok · értékesítőnként azonos súly &nbsp; / &nbsp; Megoszlás · minden beküldött értékelés</span><span class="live '+(data.frozen?'paused':'')+'"><i></i>'+(data.frozen?'Kimerevítve':'Frissítve')+' · '+safe(data.updated)+'</span></footer>';
+ screen.innerHTML='<header class="top"><div class="brand"><b>TOYOTA</b><span>KÖZÖS EREDMÉNYEK</span></div><div class="context"><strong>'+safe(data.className)+'</strong><br>'+(data.scope==='person'?'<strong>'+safe(data.subject)+'</strong> · ':'')+safe(data.kind)+' · '+safe(data.mode)+' · '+safe(data.occasion)+'</div></header><div class="heading"><div><div class="eyebrow">'+(data.view==='distribution'?'Szempontok '+(data.page*10+1)+'–'+Math.min(data.page*10+10,20)+' / 20':(data.subject||'Teljes osztály'))+'</div><h1>'+titles[data.view]+'</h1></div><div class="meta"><span><b>'+data.observed+' / '+data.people+'</b> értékesítő</span><span><b>'+data.submissions+'</b> értékelés</span></div></div><div class="main">'+body+namesPanel(data)+'</div><footer class="footer"><span>'+(data.scope==='person'?'Átlagok · a résztvevőről kapott értékelések':'Átlagok · értékesítőnként azonos súly')+' &nbsp; / &nbsp; Megoszlás · minden beküldött értékelés</span><span class="live '+(data.frozen?'paused':'')+'"><i></i>'+(data.frozen?'Kimerevítve':'Frissítve')+' · '+safe(data.updated)+'</span></footer>';
 }
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.opener||event.data?.type!=='toyota-projection-data')return;
@@ -77,3 +77,4 @@ window.addEventListener('pageshow',ready);
 </script>
 </body>
 </html>
+
