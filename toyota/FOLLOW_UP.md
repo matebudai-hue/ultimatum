@@ -33,7 +33,7 @@ Az értékelés fizikai adatsora megmarad; a végleges megőrzési/törlési sza
 
 ## Később, külön kezelendő
 
-Saját origin/domain; részletes adatkezelési tájékoztató és megőrzési szabály; vizsga végső tréneri döntése.
+Saját origin/domain; részletes adatkezelési tájékoztató és megőrzési szabály.
 
 
 ## Elkészült: visszajelzések és szempontlisták összehasonlítása
@@ -43,3 +43,18 @@ Az értékesítő nevére kattintva a szöveges visszajelzések kerülnek előre
 Az áttekintés, a kivetítés és a levélösszesítés kizárólag azonos szempontlistát használó értékeléseket összesít. A váltó csak több lista esetén látható. A mentett stabil szempontazonosítók rendezik az áthelyezett sorok pontjait; eltérő tartalom vagy verzió külön csoport. A korai, snapshot nélküli v1 adatok külön befagyasztott eredeti listával értelmezhetők, nem a mindenkori aktuális listával. Ismeretlen lista esetén nem találunk ki szempontcímeket. A meglévő adatokat, pontszámokat és szempontszövegeket nem írjuk át.
 
 A verzióváltás a kivetítési kimerevítést feloldja és az első szempontra áll, hogy más listához tartozó kiválasztás ne maradjon aktív. A listaváltó az adminban és a kivetítő vezérlőjében együtt változik. Az adatbázisban továbbra is csak a kanonikus aktuális listával lehet új értékelést beküldeni; a módosított listák előnézeti minták. Új valódi lista bevezetésekor külön szerveroldali regisztráció szükséges.
+
+
+## Elkészült: személyenkénti végső vizsgaeredmény és riport
+
+Vizsgaalkalomnál külön **Vizsgaeredmények** fül jelenik meg. A tréner a névsor minden tagjához egyetlen döntést rögzíthet: Megfelelt / Nem felelt meg. Az alapállapot Még nincs döntés; később erre is visszaállítható. Az eredmény az alkalomhoz tartozik, nem az egyes megfigyelői beküldésekhez. Nem keletkezik automatikusan 25 pontból vagy átlagból, és lezárt vizsgánál/osztálynál is rögzíthető. A pontküszöb és a tréneri eredmény külön feliratot kap.
+
+A **Riport letöltése · CSV** a letöltés előtt friss szerveradatot kér. Két oszlop: Név, Vizsgaeredmény. Minden névsorbeli résztvevő egyszer szerepel, a döntésre várók is. Excelhez UTF-8 BOM, pontosvessző és idézett mezők; képletindító karakterek semlegesítve. Nincs kapcsolattartási cím, megfigyelői név vagy szabad szöveges megjegyzés a riportban. A fájlnévben az osztály és az alkalom neve szerepel.
+
+A döntések külön, közvetlen klienshozzáférés nélküli privát táblában tárolódnak. Admin által ellenőrzött RPC ment, szerveridővel és módosítási verzióval. A régi mentési verzió és az időközben megváltozott névsor nem írható észrevétlenül felül. Azonos döntés ismételt mentése biztonságos, és nem növeli fölöslegesen a verziót. A névsormódosító függvény a döntéseket is átnevezi, névcsere esetén is atomikusan. A névsor revíziója védi a nyitva hagyott döntési ablakot attól, hogy egy átnevezés után más személy kapja a döntést.
+
+A Toyota-betekintő az adott osztály jogosultságával olvashatja a végső eredményeket. A nevek engedélyét követve valódi nevekkel vagy ugyanazokkal a Résztvevő-jelölésekkel látja őket. Módosító és riportletöltő gombja nincs. Nyilvános QR-kódon végső eredmény nem kérhető le és nem állítható. A kivetítőre továbbra sem kerül automatikusan személyes végső döntés.
+
+A két natív adatbázismigráció: `trainer_exam_results`, majd `trainer_exam_result_roster_identity_guard`. A forrásbeli végleges telepítési SQL a `database/exam_results.sql`, majd `database/exam_results_integrations.sql`; új telepítésen már az ötparaméteres, névsorverzióval ellenőrzött mentést hozzák létre. Az éles adatbázisban az átmeneti négyp­araméteres változat végrehajtási joga minden kliensszerepkörtől vissza lett vonva.
+
+A fejlesztés nem állított be valódi résztvevőnek vizsgaeredményt. A szerverpróbák szintetikus sorokon, visszagörgetett tranzakcióban futottak.

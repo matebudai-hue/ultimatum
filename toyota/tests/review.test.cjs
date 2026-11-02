@@ -10,7 +10,7 @@ function context(){
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','admin.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','admin.js','exam-results.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -210,4 +210,36 @@ test('person projection uses selected version scores and exact distribution',()=
  assert.equal(vm.runInContext('payload.items[0].mean',c),1);
  assert.equal(vm.runInContext('JSON.stringify(payload.items[0].counts)',c),'[1,0,1]');
  assert.equal(vm.runInContext('payload.submissions',c),2);
+});
+
+test('exam CSV contains each roster member once, explicit decisions, and pending without score inference',()=>{
+ const c=ui();c.reportData={roster:['Kiss Dóra','Tóth Péter','Minta Anna'],decisions:[{seller:'Kiss Dóra',status:'failed'},{seller:'Tóth Péter',status:'passed'},{seller:'Régi Név',status:'passed'}]};
+ const csv=vm.runInContext('examCSV(reportData)',c);
+ assert.equal(csv,'\ufeff"Név";"Vizsgaeredmény"\r\n"Kiss Dóra";"Nem felelt meg"\r\n"Tóth Péter";"Megfelelt"\r\n"Minta Anna";"Még nincs döntés"\r\n');
+ assert.doesNotMatch(csv,/Régi Név|@|Pont/);
+});
+test('CSV quotes Hungarian names and neutralizes spreadsheet formulas',()=>{
+ const c=ui();c.reportData={roster:['=SUM(1;2)',' +képlet','Kiss "Dóra";teszt'],decisions:[]};const csv=vm.runInContext('examCSV(reportData)',c);
+ assert.match(csv,/"'=SUM\(1;2\)"/);assert.match(csv,/"' \+képlet"/);assert.match(csv,/"Kiss ""Dóra"";teszt"/);
+});
+test('trainer result is independent of observer totals and read-only viewers cannot edit or export',()=>{
+ const c=ui();vm.runInContext(`const cls={name:'Minta',roster:['Anna']},occ={id:'a',mode:'exam',name:'Vizsga'};examData={occasion_id:'a',roster:['Anna'],decisions:[]};entries=[{seller:'Anna',scores:Array(20).fill(2)}];appRole='admin';`,c);
+ const html=vm.runInContext('examResultsPanel(cls,occ)',c);assert.match(html,/Még nincs döntés/);assert.match(html,/data-exam-person="0"/);assert.match(html,/downloadExamReport/);assert.doesNotMatch(html,/>Megfelelt</);
+ const readonly=vm.runInContext('examResultsPanel(cls,occ,true)',c);assert.doesNotMatch(readonly,/data-exam-person|downloadExamReport/);
+});
+test('saving sends the captured participant and revision; persists only after server success',async()=>{
+ const c=ui();c.el('adminContent').querySelectorAll=()=>[];
+ vm.runInContext(`appRole='admin';classId='c';occasionId='a';const cls={id:'c',name:'Minta'},occ={id:'a',name:'Vizsga',mode:'exam'};examData={occasion_id:'a',roster_revision:2,roster:['Anna'],decisions:[{seller:'Anna',status:'failed',revision:3}]};modal=()=>({classList:{add(){}},close(){},remove(){}});renderAdminContent=()=>{};api=async(path,body)=>{captured=body;return {seller:'Anna',status:body.outcome,revision:4,updated_at:'2026-11-02T12:00:00Z'};};examDecisionDialog(cls,occ,examResultRows(examData)[0]);$('examOutcome').value='passed';`,c);
+ await c.el('saveExamDecision').onclick({currentTarget:c.el('saveExamDecision')});
+ assert.equal(vm.runInContext('captured.expected_revision',c),3);assert.equal(vm.runInContext('captured.expected_roster_revision',c),2);assert.equal(vm.runInContext('captured.participant',c),'Anna');assert.equal(vm.runInContext('examData.decisions[0].status',c),'passed');
+ vm.runInContext(`api=async()=>{const e=Error('A döntést közben módosították.');e.definitive=true;throw e;};examDecisionDialog(cls,occ,examResultRows(examData)[0]);$('examOutcome').value='failed';`,c);
+ await c.el('saveExamDecision').onclick({currentTarget:c.el('saveExamDecision')});
+ assert.equal(vm.runInContext('examData.decisions[0].status',c),'passed');assert.match(c.el('examDecisionStatus').textContent,/közben/);
+});
+test('report download reads fresh server decisions and practice makes no result request',async()=>{
+ const c=ui();c.el('adminContent').querySelectorAll=()=>[];
+ vm.runInContext(`appRole='admin';classId='c';occasionId='a';const cls={id:'c'},occ={id:'a',mode:'exam'};examData={occasion_id:'a',roster:['Anna'],decisions:[]};let reads=0;api=async()=>{reads++;return {occasion_id:'a',roster:['Anna'],decisions:[{seller:'Anna',status:'passed'}]};};downloadExamCSV=data=>{exported=data;};renderAdminContent=()=>{};bindExamResults(cls,occ);`,c);
+ await c.el('downloadExamReport').onclick({currentTarget:c.el('downloadExamReport')});
+ assert.equal(vm.runInContext('exported.decisions[0].status',c),'passed');assert.equal(vm.runInContext('reads',c),1);
+ assert.equal(await vm.runInContext("readExamResults({id:'p',mode:'practice'})",c),null);assert.equal(vm.runInContext('reads',c),1);
 });

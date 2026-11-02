@@ -38,3 +38,12 @@ A kiadás SQL-sorrendje: a korábbi `review_hardening.sql`, majd `viewer_access.
 A Node-próbák ellenőrzik az átrendezett snapshot pontjainak azonosító szerinti illesztését, az eredeti adatok változatlanságát, a v1 legacy csoportot, az eltérő tartalmak és ismeretlen listák elkülönítését, az admin és kivetítés egyező kiválasztását, valamint a visszajelzések escape-elését és jogosultságfüggő megjelenítését.
 
 Böngészős minta: `design-concept.html?screen=admin&versions=1#preview=1` két eltérő listával; `&unresolved=1` ismeretlen eredeti listával. Ezek a szintetikus értékelések kizárólag a helyi előnézeti adatsorban léteznek. A szerverbe nem írnak új szempontverziót vagy értékelést.
+
+
+## Tréneri vizsgaeredmények
+
+`exam-results.sql`: visszagörgetett tranzakció szintetikus osztályokkal és tesztazonosság-segédfüggvényekkel. Ellenőrzi az explicit eredményt, az ismételt mentést, a régi módosítási/névsorverzió visszautasítását, a döntésre váró állapotot, a vizsga–gyakorlás határt, a lezárt vizsgát, a névcseréket és a betekintői/anon jogosultságokat. A törlési kaszkádot sémaszinten ellenőrzi. Nem olvas vagy használ valódi felhasználói tokent, és nem állít be valódi vizsgaeredményt.
+
+Node: személyenként egy riportrekord, döntésre várók szerepeltetése, a pontszámtól független végső döntés, Excel-kompatibilis CSV és képletvédelem, sikeres és elutasított mentés, friss szerveradatból készülő letöltés, csak olvasható betekintői felület.
+
+Böngészős minta: `design-concept.html?screen=exam-results&exam=1#preview=1`. A döntések csak memóriában változnak. A CSV-gomb valódi fájlt tölt le a mintaadatokból. A `closed=class` paraméter a lezárt osztály utólagos eredményrögzítését mutatja. `screen=viewer&exam=1` a név nélküli betekintő, `names=1` névvel.

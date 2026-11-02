@@ -33,7 +33,7 @@ async function loadViewerWorkspace(selectedClass=classId,selectedOccasion=occasi
  }
 }
 function clearViewerData(){
- classes=[];occasions=[];entries=[];classId='';occasionId='';projectionSnapshot=null;adminActive=false;clearTimeout(refreshTimer);++dashboardRequest;
+ classes=[];occasions=[];entries=[];examData=null;classId='';occasionId='';projectionSnapshot=null;adminActive=false;clearTimeout(refreshTimer);++dashboardRequest;
  document.querySelectorAll('dialog').forEach(d=>d.remove());
  if(projectorWindow&&!projectorWindow.closed)projectorWindow.postMessage({type:'toyota-projection-cleared'},location.origin);
 }
@@ -53,11 +53,11 @@ async function viewerDashboard(){
   const oldClass=classes.find(c=>c.id===classId),cls=data.classes.find(c=>c.id===data.class_id);
   if(oldClass&&oldClass.show_names!==cls.show_names){document.querySelectorAll('dialog').forEach(d=>d.remove());projectionSnapshot=null;if(projectorWindow&&!projectorWindow.closed)projectorWindow.postMessage({type:'toyota-projection-cleared'},location.origin);}
   if(projectionSnapshot?.classId===data.class_id&&projectionSnapshot?.occasionId===data.occasion_id&&projectionSnapshot.sourceIds?.some(id=>!data.entries.some(r=>r.id===id)))projectionSettings.frozen=false;
-  classes=data.classes;classId=data.class_id;occasions=data.occasions;occasionId=data.occasion_id;entries=data.entries;refreshedAt=new Date();
+  classes=data.classes;classId=data.class_id;occasions=data.occasions;occasionId=data.occasion_id;entries=data.entries;examData=data.exam_results?{...data.exam_results,occasion_id:data.occasion_id}:null;refreshedAt=new Date();
   adminActive=true;document.body.classList.add('admin-mode');$('bottom').classList.add('hidden');
   const occasion=occasions.find(a=>a.id===occasionId);
   if(occasion)feedProjection(cls,occasion,entries);
-  $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Toyota · betekintés</div><h2>Osztályok</h2><p class="viewer-role">Csak olvasási hozzáférés</p><nav aria-label="Elérhető osztályok">'+classes.map(c=>'<button data-viewer-class="'+esc(c.id)+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő'+(c.closed_at?' · Lezárva':'')+'</small></button>').join('')+'</nav><button class="secondary" id="viewerLogout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+exams[cls.kind].name+' · Betekintés</div><h1>'+esc(cls.name)+'</h1></div><span class="closed-label">'+(cls.closed_at?'Lezárt osztály':'Csak megtekintés')+'</span></div><div class="viewer-access-note">'+(cls.show_names?'Névvel és szöveges visszajelzésekkel megosztott eredmények.':'Név nélkül megosztott eredmények. A jelölések résztvevőket különböztetnek meg; a szöveges visszajelzések rejtve vannak.')+'<span>'+(cls.access_expires_at?'Hozzáférés: '+localStamp(cls.access_expires_at)+'-ig':'Hozzáférés: visszavonásig')+'</span></div><div class="admin-session-tools"><div class="occasion-row"><label>Alkalmak szűrése<select id="viewerMode"><option value="all">Megfigyelés és vizsga</option><option value="practice">Csak megfigyelés</option><option value="exam">Csak vizsga</option></select></label><label>Alkalom<select id="viewerOccasions"></select></label><button class="secondary icon-refresh" id="viewerRefresh" aria-label="Eredmények frissítése">↻</button></div>'+(occasion?'<div class="toolbar"><button class="secondary" id="viewerProject">Eredmények kivetítése</button><span class="muted" role="status" id="liveStatus">Frissítve · '+localStamp(refreshedAt)+'</span></div>':'')+'</div><nav class="admin-tabs" aria-label="Eredmények nézetei"><button data-viewer-tab="overview">Áttekintés</button><button data-viewer-tab="results">Értékelések</button></nav><div id="viewerContent"></div></div>';
+  $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Toyota · betekintés</div><h2>Osztályok</h2><p class="viewer-role">Csak olvasási hozzáférés</p><nav aria-label="Elérhető osztályok">'+classes.map(c=>'<button data-viewer-class="'+esc(c.id)+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő'+(c.closed_at?' · Lezárva':'')+'</small></button>').join('')+'</nav><button class="secondary" id="viewerLogout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+exams[cls.kind].name+' · Betekintés</div><h1>'+esc(cls.name)+'</h1></div><span class="closed-label">'+(cls.closed_at?'Lezárt osztály':'Csak megtekintés')+'</span></div><div class="viewer-access-note">'+(cls.show_names?'Névvel és szöveges visszajelzésekkel megosztott eredmények.':'Név nélkül megosztott eredmények. A jelölések résztvevőket különböztetnek meg; a szöveges visszajelzések rejtve vannak.')+'<span>'+(cls.access_expires_at?'Hozzáférés: '+localStamp(cls.access_expires_at)+'-ig':'Hozzáférés: visszavonásig')+'</span></div><div class="admin-session-tools"><div class="occasion-row"><label>Alkalmak szűrése<select id="viewerMode"><option value="all">Megfigyelés és vizsga</option><option value="practice">Csak megfigyelés</option><option value="exam">Csak vizsga</option></select></label><label>Alkalom<select id="viewerOccasions"></select></label><button class="secondary icon-refresh" id="viewerRefresh" aria-label="Eredmények frissítése">↻</button></div>'+(occasion?'<div class="toolbar"><button class="secondary" id="viewerProject">Eredmények kivetítése</button><span class="muted" role="status" id="liveStatus">Frissítve · '+localStamp(refreshedAt)+'</span></div>':'')+'</div><nav class="admin-tabs" aria-label="Eredmények nézetei"><button data-viewer-tab="overview">Áttekintés</button><button data-viewer-tab="results">Értékelések</button>'+(occasion?.mode==='exam'?'<button data-viewer-tab="exam">Vizsgaeredmények</button>':'')+'</nav><div id="viewerContent"></div></div>';
   $('viewerLogout').onclick=logoutViewer;
   action('viewerRefresh',viewerDashboard);
   $('viewerMode').value=viewerMode;
@@ -78,13 +78,15 @@ async function viewerDashboard(){
  }
 }
 function renderViewerContent(cls,occasion){
+ if(adminTab==='exam'&&occasion?.mode!=='exam')adminTab='overview';
  document.querySelectorAll('[data-viewer-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.viewerTab===adminTab?'page':'false'));
  if(viewerMode!=='all'&&occasion?.mode!==viewerMode){$('viewerContent').innerHTML='<section class="panel empty"><h2>Ehhez a célhoz még nincs alkalom</h2><p>Válassz másik szűrőt.</p></section>';return;}
  if(!occasion){$('viewerContent').innerHTML='<section class="panel empty"><h2>Még nincs megtekinthető alkalom</h2></section>';return;}
+ if(adminTab==='exam'){$('viewerContent').innerHTML=examResultsPanel(cls,occasion,true);bindExamResults(cls,occasion,true);return;}
  $('viewerContent').innerHTML=adminTab==='results'?'<section class="panel"><h2>'+modeName(occasion.mode)+' · '+esc(occasion.name)+'</h2><p class="muted">Minden sor egy megfigyelő értékelése. A pontszámok a megfigyelők saját értékelései.</p>'+resultsTable(cls,occasion,entries)+'</section>':adminOverview(cls,occasion,entries,true);
  bindCriterionSetPicker(cls,entries,()=>{changeProjectionCriterionSet(cls,occasion);renderViewerContent(cls,occasion);},$('viewerContent'));
  if($('seeResults'))$('seeResults').onclick=()=>{adminTab='results';renderViewerContent(cls,occasion);};
- bindPeople(cls,occasion,entries);
+ bindPeople(cls,occasion,entries);bindExamResults(cls,occasion,true);
 }
 
 window.addEventListener('toyota-session-expired',()=>{if(appRole==='viewer'){clearViewerData();loginScreen('A belépés lejárt. Jelentkezz be újra a betekintés folytatásához.');}});
