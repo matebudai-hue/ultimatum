@@ -12,7 +12,6 @@ A teljes programjegyzék, fejlesztési címekkel és karbantartási szabályokka
 | Kreditjáték | `app/`; publikált build: `dashboard/` | https://matebudai-hue.github.io/ultimatum/dashboard/ |
 | Explorer / Kikötő | `explorer/` | https://matebudai-hue.github.io/ultimatum/explorer/ |
 | Toyota Omotenashi | `omotenashi/` | https://matebudai-hue.github.io/ultimatum/omotenashi/ |
-| Toyota megfigyelő és pontozó | `toyota/` | https://matebudai-hue.github.io/ultimatum/toyota/ |
 | Matek-sziget | `matek/` | https://matebudai-hue.github.io/ultimatum/matek/ |
 | Autós Bajnokok Ligája | `autos-bajnokok-ligaja` ág, `games/autos-bajnokok-ligaja/` | https://autos-bajnokok-ligaja.mbudai.chatgpt.site |
 
