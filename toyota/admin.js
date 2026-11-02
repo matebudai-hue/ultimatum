@@ -18,10 +18,11 @@ async function startApp(){
  try{
   context=demo?{className:'Mintaosztály',occasion:'Bemutató alkalom',kind:route.get('kind')==='passenger'?'passenger':'fleet',mode:'practice',roster:['Minta Anna','Minta Péter']}:await api(occasionLink?'/rest/v1/rpc/occasion_context':'/rest/v1/rpc/observation_context',{link:invitation});
   if(!context)throw Error('Ez a meghívó nem érvényes.');
+  if(context.closed){$('bottom').classList.add('hidden');$('app').innerHTML='<section class="panel"><h1>Ez az alkalom lezárult</h1><p>Új értékelést már nem lehet beküldeni. A korábban beküldött eredmények megmaradtak.</p></section>';return;}
   if(!state.type)state=fresh(context.kind);
   state.observer=context.observer||state.observer;
   choosing=false;render();
- }catch(err){$('app').textContent='A megfigyelés nem nyitható meg. '+err.message;}
+ }catch(err){$('app').innerHTML='<section class="panel"><h1>A megfigyelés nem nyitható meg</h1><p>'+esc(err.message)+'</p><button class="secondary" id="retryLink">Újrapróbálás</button></section>';$('retryLink').onclick=startApp;}
 }
 function loginScreen(){
  document.body.classList.remove('admin-mode');
@@ -96,8 +97,8 @@ function criterionChart(cls,records){
 function adminOverview(cls,occasion,records){
  const observed=new Set(records.map(r=>r.seller)).size,rank=criterionMeans(cls,records);
  const score=r=>ToyStats.total(r.scores);
- const stats='<div class="stats"><section class="panel"><span>Megfigyelt résztvevők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+(occasion.mode==='exam'?'Megfelelt értékelések':'Értékelések átlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(ToyStats.meanTotal(cls.roster,records)).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div>';
- if(!records.length)return stats+'<section class="panel waiting-state"><span class="waiting-dot"></span><h2>Várjuk az első értékelést</h2><p>Vetítsd ki a QR-kódot. A beérkezett eredmények itt automatikusan megjelennek.</p></section><button hidden id="seeResults">Eredmények</button>';
+ const stats='<div class="stats"><section class="panel"><span>Megfigyelt résztvevők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+(occasion.mode==='exam'?'Megfelelt értékelések':'Résztvevők pontátlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(ToyStats.meanTotal(cls.roster,records)).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div>';
+ if(!rank.length)return stats+'<section class="panel waiting-state"><span class="waiting-dot"></span><h2>Várjuk az első értékelést</h2><p>Vetítsd ki a QR-kódot. A beérkezett eredmények itt automatikusan megjelennek.</p></section><button hidden id="seeResults">Eredmények</button>';
  const equal=Math.abs(rank[0].mean-rank.at(-1).mean)<1e-9;
  function highlight(title,items,style){
  const displayed=items.slice(0,3),ties=items.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length-displayed.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length;
@@ -131,6 +132,7 @@ function showPerson(cls,occasion,name,records){
 }
 async function dashboard(){
  adminActive=true;document.body.classList.add('admin-mode');
+ const restoreControls=Boolean($('projectionControlPanel'));
  const request=++dashboardRequest;
  const loaded=await api('/rest/v1/classes?select=*&order=created_at.desc');
  if(request!==dashboardRequest)return;
@@ -144,12 +146,14 @@ async function dashboard(){
  if(request!==dashboardRequest)return;
  entries=loadedEntries;refreshedAt=new Date();if(cls&&occasion)feedProjection(cls,occasion,entries);
  $('bottom').classList.add('hidden');
- $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<details class="more-menu class-menu"><summary>Osztály beállításai</summary><div><button id="newOcc">Új megfigyelés vagy vizsga</button><button id="deleteClass" class="danger-action">Osztály törlése</button></div></details>':'')+'</div>'+(cls?'<div class="admin-session-tools"><div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Automatikusan frissül · '+new Date(refreshedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})+'</span><button class="secondary icon-refresh" id="refresh" aria-label="Eredmények frissítése" title="Frissítés">↻</button></div>':'')+(occasion?'<div class="toolbar"><button class="primary" id="showQr">Csatlakozás · QR-kód</button><button class="secondary" id="projectSummary">Eredmények kivetítése</button><details class="more-menu"><summary>További műveletek</summary><div><a href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button id="copyOcc">Csatlakozási link másolása</button><button id="mailSummary">Összesítés e-mailben</button></div></details></div>':'')+(cls?'</div><nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
- $('newClass').onclick=()=>createClassDialog();
- action('logout',async()=>{adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{clearAdminSession();location.replace('./#admin');location.reload();}});
+ $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+c.roster.length+' fő'+(c.closed_at?' · Lezárva':'')+'</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<details class="more-menu class-menu"><summary>Osztály beállításai</summary><div><button id="toggleClassClosed">'+(cls.closed_at?'Osztály újranyitása':'Osztály lezárása')+'</button><button id="deleteClass" class="danger-action">Osztály törlése</button></div></details>':'')+'</div>'+(cls?'<div class="admin-session-tools"><div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Automatikusan frissül · '+new Date(refreshedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})+'</span><button class="secondary icon-refresh" id="refresh" aria-label="Eredmények frissítése" title="Frissítés">↻</button></div>':'')+(occasion?'<div class="toolbar"><button class="secondary" id="newOcc" '+(cls.closed_at?'disabled':'')+'>+ Új alkalom</button><button class="primary" id="showQr">Csatlakozás · QR-kód</button><button class="secondary" id="projectSummary">Eredmények kivetítése</button><details class="more-menu"><summary>További műveletek</summary><div><a href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button id="toggleOccasionClosed">'+(occasion.closed_at?'Alkalom újranyitása':'Alkalom lezárása')+'</button><button id="copyOcc">Csatlakozási link másolása</button><button id="mailSummary">Összesítés e-mailben</button></div></details></div>':'')+(cls?'</div><nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Eredmények'],['roster','Névsor']].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
+ $('newClass').onclick=()=>{if(leaveRoster())createClassDialog();};
+ action('logout',async()=>{if(!leaveRoster())return;adminActive=false;clearTimeout(refreshTimer);try{await api('/auth/v1/logout',{});}finally{clearAdminSession();location.replace('./#admin');location.reload();}});
  if(cls){
  action('deleteClass',async()=>{if(leaveRoster())await deleteClassDialog(cls);});
- $('newOcc').onclick=()=>createOccasionDialog(cls);
+ if($('newOcc'))$('newOcc').onclick=()=>{if(leaveRoster())createOccasionDialog(cls);};
+ $('toggleClassClosed').onclick=()=>closureDialog('class',cls);
+ if(cls.closed_at){$('app').querySelector('.admin-heading h1').insertAdjacentHTML('afterend','<span class="closed-label">Lezárt osztály · eredmények megtekinthetők</span>');}
  $('occasions').onchange=e=>{if(!leaveRoster()){e.target.value=occasionId;return;}rosterDirty=false;occasionId=e.target.value;dashboard().catch(alertError);};
  action('refresh',async()=>{if(leaveRoster()){rosterDirty=false;await dashboard();}});
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(!leaveRoster())return;rosterDirty=false;adminTab=b.dataset.tab;renderAdminContent(cls,occasion);});
@@ -159,8 +163,12 @@ async function dashboard(){
  if(occasion){
  const link=location.origin+location.pathname+'#occasion='+occasion.id;
  $('showQr').onclick=()=>{const d=modal(cls.name+' · '+modeName(occasion.mode),'<p>'+esc(occasion.name)+'</p><canvas id="projectQr" aria-label="Az alkalom közös QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p>');d.classList.add('projection');drawQr(d.querySelector('canvas'),link);};
- action('copyOcc',async()=>{try{await navigator.clipboard.writeText(link);$('copyOcc').textContent='Kimásolva';}catch{prompt('Másold ki a linket:',link);}});
+ action('copyOcc',async()=>{try{await navigator.clipboard.writeText(link);$('copyOcc').textContent='Kimásolva';setTimeout(()=>{if($('copyOcc'))$('copyOcc').textContent='Csatlakozási link másolása';},2500);}catch{prompt('Másold ki a linket:',link);}});
  $('projectSummary').onclick=()=>projectionControls(cls,occasion);
+ $('toggleOccasionClosed').onclick=()=>closureDialog('occasion',occasion,cls);
+ $('toggleOccasionClosed').disabled=Boolean(cls.closed_at);
+ if(occasion.closed_at&&!cls.closed_at)$('liveStatus').textContent='Lezárt alkalom · új beküldést nem fogad';
+ if(restoreControls&&projectionSnapshot?.classId===cls.id&&projectionSnapshot?.occasionId===occasion.id)projectionControls(cls,occasion,false);
  $('mailSummary').onclick=()=>emailSummary(cls,occasion,entries);
  }
  scheduleRefresh();
@@ -180,12 +188,13 @@ function emailSummary(cls,occasion,records){
 function renderAdminContent(cls,occasion){
  document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===adminTab?'page':'false'));
  const content=$('adminContent');
+ if(adminTab==='roster'&&cls.closed_at){content.innerHTML='<section class="panel"><h2>Névsor · lezárt osztály</h2><p>A névsor szerkesztéséhez előbb nyisd újra az osztályt.</p><table><thead><tr><th>Név</th><th>E-mail-cím</th></tr></thead><tbody>'+cls.roster.map(name=>'<tr><td>'+esc(name)+'</td><td>'+esc(cls.contacts?.[name]||'—')+'</td></tr>').join('')+'</tbody></table></section>';return;}
  if(adminTab==='roster'){
  content.innerHTML='<section class="panel"><div class="section-head"><h2>Névsor · '+cls.roster.length+' fő</h2><button class="secondary" id="pasteRoster">Névsor beillesztése</button></div><p class="muted">A név módosítása a korábbi értékeléseknél is érvényesül.</p><div class="table-scroll"><table><thead><tr><th>Név</th><th>E-mail-cím</th></tr></thead><tbody id="rosterRows"></tbody></table></div><p><button class="secondary" id="addPerson">+ Résztvevő</button> <button class="primary" id="saveRoster">Névsor mentése</button></p></section>';
  let draft=cls.roster.map(name=>({original:name,name,email:cls.contacts?.[name]||''}));
  const draw=()=>{$('rosterRows').innerHTML=draft.map((p,i)=>'<tr><td><input aria-label="Név '+(i+1)+'" data-name="'+i+'" value="'+esc(p.name)+'"></td><td><input aria-label="E-mail '+(i+1)+'" type="email" data-email="'+i+'" value="'+esc(p.email)+'"></td></tr>').join('');document.querySelectorAll('[data-name]').forEach(el=>el.oninput=()=>{draft[Number(el.dataset.name)].name=el.value;rosterDirty=true;});document.querySelectorAll('[data-email]').forEach(el=>el.oninput=()=>{draft[Number(el.dataset.email)].email=el.value;rosterDirty=true;});};
  draw();$('addPerson').onclick=()=>{draft.push({original:null,name:'',email:''});rosterDirty=true;draw();};
- $('pasteRoster').onclick=()=>{const d=modal('Névsor beillesztése','<p>Soronként egy név és opcionális e-mail-cím. Excelből két oszlopot is bemásolhatsz. A már meglévő nevekhez tartozó e-mail-címek frissülnek.</p><textarea id="pasteText" rows="10"></textarea><p><button class="primary" id="applyPaste">Beillesztés</button></p>');d.querySelector('#applyPaste').onclick=()=>{try{const p=parseRoster(d.querySelector('textarea').value);for(const name of p.names){const existing=draft.find(x=>x.name===name);if(existing)existing.email=p.contacts[name]||'';else draft.push({original:null,name,email:p.contacts[name]||''});}rosterDirty=true;draw();d.close();}catch(e){alertError(e);}};};
+ $('pasteRoster').onclick=()=>{const d=modal('Névsor beillesztése','<p>Soronként egy név és opcionális e-mail-cím. Excelből két oszlopot is bemásolhatsz. A meglévő e-mail-címek megmaradnak, ha csak neveket illesztesz be. Megadott új címmel frissítheted őket.</p><textarea id="pasteText" rows="10"></textarea><p><button class="primary" id="applyPaste">Beillesztés</button></p>');d.querySelector('#applyPaste').onclick=()=>{try{const p=parseRoster(d.querySelector('textarea').value);for(const name of p.names){const existing=draft.find(x=>x.name===name);if(existing){if(Object.hasOwn(p.contacts,name))existing.email=p.contacts[name];}else draft.push({original:null,name,email:p.contacts[name]||''});}rosterDirty=true;draw();d.close();}catch(e){alertError(e);}};};
  action('saveRoster',async()=>{const parsed=parseRoster(draft.map(p=>p.name.trim()+String.fromCharCode(9)+p.email.trim()).join(String.fromCharCode(10)));if(parsed.names.length!==draft.length)throw Error('Minden résztvevőnek adj nevet.');
  await api('/rest/v1/rpc/update_class_roster',{target:cls.id,changes:draft.map(p=>({original:p.original,name:p.name.trim(),email:p.email.trim()}))});rosterDirty=false;await dashboard();});
  return;
@@ -212,12 +221,12 @@ async function deleteClassDialog(cls){
 
 function createClassDialog(){
  const d=modal('Új osztály','<label>Osztály neve<input id="className" placeholder="Például Toyota · november"></label><div class="fields"><label>Értékesítés típusa<select id="kind"><option value="fleet">Flotta</option><option value="passenger">Személyautó</option></select></label><label>Első alkalom<select id="firstMode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label></div><label>Névsor<textarea id="roster" rows="8" placeholder="Név és opcionális e-mail-cím · soronként egy résztvevő"></textarea></label><p class="muted">Excelből két oszlop is beilleszthető.</p><label>Vagy TXT / CSV feltöltése<input id="file" type="file" accept=".txt,.csv"></label><p><button class="primary" id="saveClass">Osztály és QR-kód létrehozása</button></p>');
- d.querySelector('#file').onchange=async e=>{if(e.target.files[0])d.querySelector('#roster').value=await e.target.files[0].text();};
+ d.querySelector('#file').onchange=async e=>{if(e.target.files[0])d.querySelector('#roster').value=await decodeRosterFile(e.target.files[0]);};
  action('saveClass',async()=>{const name=$('className').value.trim(),p=parseRoster($('roster').value);if(!name||!p.names.length)throw Error('Adj nevet az osztálynak és illeszd be a névsort.');const result=await api('/rest/v1/rpc/create_observation_class',{class_name:name,class_kind:$('kind').value,names:p.names,emails:p.contacts,occasion_mode:$('firstMode').value});classId=result.class_id;occasionId=result.occasion_id;adminTab='overview';d.close();await dashboard();});
 }
 function createOccasionDialog(cls){
  const d=modal('Új alkalom · '+cls.name,'<label>Alkalom neve vagy dátuma<input id="occasionName" value="'+new Date().toLocaleDateString('hu-HU')+'"></label><label>Cél<select id="mode"><option value="practice">Megfigyelés</option><option value="exam">Vizsga</option></select></label><p><button class="primary" id="saveOcc">Alkalom és QR-kód létrehozása</button></p>');
- action('saveOcc',async()=>{const id=crypto.randomUUID();await api('/rest/v1/occasions',{id,class_id:cls.id,name:$('occasionName').value.trim(),mode:$('mode').value});occasionId=id;adminTab='overview';d.close();await dashboard();});
+ action('saveOcc',async()=>{const name=$('occasionName').value.trim();if(!name)throw Error('Adj nevet az alkalomnak.');const id=crypto.randomUUID();await api('/rest/v1/occasions',{id,class_id:cls.id,name,mode:$('mode').value});occasionId=id;adminTab='overview';d.close();await dashboard();});
 }
 function scheduleRefresh(){
  clearTimeout(refreshTimer);
@@ -250,4 +259,30 @@ function overview(cls,occasion,records){
  const level=r=>r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'/2';
  const ties=target=>rank.filter(r=>Math.abs(r.mean-target)<1e-9).map(r=>esc(r.title)).join(', ');
  return `<div class="panel"><h2>${modeName(occasion.mode)} · beérkezett eredmények</h2><p>Frissítve: ${new Date().toLocaleString("hu-HU")}</p><p>${observed}/${cls.roster.length} értékesítő · ${records.length} beküldés</p>${observed?`<p><b>Legmagasabb · ${level(rank[0])}</b><br>${ties(rank[0].mean)}</p><p><b>Legalacsonyabb · ${level(rank[19])}</b><br>${ties(rank[19].mean)}</p><details><summary>Mind a 20 szempont átlaga</summary><p>Minden megfigyelt értékesítő azonos súllyal szerepel.</p><ol>${rank.map(r=>`<li>${esc(r.title)} · ${level(r)}</li>`).join('')}</ol></details>`:'Még nincs beküldés.'}</div>${people.join('')}`;
+}
+
+
+async function decodeRosterFile(file){
+ const bytes=await file.arrayBuffer();
+ try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');}
+ catch{return new TextDecoder('windows-1250').decode(bytes);}
+}
+window.addEventListener('beforeunload',e=>{if(rosterDirty){e.preventDefault();e.returnValue='';}});
+document.addEventListener('click',e=>{document.querySelectorAll('.more-menu[open]').forEach(menu=>{if(!menu.contains(e.target))menu.open=false;});});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.more-menu[open]').forEach(menu=>menu.open=false);});
+window.addEventListener('toyota-session-expired',()=>{
+ if(!adminActive)return;
+ adminActive=false;clearTimeout(refreshTimer);
+ const existing=document.querySelector('#sessionExpired');if(existing)return;
+ const d=modal('A belépés lejárt','<p>Az utoljára betöltött eredmények megmaradtak a képernyőn, de most nem frissülnek. Lépj be újra a folytatáshoz.</p><p><button class="primary" id="reenterAdmin">Újra belépek</button></p>');d.id='sessionExpired';
+ if($('liveStatus'))$('liveStatus').textContent='A belépés lejárt · az adatok nem frissülnek';
+ $('reenterAdmin').onclick=()=>{if(!leaveRoster())return;d.close();loginScreen();};
+ sendProjection();
+});
+
+function closureDialog(type,item,cls){
+ if(!leaveRoster())return;
+ const isClass=type==='class',closed=Boolean(item.closed_at),noun=isClass?'Osztály':'Alkalom';
+ const d=modal(noun+(closed?' újranyitása':' lezárása'),'<p><b>'+esc(item.name)+'</b></p><p>'+(closed?'Az újranyitás után ismét fogadhat értékeléseket. Az egyenként lezárt alkalmak lezárva maradnak.':isClass?'Az osztály minden alkalma leállítja az új értékelések fogadását. A névsor és minden eredmény megmarad, visszanézhető és kivetíthető. Később újranyithatod.':'Új értékelést már nem fogadunk ehhez az alkalomhoz. Az eredmények megmaradnak, és az osztályban indíthatsz új alkalmat.')+'</p><p><button class="primary" id="confirmClosure">'+noun+(closed?' újranyitása':' lezárása')+'</button></p>');
+ action('confirmClosure',async()=>{await api('/rest/v1/rpc/set_observation_closed',{target:item.id,target_type:type,closed:!closed});rosterDirty=false;d.close();await dashboard();});
 }

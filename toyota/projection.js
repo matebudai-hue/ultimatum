@@ -28,10 +28,21 @@ function single(data){
 }
 function namesPanel(data){
  if(!data.showNames||!Array.isArray(data.namedRecords)||!data.namedRecords.length)return '';
- if(data.view!=='single')return '<div class="name-strip"><b>Értékelt résztvevők</b><span>'+[...new Set(data.namedRecords.map(r=>r.seller))].map(safe).join(' · ')+'</span></div>';
- return '<section class="card named-results"><div class="card-head"><div><h2>Egyéni értékelések</h2><small>A kiválasztott szempontra adott pontok</small></div></div><div class="named-grid">'+[...new Set(data.namedRecords.map(r=>r.seller))].map(name=>'<div class="named-person"><b>'+safe(name)+'</b><div>'+data.namedRecords.filter(r=>r.seller===name).map(r=>'<span class="named-score"><strong>'+r.scores[data.selected]+' / 2</strong><span>'+safe(r.observer)+'</span></span>').join('')+'</div></div>').join('')+'</div></section>';
+ const names=[...new Set(data.namedRecords.map(r=>r.seller))];
+ if(data.view!=='single')return '<div class="name-strip"><b>Értékelt résztvevők</b><span>'+names.slice(0,10).map(safe).join(' · ')+(names.length>10?' · és további '+(names.length-10)+' fő':'')+'</span></div>';
+ const pages=Math.ceil(data.namedRecords.length/6),page=Math.min(data.namedPage||0,pages-1),rows=data.namedRecords.slice(page*6,page*6+6);
+ return '<section class="card named-results"><div class="card-head"><div><h2>Egyéni értékelések</h2><small>A kiválasztott szempontra adott pontok · '+(page+1)+' / '+pages+' oldal</small></div></div><div class="named-grid">'+rows.map(r=>'<div class="named-person"><b>'+safe(r.seller)+'</b><span class="named-score"><strong>'+r.scores[data.selected]+' / 2</strong><span>'+safe(r.observer)+'</span></span></div>').join('')+'</div></section>';
 }
+let lastData=null,lastReceived=0;
+function updateConnection(){
+ const badge=document.querySelector('.live');if(!badge||!lastData)return;
+ const stale=!lastData.liveConnected||Date.now()-lastReceived>35000||Date.now()-(lastData.updatedAt||0)>60000;
+ badge.classList.toggle('stale',!lastData.frozen&&stale);
+ badge.innerHTML='<i></i>'+(lastData.frozen?'Kimerevítve':stale?'Nem frissül · utolsó adat':'Frissítve')+' · '+safe(lastData.updated);
+}
+setInterval(updateConnection,5000);
 function render(data){
+ screen.classList.toggle('with-names',Boolean(data.showNames&&data.view==='single'));
  const titles={highlights:'Erősségek és fejlesztendők',single:'Egy szempont közelebbről',distribution:'Milyen pontok érkeztek?'};
  const body=data.submissions?(data.view==='single'?single(data):data.view==='distribution'?distribution(data):highlights(data)):'<section class="card empty"><h2>Még nincs beküldött értékelés</h2><p>Az összesítés az első beküldés után jelenik meg.</p></section>';
  screen.innerHTML='<header class="top"><div class="brand"><img class="brand-emblem" src="./assets/toyota.svg" alt="Toyota"><span class="brand-copy">Közös eredmények<small>Értékesítői megfigyelés · Budai Máté</small></span></div><div class="context"><strong>'+safe(data.className)+'</strong><br>'+(data.scope==='person'?'<strong>'+safe(data.subject)+'</strong> · ':'')+safe(data.kind)+' · '+safe(data.mode)+' · '+safe(data.occasion)+'</div></header><div class="heading"><div><div class="eyebrow">'+(data.view==='distribution'?'Szempontok '+(data.page*10+1)+'–'+Math.min(data.page*10+10,20)+' / 20':(data.subject||'Teljes osztály'))+'</div><h1>'+titles[data.view]+'</h1></div><div class="meta"><span><b>'+data.observed+' / '+data.people+'</b> értékesítő</span><span><b>'+data.submissions+'</b> értékelés</span></div></div><div class="main">'+body+namesPanel(data)+'</div><footer class="footer"><span>'+(data.scope==='person'?'Átlagok · a résztvevőről kapott értékelések':'Átlagok · értékesítőnként azonos súly')+' &nbsp; / &nbsp; Megoszlás · minden beküldött értékelés</span><span class="live '+(data.frozen?'paused':'')+'"><i></i>'+(data.frozen?'Kimerevítve':'Frissítve')+' · '+safe(data.updated)+'</span></footer>';
@@ -40,7 +51,7 @@ window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.opener||event.data?.type!=='toyota-projection-data')return;
  const data=event.data.payload;
  if(!data||!['highlights','single','distribution'].includes(data.view)||!Array.isArray(data.items)||data.items.length!==20)return;
- render(data);
+ lastData=data;lastReceived=Date.now();render(data);updateConnection();
 });
 document.getElementById('full').onclick=async()=>{
  try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{}
@@ -48,3 +59,4 @@ document.getElementById('full').onclick=async()=>{
 function ready(){if(window.opener)window.opener.postMessage({type:'toyota-projection-ready'},location.origin);}
 ready();
 window.addEventListener('pageshow',ready);
+

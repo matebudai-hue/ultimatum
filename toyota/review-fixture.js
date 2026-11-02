@@ -17,10 +17,14 @@ startApp=async function(){
   if(path.includes('/observations'))return records;
   return [];
  };
- const page=new URLSearchParams(location.search).get('screen')||'admin';
- if(page==='participant'){
+ const params=new URLSearchParams(location.search),page=params.get('screen')||'admin';
+ if(params.get('closed')==='class')cls.closed_at=new Date().toISOString();
+ if(params.get('closed')==='occasion')occ.closed_at=new Date().toISOString();
+ if(page==='participant'||page==='result'){
   context={className:cls.name,kind:'passenger',mode:'practice',occasion:occ.name,roster:names};
   state=fresh('passenger');state.observer='Farkas András';state.seller='Kiss Dóra';state.step=1;state.scores[5]=2;
+  if(page==='result'){state.scores=records[0].scores.slice();state.notes=records[0].notes;state.done=true;}
   choosing=false;render();
  }else await dashboard();
 };
+

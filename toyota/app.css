@@ -55,3 +55,10 @@ main>.eyebrow{font-size:10px}main>h1{font-size:26px;margin:7px 0 14px}
 .form-hint{display:none}
 .criterion-jump{margin-bottom:14px}.criterion-jump select{padding:9px 10px}
 }
+
+
+/* Review fixes: one primary submit action, predictable menus and compact result filters. */
+.submission-panel{border-top:3px solid var(--red)}.submission-panel .primary{width:100%;min-height:48px}.submission-panel h2{margin-top:0}
+.more-menu{z-index:auto}.more-menu[open]{z-index:30}.more-menu[open]>div{background:#fff;isolation:isolate}.section-head h2{flex:1;margin-right:12px}.section-head #scope{width:auto;max-width:350px;flex:0 1 350px;margin:0;font-size:14px}.section-head{flex-wrap:wrap}
+.card summary{min-height:44px;display:flex;align-items:center}.closed-label{display:inline-block;padding:5px 9px;background:var(--soft);border:1px solid var(--line);font-size:13px}.admin-sidebar small .closed-label{font-size:11px}
+.admin-session-tools{flex-wrap:wrap;gap:10px}.admin-session-tools .occasion-row{flex:1 1 100%;min-width:0}.admin-session-tools .toolbar{width:100%;flex-wrap:wrap}.occasion-row #liveStatus{margin-left:auto}.toolbar>.more-menu{margin-left:auto}

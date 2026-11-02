@@ -1,0 +1,67 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const root=path.join(__dirname,'..');
+const source=f=>fs.readFileSync(path.join(root,f),'utf8');
+function context(){
+ const elements=new Map();
+ const element=id=>{if(!elements.has(id))elements.set(id,{id,textContent:'',innerHTML:'',hidden:false,disabled:false,value:'',classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},insertAdjacentHTML(position,html){this.innerHTML=position==='afterbegin'?html+this.innerHTML:this.innerHTML+html;},addEventListener(){}});return elements.get(id);};
+ const events=[];
+ const env={console,URLSearchParams,URL,TextDecoder,AbortController,Blob,TypeError,Date,crypto:require('node:crypto').webcrypto,location:{hash:'',search:'',origin:'https://example.test',pathname:'/toyota/'},navigator:{},localStorage:{getItem(){return null;},setItem(){},removeItem(){}},document:{getElementById:element,addEventListener(){},querySelector(){return null;},querySelectorAll(){return[];},body:{classList:{remove(){},add(){}},append(){}},createElement:()=>element('temporary')},setTimeout:()=>0,clearTimeout(){},setInterval(){},Event,window:{addEventListener(){},dispatchEvent(e){events.push(e.type);},scrollTo(){},print(){}}};
+ const c=vm.createContext(env);c.events=events;c.el=element;return c;
+}
+function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
+function ui(){const c=context();load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
+ const c=ui();
+ const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
+ c.file={arrayBuffer:async()=>new TextEncoder().encode(csv).buffer};
+ assert.equal(await vm.runInContext('decodeRosterFile(file)',c),csv);
+ c.file={arrayBuffer:async()=>Uint8Array.from([84,243,116,104,32,80,233,116,101,114]).buffer};
+ assert.equal(await vm.runInContext('decodeRosterFile(file)',c),'Tóth Péter');
+ // Exercise the actual paste handler with a roster draft and an existing email.
+ vm.runInContext(`modal=()=>({querySelector:selector=>selector==='textarea'?{value:'Tóth Péter'}:$('applyPaste'),close(){}});adminTab='roster';renderAdminContent({roster:['Tóth Péter'],contacts:{'Tóth Péter':'old@example.hu'}},null);$('pasteRoster').onclick();$('applyPaste').onclick();api=async(path,body)=>{captured=body;};dashboard=async()=>{};`,c);
+ await c.el('saveRoster').onclick({currentTarget:c.el('saveRoster')});
+ assert.equal(vm.runInContext('captured.changes[0].email',c),'old@example.hu');
+});
+test('result has explicit unsubmitted status, one submit primary, neutral practice styling',()=>{
+ const c=ui();vm.runInContext(`context={mode:'practice'};state=fresh('passenger');state.done=true;state.scores.fill(2);result();`,c);
+ const html=c.el('app').innerHTML;
+ assert.match(html,/még nincs beküldve/);assert.match(html,/Még egy lépés/);assert.doesNotMatch(html,/result pass/);
+ assert.match(html,/class="secondary" id="email"/);assert.match(html,/class="secondary" id="reset"/);assert.equal(c.el('sendGroup').textContent,'Beküldés az osztályhoz');
+});
+test('definitive rejection unlocks editing; uncertain delivery preserves UUID for retry',async()=>{
+ for(const definitive of [true,false]){
+  const c=ui();c.definitive=definitive;
+  vm.runInContext(`context={mode:'practice'};state=fresh('passenger');state.done=true;state.scores.fill(2);state.seller='Minta Anna';state.observer='Minta Péter';api=async()=>{const e=Error('Teszt');e.definitive=definitive;throw e;};alertError=()=>{};result();`,c);
+  await c.el('sendGroup').onclick({currentTarget:c.el('sendGroup')});
+  assert.equal(vm.runInContext('state.startedSending',c),!definitive);
+  assert.equal(c.el('edit').hidden,!definitive);
+  assert.equal(vm.runInContext('Boolean(state.submission)',c),!definitive);
+ }
+});
+test('request errors distinguish rejected writes from timeouts and proxy replies',async()=>{
+ const c=ui();c.fetch=async()=>({ok:false,status:400,text:async()=>JSON.stringify({code:'P0001',message:'Ez az alkalom lezárult.'})});
+ await assert.rejects(()=>vm.runInContext("rawApi('/rest/v1/rpc/test',{},'')",c),e=>e.definitive&&e.status===400);
+ c.fetch=async()=>({ok:false,status:502,text:async()=>'<html>Bad gateway</html>'});
+ await assert.rejects(()=>vm.runInContext("rawApi('/rest/v1/rpc/test',{},'')",c),e=>!e.definitive&&/szokatlan/.test(e.message));
+ c.fetch=async()=>{const e=Error();e.name='AbortError';throw e;};
+ await assert.rejects(()=>vm.runInContext("rawApi('/rest/v1/rpc/test',{},'')",c),e=>!e.definitive&&/túl sokáig/.test(e.message));
+});
+test('expired session never silently falls back to anonymous admin reads',async()=>{
+ const c=ui();vm.runInContext('adminActive=true',c);let fetched=false;c.fetch=async()=>{fetched=true;};
+ await assert.rejects(()=>vm.runInContext("api('/rest/v1/classes')",c),e=>e.status===401);
+ assert.equal(fetched,false);assert.ok(c.events.includes('toyota-session-expired'));
+});
+test('projector sends names only on request and marks detached selection as disconnected',()=>{
+ const c=ui();vm.runInContext(`projectionSnapshot={classId:'c',occasionId:'a',namedRecords:[{seller:'Minta Anna',observer:'Minta Péter',scores:Array(20).fill(2)}],roster:['Minta Anna'],items:[],submissions:1};classId='c';occasionId='a';adminActive=true;`,c);
+ assert.equal(vm.runInContext('Object.hasOwn(selectedProjectionData(),"namedRecords")',c),false);
+ vm.runInContext('projectionSettings.showNames=true',c);assert.equal(vm.runInContext('selectedProjectionData().namedRecords.length',c),1);
+ vm.runInContext("occasionId='other'",c);assert.equal(vm.runInContext('selectedProjectionData().liveConnected',c),false);
+});
+test('named projector pages contain at most six forms and escape names',()=>{
+ const c=ui();load(c,'projection.js');
+ c.data={showNames:true,view:'single',selected:0,namedPage:1,namedRecords:Array.from({length:14},(_,i)=>({seller:'Minta <Anna> '+i,observer:'Péter',scores:Array(20).fill(i%3)}))};
+ const html=vm.runInContext('namesPanel(data)',c);
+ assert.equal((html.match(/class="named-person"/g)||[]).length,6);
+ assert.match(html,/2 \/ 3 oldal/);assert.match(html,/&lt;Anna&gt;/);assert.doesNotMatch(html,/Minta <Anna>/);
+});

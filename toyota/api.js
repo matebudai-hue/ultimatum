@@ -33,7 +33,7 @@ async function renewAdminSession(force=false){
  const epoch=sessionEpoch;
  const refresh=async()=>{
   const latest=storedSession();
-  if(!latest){clearAdminSession();throw Error('Lépj be az adminfelületre.');}
+  if(!latest){clearAdminSession();window.dispatchEvent(new Event('toyota-session-expired'));throw Error('Lépj be az adminfelületre.');}
   if(!force&&latest.expires_at*1000>Date.now()+90000){adminSession=latest;access=latest.access_token;scheduleSessionRenewal();return;}
   // Another tab may already have renewed the session while this tab waited for the lock.
   if(force&&adminSession&&latest.access_token!==adminSession.access_token&&latest.expires_at*1000>Date.now()+90000){adminSession=latest;access=latest.access_token;scheduleSessionRenewal();return;}
@@ -44,7 +44,7 @@ async function renewAdminSession(force=false){
   }catch(err){
    if(epoch===sessionEpoch&&(err.status===400||err.status===401)){
     const current=storedSession();
-    if(current?.refresh_token===latest.refresh_token)clearAdminSession();
+    if(current?.refresh_token===latest.refresh_token){clearAdminSession();window.dispatchEvent(new Event('toyota-session-expired'));}
    }
    throw err;
   }
@@ -53,22 +53,43 @@ async function renewAdminSession(force=false){
  sessionRenewal=Promise.resolve(run).finally(()=>{sessionRenewal=null;});
  return sessionRenewal;
 }
+function requestError(message,status,definitive=false){const e=Error(message);e.status=status;e.definitive=definitive;return e;}
 async function rawApi(path,body,token,method){
  const headers={apikey:publicKey,'Content-Type':'application/json'};
  if(token)headers.Authorization='Bearer '+token;
- const res=await fetch(apiRoot+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:JSON.stringify(body)});
- const raw=await res.text(),data=raw?JSON.parse(raw):null;
- if(!res.ok){const error=Error(data?.message||data?.msg||data?.error_description||'Sikertelen kérés.');error.status=res.status;throw error;}
- return data;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{
+  const res=await fetch(apiRoot+path,{method:method||(body===undefined?'GET':'POST'),headers,body:body===undefined?undefined:JSON.stringify(body),signal:controller.signal});
+  const raw=await res.text();let data=null;
+  try{data=raw?JSON.parse(raw):null;}catch{throw requestError('A szerver szokatlan választ adott. Próbáld újra; a megadott adatok megmaradtak.',res.status);}
+  if(!res.ok){
+   const source=data?.message||data?.msg||data?.error_description||'';
+   const authMessage=path.startsWith('/auth/')?(/invalid login credentials/i.test(source)?'A belépés nem sikerült. Ellenőrizd az e-mail-címet és a jelszót.':/not confirmed/i.test(source)?'Erősítsd meg az e-mail-címed a regisztrációs levélben.':/rate limit|too many/i.test(source)?'Túl sok kérés érkezett. Próbáld újra később.':''):'';
+   const hungarian=/[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/.test(source);
+   const message=authMessage|| (res.status===401?'A belépés lejárt. Lépj be újra.':res.status===429?'Túl sok kérés érkezett. Próbáld újra egy kicsit később.':hungarian?source:res.status===403?'Ehhez a művelethez nincs jogosultságod.':res.status>=500?'A szerver átmenetileg nem elérhető. Próbáld újra.':'A kérés nem fogadható el. Ellenőrizd a megadott adatokat.');
+   // A proxy/network error cannot establish whether a write committed.
+   throw requestError(message,res.status,Boolean(data?.code&&res.status>=400&&res.status<500&&res.status!==408&&res.status!==429));
+  }
+  return data;
+ }catch(err){
+  if(err.name==='AbortError')throw requestError('A válaszra túl sokáig kellett várni. Az adataid megmaradtak; próbáld újra.',0);
+  if(err instanceof TypeError)throw requestError('Nem sikerült kapcsolódni. Ellenőrizd az internetkapcsolatot, majd próbáld újra.',0);
+  throw err;
+ }finally{clearTimeout(timer);}
 }
 async function api(path,body,token=access,method){
- const adminRequest=!path.startsWith('/auth/')&&Boolean(token);
+ const adminRequest=!path.startsWith('/auth/')&&(Boolean(token)||adminActive);
+ if(adminRequest&&!token){window.dispatchEvent(new Event('toyota-session-expired'));throw requestError('A belépés lejárt. Lépj be újra.',401);}
  if(adminRequest&&adminSession){await renewAdminSession();token=access;}
  try{return await rawApi(path,body,token,method);}
  catch(err){
-  if(err.status!==401||!adminRequest||!adminSession)throw err;
-  await renewAdminSession(true);
-  return rawApi(path,body,access,method);
+  if(err.status!==401||!adminRequest)throw err;
+  if(adminSession){
+   await renewAdminSession(true);
+   try{return await rawApi(path,body,access,method);}catch(retry){if(retry.status!==401)throw retry;}
+  }
+  clearAdminSession();window.dispatchEvent(new Event('toyota-session-expired'));
+  throw requestError('A belépés lejárt. Lépj be újra.',401);
  }
 }
 async function restoreAdmin(){
@@ -93,3 +114,4 @@ window.addEventListener('storage',event=>{
 });
 window.addEventListener('online',()=>{if(adminSession)renewAdminSession().catch(()=>{});});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&adminSession)renewAdminSession().catch(()=>{});});
+

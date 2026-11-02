@@ -1,10 +1,10 @@
 let projectorWindow=null,projectionSnapshot=null;
-const projectionSettings={view:'highlights',selected:0,page:0,frozen:false,showNames:false,scope:'class',seller:''};
+const projectionSettings={view:'highlights',selected:0,page:0,frozen:false,showNames:false,scope:'class',seller:'',namedPage:0};
 function projectionData(cls,occasion,records){
- const means=criterionMeans(cls,records);
+ const means=criterionMeans(cls,records),stamp=refreshedAt||new Date();
  return {
  classId:cls.id,occasionId:occasion.id,className:cls.name,kind:exams[cls.kind].name,mode:modeName(occasion.mode),occasion:occasion.name,
- roster:cls.roster,people:cls.roster.length,observed:new Set(records.map(r=>r.seller)).size,submissions:records.length,updated:localStamp(new Date()),
+ roster:cls.roster,people:cls.roster.length,observed:new Set(records.map(r=>r.seller)).size,submissions:records.length,updated:localStamp(stamp),updatedAt:new Date(stamp).getTime(),
  namedRecords:records.map(r=>({seller:r.seller,observer:r.observers.name,scores:r.scores})),
  items:exams[cls.kind].items.map((it,index)=>({index,title:it.title,help:it.help,mean:means.find(r=>r.title===it.title)?.mean||0,counts:[0,1,2].map(n=>records.filter(r=>r.scores[index]===n).length)}))
  };
@@ -18,7 +18,7 @@ function selectedProjectionData(){
  aggregate.people=1;aggregate.observed=records.length?1:0;aggregate.submissions=records.length;
  aggregate.items=aggregate.items.map(it=>({...it,mean:records.length?records.reduce((sum,r)=>sum+r.scores[it.index],0)/records.length:0,counts:[0,1,2].map(n=>records.filter(r=>r.scores[it.index]===n).length)}));
  }
- return {...aggregate,...settings,subject:settings.scope==='person'?(settings.showNames?seller:'Egy résztvevő'):'Teljes osztály',...(settings.showNames?{namedRecords:records}:{})};
+ return {...aggregate,...settings,liveConnected:adminActive&&classId===projectionSnapshot.classId&&occasionId===projectionSnapshot.occasionId,subject:settings.scope==='person'?(settings.showNames?seller:'Egy résztvevő'):'Teljes osztály',...(settings.showNames?{namedRecords:records}:{})};
 }
 function sendProjection(){
  if(!projectorWindow||projectorWindow.closed||!projectionSnapshot)return;
@@ -47,7 +47,7 @@ function projectionControlPanel(title,body){
  panel.querySelector('#hideProjectionControls').onclick=()=>panel.remove();
  return panel;
 }
-function projectionControls(cls,occasion){
+function projectionControls(cls,occasion,open=true){
  if(!projectionSnapshot||projectionSnapshot.classId!==cls.id||projectionSnapshot.occasionId!==occasion.id){
  projectionSettings.frozen=false;projectionSettings.showNames=false;projectionSettings.scope='class';projectionSettings.seller=cls.roster[0]||'';projectionSnapshot=projectionData(cls,occasion,entries);
  }else if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
@@ -59,19 +59,29 @@ function projectionControls(cls,occasion){
  const options=panel.querySelector('#projectionOptions');
  if(projectionSettings.view==='single'){
  options.innerHTML='<div class="compact-criterion"><button class="secondary" id="previousCriterion" aria-label="Előző szempont" '+(projectionSettings.selected===0?'disabled':'')+'>←</button><label>Szempont<select id="projectedCriterion">'+projectionSnapshot.items.map(it=>'<option value="'+it.index+'" '+(it.index===projectionSettings.selected?'selected':'')+'>'+String(it.index+1).padStart(2,'0')+' · '+esc(it.title)+'</option>').join('')+'</select></label><button class="secondary" id="nextCriterion" aria-label="Következő szempont" '+(projectionSettings.selected===19?'disabled':'')+'>→</button></div>';
- options.querySelector('select').onchange=e=>{projectionSettings.selected=Number(e.target.value);redraw();sendProjection();};
- options.querySelector('#previousCriterion').onclick=()=>{projectionSettings.selected=Math.max(0,projectionSettings.selected-1);redraw();sendProjection();};
- options.querySelector('#nextCriterion').onclick=()=>{projectionSettings.selected=Math.min(19,projectionSettings.selected+1);redraw();sendProjection();};
+ options.querySelector('select').onchange=e=>{projectionSettings.selected=Number(e.target.value);projectionSettings.namedPage=0;redraw();sendProjection();};
+ options.querySelector('#previousCriterion').onclick=()=>{projectionSettings.selected=Math.max(0,projectionSettings.selected-1);projectionSettings.namedPage=0;redraw();sendProjection();};
+ options.querySelector('#nextCriterion').onclick=()=>{projectionSettings.selected=Math.min(19,projectionSettings.selected+1);projectionSettings.namedPage=0;redraw();sendProjection();};
  }else if(projectionSettings.view==='distribution'){
  options.innerHTML='<div class="projection-pages">'+[0,1].map(page=>'<button data-page="'+page+'" aria-pressed="'+(projectionSettings.page===page)+'">'+(page===0?'01–10. szempont':'11–20. szempont')+'</button>').join('')+'</div>';
  options.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{projectionSettings.page=Number(b.dataset.page);redraw();sendProjection();});
  }else options.innerHTML='';
+ if(projectionSettings.view==='single'&&projectionSettings.showNames){
+  const rows=selectedProjectionData().namedRecords||[],pages=Math.max(1,Math.ceil(rows.length/6));projectionSettings.namedPage=Math.min(projectionSettings.namedPage,pages-1);
+  options.insertAdjacentHTML('beforeend','<div class="projection-pages"><button id="previousNames" '+(projectionSettings.namedPage===0?'disabled':'')+'>← Előző nevek</button><span>Nevek · '+(projectionSettings.namedPage+1)+' / '+pages+'</span><button id="nextNames" '+(projectionSettings.namedPage===pages-1?'disabled':'')+'>Következő nevek →</button></div>');
+  options.querySelector('#previousNames').onclick=()=>{projectionSettings.namedPage--;redraw();sendProjection();};
+  options.querySelector('#nextNames').onclick=()=>{projectionSettings.namedPage++;redraw();sendProjection();};
+ }
  status();
  };
  panel.querySelector('#projectionView').onchange=e=>{projectionSettings.view=e.target.value;redraw();sendProjection();};
- panel.querySelector('#projectionAudience').onchange=e=>{const index=Number(e.target.value);projectionSettings.scope=index<0?'class':'person';projectionSettings.seller=index<0?'':projectionSnapshot.roster[index];status();sendProjection();};
- panel.querySelector('#projectionNames').onchange=e=>{projectionSettings.showNames=e.target.checked;sendProjection();};
+ panel.querySelector('#projectionAudience').onchange=e=>{const index=Number(e.target.value);projectionSettings.scope=index<0?'class':'person';projectionSettings.seller=index<0?'':projectionSnapshot.roster[index];projectionSettings.namedPage=0;redraw();sendProjection();};
+ panel.querySelector('#projectionNames').onchange=e=>{projectionSettings.showNames=e.target.checked;redraw();sendProjection();};
  panel.querySelector('#freezeProjection').onchange=e=>{projectionSettings.frozen=e.target.checked;if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);status();sendProjection();};
  panel.querySelector('#openProjector').onclick=openProjector;
- redraw();sendProjection();openProjector();
+ redraw();sendProjection();if(open)openProjector();
 }
+
+
+// Heartbeats preserve the data timestamp: a live window is not necessarily fresh data.
+setInterval(sendProjection,10000);
