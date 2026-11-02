@@ -16,7 +16,6 @@ A központban a tréningprogramok, a személyes játékok, a fejlesztési válto
 | Kreditjáték | `ultimatum`, `main`, forrás `app/`, build `dashboard/` | https://matebudai-hue.github.io/ultimatum/dashboard/ |
 | Explorer / Kikötő | `ultimatum`, `main`, `explorer/` | https://matebudai-hue.github.io/ultimatum/explorer/ |
 | Omotenashi | `ultimatum`, `main`, `omotenashi/` | https://matebudai-hue.github.io/ultimatum/omotenashi/ |
-| Toyota-pontozó | `ultimatum`, `main`, `toyota/` | https://matebudai-hue.github.io/ultimatum/toyota/ |
 | Mátra – alapjáték | `matra-hardtrail`, `main`, `matra-v11.html` | https://matebudai-hue.github.io/matra-hardtrail/ |
 | Skorpió | `skorpio`, `main` | https://matebudai-hue.github.io/skorpio/ |
 | Matek-sziget | `ultimatum`, `main`, `matek/` | https://matebudai-hue.github.io/ultimatum/matek/ |
