@@ -6,6 +6,7 @@ const preview=route.has('preview');
 const demo=preview&&!route.has('occasion');
 const occasionLink=route.get('occasion')||(demo?'demo':null);
 const invitation=occasionLink||route.get('observe');
+let appRole=null;
 let context=null, access='', classes=[], occasions=[], entries=[],classId='',occasionId='';
 const modeName=mode=>mode==='exam'?'Vizsga':'Megfigyelés';
 const ADMIN_SESSION_KEY='toyota-admin-session-v1';
@@ -98,7 +99,8 @@ async function restoreAdmin(){
  if(!adminSession){loginScreen();return;}
  try{
   access=adminSession.access_token;await renewAdminSession();
-  if(!await api('/rest/v1/rpc/toyota_admin_access',{})){clearAdminSession();loginScreen();return;}
+  appRole=await api('/rest/v1/rpc/toyota_app_role',{});
+  if(!['admin','viewer'].includes(appRole)){clearAdminSession();loginScreen('Ehhez a fiókhoz jelenleg nincs engedélyezett hozzáférés. A tréner tud betekintést adni.');return;}
   await dashboard();
  }catch(err){
   if(!adminSession){loginScreen();return;}
@@ -115,3 +117,9 @@ window.addEventListener('storage',event=>{
 window.addEventListener('online',()=>{if(adminSession)renewAdminSession().catch(()=>{});});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&adminSession)renewAdminSession().catch(()=>{});});
 
+
+async function acceptAppSession(session){
+ const role=await rawApi('/rest/v1/rpc/toyota_app_role',{},session.access_token);
+ if(!['admin','viewer'].includes(role)){clearAdminSession();throw Error('Ehhez a fiókhoz jelenleg nincs engedélyezett hozzáférés. A tréner tud betekintést adni.');}
+ appRole=role;adminTab='overview';classId='';occasionId='';rememberAdminSession(session);await dashboard();
+}

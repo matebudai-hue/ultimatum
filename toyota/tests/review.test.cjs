@@ -10,7 +10,7 @@ function context(){
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(){const c=context();load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(){const c=context();load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js','viewer.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -64,4 +64,45 @@ test('named projector pages contain at most six forms and escape names',()=>{
  const html=vm.runInContext('namesPanel(data)',c);
  assert.equal((html.match(/class="named-person"/g)||[]).length,6);
  assert.match(html,/2 \/ 3 oldal/);assert.match(html,/&lt;Anna&gt;/);assert.doesNotMatch(html,/Minta <Anna>/);
+});
+
+function viewerFixture(c){
+ c.fixture={classes:[{id:'class-a',name:'Minta osztály',kind:'passenger',roster:['Résztvevő 01'],show_names:false,access_expires_at:null}],occasions:[{id:'opaque-occasion',name:'Első kör',mode:'practice'}],class_id:'class-a',occasion_id:'opaque-occasion',entries:[{id:'r1',seller:'Résztvevő 01',observers:{name:'Megfigyelő 01'},scores:Array(20).fill(2),created_at:'2026-11-02T08:00:00Z',notes:''}]};
+}
+test('viewer workspace exposes result tools without admin mutations or roster contacts',async()=>{
+ const c=ui();viewerFixture(c);vm.runInContext("appRole='viewer';api=async()=>fixture;",c);
+ await vm.runInContext('dashboard()',c);
+ const html=c.el('app').innerHTML;
+ assert.match(html,/Csak olvasási hozzáférés/);assert.match(html,/viewerProject/);
+ assert.doesNotMatch(html,/id="(?:newClass|newOcc|deleteClass|showQr|viewerAccess|saveRoster|toggleClassClosed)"/);
+ assert.equal(vm.runInContext('appRole',c),'viewer');
+});
+test('viewer revocation clears loaded data, details and projector even when frozen',async()=>{
+ const c=ui();viewerFixture(c);c.messages=[];
+ vm.runInContext("appRole='viewer';adminActive=true;classes=fixture.classes;classId='class-a';entries=fixture.entries;projectionSettings.frozen=true;projectionSnapshot={classId:'class-a'};projectorWindow={closed:false,postMessage:m=>messages.push(m)};api=async()=>{throw requestError('A hozzáférést visszavonták.',403,true);};",c);
+ await vm.runInContext('viewerDashboard()',c);
+ assert.equal(vm.runInContext('entries.length+classes.length',c),0);
+ assert.equal(vm.runInContext('projectionSnapshot',c),null);
+ assert.ok(c.messages.some(m=>m.type==='toyota-projection-cleared'));
+ assert.match(c.el('app').innerHTML,/nincs megnyitható eredmény/);
+});
+test('hiding names invalidates a frozen named projection on the next permission check',async()=>{
+ const c=ui();viewerFixture(c);c.messages=[];
+ vm.runInContext("appRole='viewer';classId='class-a';classes=[{...fixture.classes[0],show_names:true}];projectionSettings.frozen=true;projectionSnapshot={classId:'class-a',namedRecords:[{seller:'Titkos Anna'}]};projectorWindow={closed:false,postMessage:m=>messages.push(m)};api=async()=>fixture;",c);
+ await vm.runInContext('viewerDashboard()',c);
+ assert.equal(vm.runInContext('projectionSnapshot',c),null);
+ assert.ok(c.messages.some(m=>m.type==='toyota-projection-cleared'));
+ assert.doesNotMatch(c.el('app').innerHTML,/Titkos Anna/);
+});
+test('pagination rejects a changed permission scope rather than merging older named records',async()=>{
+ const c=ui();viewerFixture(c);
+ vm.runInContext("calls=0;api=async()=>{calls++;return {...fixture,classes:calls===1?fixture.classes:[{...fixture.classes[0],show_names:true}],entries:calls===1?Array(500).fill(fixture.entries[0]):[]};};",c);
+ await assert.rejects(()=>vm.runInContext('loadViewerWorkspace()',c),e=>e.status===403);
+});
+test('verified sessions route admins and viewers through the same login without granting new roles',async()=>{
+ for(const role of ['admin','viewer',null]){
+  const c=ui();c.role=role;vm.runInContext("rawApi=async()=>role;rememberAdminSession=()=>{};dashboard=async()=>{openedRole=appRole;};",c);
+  if(role){await vm.runInContext("acceptAppSession({access_token:'synthetic-test-token'})",c);assert.equal(vm.runInContext('openedRole',c),role);}
+  else await assert.rejects(()=>vm.runInContext("acceptAppSession({access_token:'synthetic-test-token'})",c),/nincs engedélyezett hozzáférés/);
+ }
 });

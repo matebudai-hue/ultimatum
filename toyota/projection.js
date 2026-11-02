@@ -48,7 +48,9 @@ function render(data){
  screen.innerHTML='<header class="top"><div class="brand"><img class="brand-emblem" src="./assets/toyota.svg" alt="Toyota"><span class="brand-copy">Közös eredmények<small>Értékesítői megfigyelés · Budai Máté</small></span></div><div class="context"><strong>'+safe(data.className)+'</strong><br>'+(data.scope==='person'?'<strong>'+safe(data.subject)+'</strong> · ':'')+safe(data.kind)+' · '+safe(data.mode)+' · '+safe(data.occasion)+'</div></header><div class="heading"><div><div class="eyebrow">'+(data.view==='distribution'?'Szempontok '+(data.page*10+1)+'–'+Math.min(data.page*10+10,20)+' / 20':(data.subject||'Teljes osztály'))+'</div><h1>'+titles[data.view]+'</h1></div><div class="meta"><span><b>'+data.observed+' / '+data.people+'</b> értékesítő</span><span><b>'+data.submissions+'</b> értékelés</span></div></div><div class="main">'+body+namesPanel(data)+'</div><footer class="footer"><span>'+(data.scope==='person'?'Átlagok · a résztvevőről kapott értékelések':'Átlagok · értékesítőnként azonos súly')+' &nbsp; / &nbsp; Megoszlás · minden beküldött értékelés</span><span class="live '+(data.frozen?'paused':'')+'"><i></i>'+(data.frozen?'Kimerevítve':'Frissítve')+' · '+safe(data.updated)+'</span></footer>';
 }
 window.addEventListener('message',event=>{
- if(event.origin!==location.origin||event.source!==window.opener||event.data?.type!=='toyota-projection-data')return;
+ if(event.origin!==location.origin||event.source!==window.opener)return;
+ if(event.data?.type==='toyota-projection-cleared'){lastData=null;lastReceived=0;screen.classList.remove('with-names');screen.innerHTML='<section class="card empty"><h2>A betekintés lezárult</h2><p>Válassz engedélyezett osztályt a betekintő felületen.</p></section>';return;}
+ if(event.data?.type!=='toyota-projection-data')return;
  const data=event.data.payload;
  if(!data||!['highlights','single','distribution'].includes(data.view)||!Array.isArray(data.items)||data.items.length!==20)return;
  lastData=data;lastReceived=Date.now();render(data);updateConnection();
