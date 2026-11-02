@@ -152,7 +152,7 @@ async function dashboard(){
  const occasion=occasions.find(a=>a.id===occasionId);
  const [loadedEntries,loadedExam]=await Promise.all([occasion?readEntries(occasionId):[],readExamResults(occasion)]);
  if(request!==dashboardRequest)return;
- entries=loadedEntries;examData=loadedExam;refreshedAt=new Date();if(cls&&occasion)feedProjection(cls,occasion,entries);
+ entries=loadedEntries;examData=loadedExam;syncJoinProjection();refreshedAt=new Date();if(cls&&occasion)feedProjection(cls,occasion,entries);
  $('bottom').classList.add('hidden');
  $('app').innerHTML='<aside class="admin-sidebar"><div class="eyebrow">Adminisztráció</div><h2>Osztályok</h2><button class="primary" id="newClass">+ Új osztály</button><nav aria-label="Osztályok">'+classes.map(c=>'<button data-class="'+c.id+'" class="'+(c.id===classId?'selected':'')+'"><b>'+esc(c.name)+'</b><small>'+exams[c.kind].name+' · '+activeRoster(c).length+' fő'+(c.closed_at?' · Lezárva':'')+'</small></button>').join('')+'</nav><button class="secondary" id="logout">Kilépés</button></aside><div class="admin-work"><div class="admin-heading"><div><div class="eyebrow">'+(cls?exams[cls.kind].name:'Toyota')+'</div><h1>'+esc(cls?.name||'Hozd létre az első osztályt')+'</h1></div>'+(cls?'<details class="more-menu class-menu"><summary>Osztály beállításai</summary><div><button id="viewerAccess">Betekintő hozzáférés</button><button id="toggleClassClosed">'+(cls.closed_at?'Osztály újranyitása':'Osztály lezárása')+'</button><button id="deleteClass" class="danger-action">Osztály törlése</button></div></details>':'')+'</div>'+(cls?'<div class="admin-session-tools"><div class="occasion-row"><label>Aktuális alkalom<select id="occasions">'+selectOptions(occasions.map(a=>({...a,name:modeName(a.mode)+' · '+a.name})),occasionId)+'</select></label><span id="liveStatus" class="muted" role="status">Automatikusan frissül · '+new Date(refreshedAt).toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'})+'</span><button class="secondary icon-refresh" id="refresh" aria-label="Eredmények frissítése" title="Frissítés">↻</button></div>':'')+(occasion?'<div class="toolbar"><button class="secondary" id="newOcc" '+(cls.closed_at?'disabled':'')+'>+ Új alkalom</button><button class="primary" id="showQr" '+(cls.closed_at||occasion.closed_at?'disabled':'')+'>'+(cls.closed_at||occasion.closed_at?'Lezárt QR-kód':'Csatlakozás · QR-kód')+'</button><button class="secondary" id="projectSummary">Eredmények kivetítése</button><details class="more-menu"><summary>További műveletek</summary><div><a href="./#occasion='+occasion.id+'&preview=1" target="_blank" rel="noopener">Megfigyelői előnézet ↗</a><button id="toggleOccasionClosed">'+(occasion.closed_at?'Alkalom újranyitása':'Alkalom lezárása')+'</button><button id="copyOcc">Csatlakozási link másolása</button><button id="mailSummary">Összesítés e-mailben</button><button id="withdrawnObservations">Törölt értékelések</button></div></details></div>':'')+(cls?'</div><nav class="admin-tabs" aria-label="Osztály nézetei">'+[['overview','Áttekintés'],['results','Értékelések'],['roster','Névsor'],...(occasion?.mode==='exam'?[['exam','Vizsgaeredmények']]:[])].map(([key,name])=>'<button data-tab="'+key+'" aria-current="'+(key===adminTab?'page':'false')+'">'+name+'</button>').join('')+'</nav><div id="adminContent"></div>':'<section class="panel empty"><h2>Az osztályból indul a közös munka</h2><p>Adj nevet az osztálynak, illeszd be a névsort, majd válaszd ki a megfigyelést vagy a vizsgát. A közös QR-kód rögtön elkészül.</p><p><a href="./#preview=1&kind=fleet" target="_blank" rel="noopener">Flottás előnézet ↗</a> · <a href="./#preview=1&kind=passenger" target="_blank" rel="noopener">Személyautós előnézet ↗</a></p></section>')+'</div>';
  $('newClass').onclick=()=>{if(leaveRoster())createClassDialog();};
@@ -171,22 +171,17 @@ async function dashboard(){
  document.querySelectorAll('[data-class]').forEach(b=>b.onclick=()=>{if(!leaveRoster())return;rosterDirty=false;classId=b.dataset.class;occasionId='';adminTab='overview';dashboard().catch(alertError);});
  if(occasion){
  const link=location.origin+location.pathname+'#occasion='+occasion.id;
- $('showQr').onclick=()=>{const d=modal(cls.name+' · '+modeName(occasion.mode),'<p>'+esc(occasion.name)+'</p><canvas id="projectQr" aria-label="Az alkalom közös QR-kódja"></canvas><p>Olvasd be, add meg a saját neved, majd válaszd ki, kit figyelsz meg.</p>');d.classList.add('projection');drawQr(d.querySelector('canvas'),link);};
+ $('showQr').onclick=()=>openJoinProjector(cls,occasion);
  action('copyOcc',async()=>{try{await navigator.clipboard.writeText(link);$('copyOcc').textContent='Kimásolva';setTimeout(()=>{if($('copyOcc'))$('copyOcc').textContent='Csatlakozási link másolása';},2500);}catch{prompt('Másold ki a linket:',link);}});
  $('projectSummary').onclick=()=>projectionControls(cls,occasion);
  $('toggleOccasionClosed').onclick=()=>closureDialog('occasion',occasion,cls);
  $('toggleOccasionClosed').disabled=Boolean(cls.closed_at);
  if(cls.closed_at||occasion.closed_at)$('liveStatus').textContent=(cls.closed_at?'Lezárt osztály':'Lezárt alkalom')+' · új beküldést nem fogad';
- if(restoreControls&&projectionSnapshot?.classId===cls.id&&projectionSnapshot?.occasionId===occasion.id)projectionControls(cls,occasion,false);
+ if(restoreControls&&projectionSnapshot?.classId===cls.id&&projectionSnapshot?.occasionId===occasion.id)projectionControls(cls,occasion);
  $('mailSummary').onclick=()=>emailSummary(cls,occasion,entries);
  action('withdrawnObservations',()=>withdrawnObservationsDialog(cls,occasion));
  }
  scheduleRefresh();
-}
-function drawQr(canvas,link){
- const qr=new ToyotaQRCode(-1,0);qr.addData(link);qr.make();const n=qr.getModuleCount();
- canvas.width=canvas.height=(n+8)*12;const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#000';
- for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(qr.isDark(y,x))ctx.fillRect((x+4)*12,(y+4)*12,12,12);
 }
 function emailSummary(cls,occasion,records){
  const recipients=activeRoster(cls).map(n=>cls.contacts?.[n]).filter(Boolean),subject=cls.name+' · '+modeName(occasion.mode)+' · '+occasion.name;

@@ -68,7 +68,7 @@ async function viewerDashboard(){
   document.querySelectorAll('[data-viewer-tab]').forEach(b=>b.onclick=()=>{adminTab=b.dataset.viewerTab;renderViewerContent(cls,occasion);});
   renderViewerContent(cls,occasion);
   if($('viewerProject'))$('viewerProject').disabled=viewerMode!=='all'&&occasion?.mode!==viewerMode;
-  if(occasion&&(viewerMode==='all'||occasion.mode===viewerMode)){$('viewerProject').onclick=()=>projectionControls(cls,occasion);if(restoreControls&&projectionSnapshot?.classId===cls.id&&projectionSnapshot?.occasionId===occasion.id)projectionControls(cls,occasion,false);}
+  if(occasion&&(viewerMode==='all'||occasion.mode===viewerMode)){$('viewerProject').onclick=()=>projectionControls(cls,occasion);if(restoreControls&&projectionSnapshot?.classId===cls.id&&projectionSnapshot?.occasionId===occasion.id)projectionControls(cls,occasion);}
   refreshTimer=setTimeout(()=>{if(appRole==='viewer'&&adminActive)viewerDashboard();},20000);
  }catch(err){
   if(request!==dashboardRequest)return;

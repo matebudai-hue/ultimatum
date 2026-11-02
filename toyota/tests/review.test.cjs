@@ -10,7 +10,7 @@ function context(){
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','roster-actions.js','admin.js','exam-results.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','roster-actions.js','admin.js','exam-results.js','comparison.js','qr-projector-controller.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -258,4 +258,12 @@ test('participant removal saves only an explicit target and guards unsaved roste
  await c.el('confirmParticipantActive').onclick({currentTarget:c.el('confirmParticipantActive')});
  assert.equal(vm.runInContext('captured.participant',c),'Anna');assert.equal(vm.runInContext('captured.active',c),false);assert.equal(vm.runInContext('captured.expected_roster_revision',c),4);
  vm.runInContext(`participantActiveDialog(cls,'Anna',true);`,c);await c.el('confirmParticipantActive').onclick({currentTarget:c.el('confirmParticipantActive')});assert.equal(vm.runInContext('captured.active',c),true);
+});
+
+test('QR projection uses a dedicated reusable window, excludes personal data, and hides a closed occasion',()=>{
+ const c=ui();c.window.open=()=>({closed:false,focus(){},postMessage(message){c.sent=message;}});
+ vm.runInContext(`const cls={id:'c',name:'Minta osztály',roster:['Személyes Név'],contacts:{'Személyes Név':'test@example.invalid'}},occ={id:'a',name:'Gyakorlás',mode:'practice'};openJoinProjector(cls,occ);`,c);
+ assert.equal(c.sent.type,'toyota-join-data');assert.equal(c.sent.payload.link,'https://example.test/toyota/#occasion=a');assert.doesNotMatch(JSON.stringify(c.sent),/Személyes Név|@example.invalid|access_token/);
+ vm.runInContext(`classes=[{...cls,closed_at:'2026-11-02'}];occasions=[occ];syncJoinProjection();`,c);assert.equal(c.sent.payload.closed,true);
+ load(c,'join.js');c.data={link:'https://example.test/toyota/#occasion=a',className:'Minta',occasion:'Gyakorlás',mode:'Megfigyelés',closed:true};vm.runInContext('renderJoin(data)',c);assert.equal(c.el('joinQr').hidden,true);assert.match(c.el('instruction').textContent,/nem fogad új/);
 });

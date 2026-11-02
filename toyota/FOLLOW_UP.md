@@ -67,3 +67,10 @@ A Névsor fül minden aktív, mentett résztvevőjénél Eltávolítás gomb tal
 A classes.inactive_roster jelöli az eltávolított személyeket; a történeti roster sorrendje megmarad, így a régi statisztikák és a név nélküli betekintő jelölései stabilak. Az aktív létszám az admin osztálylistájában és a betekintő osztálylistájában külön számolódik. Az értékelések összesítése a történeti osztályt tartalmazza. A vizsgariportban az aktív résztvevők mellett megmarad minden korábban rögzített végső eredmény, az eltávolított, döntés nélküli személy kimarad. A kontaktadat megmarad a visszaállíthatósághoz; az osztály összesítő e-mail címzése csak az aktív résztvevőket használja.
 
 Az új admin-RPC szerveroldali jogosultságot, lezárást és névsorverziót ellenőriz. A résztvevői context csak aktív névsort szolgál ki; minden publikus beküldési útvonal a közös, aktív személyt ellenőrző függvényen halad át. A QR-azonosító nem változik. A funkció fejlesztése nem távolított el valódi résztvevőt.
+
+
+## Elkészült: külön QR-ablak és kézi eredményablak-nyitás
+
+A Csatlakozás · QR-kód gomb külön böngészőablakban nyitja a QR-kódot, teljes képernyős gombbal. Az ablak áthúzható a kivetítőre; újbóli kattintás ugyanazt az ablakot használja. Az osztály és az alkalom neve, a mód és a csatlakozási link kerül átadásra, személyes névsor, elérhetőség és adminhitelesítés nem. A kommunikáció mindkét irányban ellenőrzi az eredetet és a küldő ablakot. Az admin frissítése/lezárás után a lezárt alkalom QR-kódja eltűnik.
+
+Az Eredmények kivetítése gomb az adminban és a betekintőnél is csak a vezérlőpanelt nyitja. Az eredményablak kizárólag a panel Kivetítőablak megnyitása ↗ gombjával indul. A választók és frissítések egy már nyitott eredményablakot továbbra is frissítenek, de nem nyitnak új ablakot és nem váltanak oda.

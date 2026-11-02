@@ -47,7 +47,7 @@ function projectionControlPanel(title,body){
  panel.querySelector('#hideProjectionControls').onclick=()=>panel.remove();
  return panel;
 }
-function projectionControls(cls,occasion,open=true){
+function projectionControls(cls,occasion){
  if(!projectionSnapshot||projectionSnapshot.classId!==cls.id||projectionSnapshot.occasionId!==occasion.id){
  projectionSettings.frozen=false;projectionSettings.showNames=false;projectionSettings.scope='class';projectionSettings.seller=cls.roster[0]||'';projectionSnapshot=projectionData(cls,occasion,entries);
  }else if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);
@@ -80,7 +80,7 @@ function projectionControls(cls,occasion,open=true){
  panel.querySelector('#projectionNames').onchange=e=>{projectionSettings.showNames=e.target.checked;redraw();sendProjection();};
  panel.querySelector('#freezeProjection').onchange=e=>{projectionSettings.frozen=e.target.checked;if(!projectionSettings.frozen)projectionSnapshot=projectionData(cls,occasion,entries);status();sendProjection();};
  panel.querySelector('#openProjector').onclick=openProjector;
- redraw();sendProjection();if(open)openProjector();
+ redraw();sendProjection();
 }
 
 
@@ -91,5 +91,5 @@ function changeProjectionCriterionSet(cls,occasion){
  if(!projectionSnapshot||projectionSnapshot.classId!==cls.id||projectionSnapshot.occasionId!==occasion.id)return;
  projectionSettings.frozen=false;projectionSettings.selected=0;projectionSettings.page=0;projectionSettings.namedPage=0;
  projectionSnapshot=projectionData(cls,occasion,entries);sendProjection();
- if($('projectionControlPanel'))projectionControls(cls,occasion,false);
+ if($('projectionControlPanel'))projectionControls(cls,occasion);
 }
