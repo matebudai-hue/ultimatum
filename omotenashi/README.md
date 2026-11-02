@@ -49,7 +49,7 @@ A résztvevői napló és a kvíz a szinkron, minden szerkesztésnél azonnal fr
 
 A két helyi tároló ugyanazon böngészőeredethez tartozik, ezért egy böngésző-adattörlés, privát mód vége vagy böngésző általi teljes adattár-eviction **mindkettőt egyszerre** eltávolíthatja. A „Jegyzeteim és mentés” résznél kérhető \`navigator.storage.persist()\` védelem (a böngésző dönt a jóváhagyásáról), illetve letölthető a **napló + kvíz** JSON-másolat. A fájlt a résztvevőnek a Fájlok alkalmazásban, felhőmeghajtón vagy más saját biztonságos helyen meg kell őriznie. Az alkalmazás nem garantálhatja az adatmegőrzést, ha maga a böngésző törli az összes helyi adatot.
 
-A `toyota-omotenashi-notebook-v1` helyi mentési kulcs verziófrissítéskor változatlan marad. A meglévő megfigyelési listát és annak szerkesztéseit nem cseréljük vissza az alaplistára. Az offline gyorsítótár csak ehhez az almappához tartozik, és nem módosítja a többi játékot vagy a Toyota értékesítői megfigyelőappot.
+A `toyota-omotenashi-notebook-v1` helyi mentési kulcs verziófrissítéskor változatlan marad. A meglévő megfigyelési listát és annak szerkesztéseit nem cseréljük vissza az alaplistára. Az offline gyorsítótár csak ehhez az almappához tartozik, és nem módosítja a többi játékot.
 
 Frissítéskor az `APP_VERSION` és a service worker `CACHE` verziója együtt emelendő. Adatszerkezeti változásnál külön, nem destruktív migráció és mentési teszt szükséges. A böngészőben a Jegyzeteim / Az app frissítése rész kezdeményezhet ellenőrzést.
 
