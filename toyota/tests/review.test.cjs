@@ -10,7 +10,7 @@ function context(){
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','admin.js','exam-results.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','roster-actions.js','admin.js','exam-results.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -242,4 +242,20 @@ test('report download reads fresh server decisions and practice makes no result 
  await c.el('downloadExamReport').onclick({currentTarget:c.el('downloadExamReport')});
  assert.equal(vm.runInContext('exported.decisions[0].status',c),'passed');assert.equal(vm.runInContext('reads',c),1);
  assert.equal(await vm.runInContext("readExamResults({id:'p',mode:'practice'})",c),null);assert.equal(vm.runInContext('reads',c),1);
+});
+
+test('inactive participants stay in history but disappear from editable roster and gain restore action',()=>{
+ const c=ui();vm.runInContext(`appRole='admin';adminTab='roster';const cls={id:'c',roster:['Anna','Béla'],inactive_roster:['Anna'],contacts:{Anna:'a@example.invalid'}};renderAdminContent(cls,null);`,c);
+ assert.equal(vm.runInContext('JSON.stringify(activeRoster(cls))',c),'["Béla"]');
+ assert.doesNotMatch(c.el('rosterRows').innerHTML,/value="Anna"/);assert.match(c.el('rosterRows').innerHTML,/value="Béla"/);assert.match(c.el('rosterRows').innerHTML,/data-remove-person/);
+ assert.match(c.el('adminContent').innerHTML,/data-restore-person="Anna"/);
+ assert.equal(vm.runInContext('cls.roster.length',c),2);
+});
+test('participant removal saves only an explicit target and guards unsaved roster edits',async()=>{
+ const c=ui();vm.runInContext(`appRole='admin';rosterDirty=true;let opened=0;modal=()=>{opened++;return {classList:{add(){}},close(){},remove(){}};};alertError=e=>{message=e.message;};const cls={id:'c',name:'Minta',roster_revision:4};participantActiveDialog(cls,'Anna');`,c);
+ assert.equal(vm.runInContext('opened',c),0);assert.match(vm.runInContext('message',c),/mentsd el/);
+ vm.runInContext(`rosterDirty=false;api=async(path,body)=>{captured=body;};dashboard=async()=>{};participantActiveDialog(cls,'Anna');`,c);
+ await c.el('confirmParticipantActive').onclick({currentTarget:c.el('confirmParticipantActive')});
+ assert.equal(vm.runInContext('captured.participant',c),'Anna');assert.equal(vm.runInContext('captured.active',c),false);assert.equal(vm.runInContext('captured.expected_roster_revision',c),4);
+ vm.runInContext(`participantActiveDialog(cls,'Anna',true);`,c);await c.el('confirmParticipantActive').onclick({currentTarget:c.el('confirmParticipantActive')});assert.equal(vm.runInContext('captured.active',c),true);
 });

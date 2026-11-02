@@ -23,6 +23,8 @@ startApp=async function(){
  let grants=[{id:'sample-grant',email:'katalin.kovacs@example.invalid',show_names:false,expires_at:new Date(Date.now()+30*86400000).toISOString(),created_at:new Date().toISOString(),revoked_at:null}];
  rawApi=async(path,body,token,method)=>{if(path.startsWith('/auth/v1/recover'))return {};if(path==='/auth/v1/user'&&method!=='PUT')return {id:'sample-user',email:'minta@example.invalid'};if(path==='/auth/v1/user'&&method==='PUT')return {id:'sample-user'};if(path.startsWith('/auth/v1/logout'))return {};throw Error('Mintaadatokkal működő előnézet; valódi fiókművelet nem történik.');};
  api=async(path,body)=>{
+  if(path.endsWith('/set_class_participant_active')){cls.inactive_roster=body.active?(cls.inactive_roster||[]).filter(n=>n!==body.participant):[...new Set([...(cls.inactive_roster||[]),body.participant])];cls.roster_revision=(cls.roster_revision||0)+1;return true;}
+
   if(path.endsWith('/get_exam_results'))return sampleExamData();
   if(path.endsWith('/set_exam_result')){const previous=sampleDecisions.find(r=>r.seller===body.participant);if((previous?.revision||0)!==body.expected_revision&&previous?.status!==body.outcome)throw Error('A vizsgaeredményt közben módosították.');const saved={seller:body.participant,status:body.outcome,revision:(previous?.revision||0)+1,updated_at:new Date().toISOString()};sampleDecisions=[...sampleDecisions.filter(r=>r.seller!==body.participant),saved];return saved;}
 
@@ -54,6 +56,6 @@ startApp=async function(){
   if(page==='result'){state.scores=records[0].scores.slice();state.notes=records[0].notes;state.done=true;}
   choosing=false;render();
  }else if(page==='viewer'){appRole='viewer';await viewerDashboard();}
- else{appRole='admin';if(page==='exam-results')adminTab='exam';await dashboard();if(page==='access')await viewerAccessDialog(cls);}
+ else{appRole='admin';if(page==='exam-results')adminTab='exam';if(page==='roster')adminTab='roster';await dashboard();if(page==='access')await viewerAccessDialog(cls);}
 };
 

@@ -58,3 +58,12 @@ A Toyota-betekintő az adott osztály jogosultságával olvashatja a végső ere
 A két natív adatbázismigráció: `trainer_exam_results`, majd `trainer_exam_result_roster_identity_guard`. A forrásbeli végleges telepítési SQL a `database/exam_results.sql`, majd `database/exam_results_integrations.sql`; új telepítésen már az ötparaméteres, névsorverzióval ellenőrzött mentést hozzák létre. Az éles adatbázisban az átmeneti négyp­araméteres változat végrehajtási joga minden kliensszerepkörtől vissza lett vonva.
 
 A fejlesztés nem állított be valódi résztvevőnek vizsgaeredményt. A szerverpróbák szintetikus sorokon, visszagörgetett tranzakcióban futottak.
+
+
+## Elkészült: résztvevő eltávolítása és visszaállítása
+
+A Névsor fül minden aktív, mentett résztvevőjénél Eltávolítás gomb található. A megerősítés az adott személy nevét mutatja. Új beküldéshez ezután nem választható; régi lapról történő beküldést is visszautasít a szerver. A már elmentett beküldés azonosítóval történő ismétlése változatlanul biztonságos. Értékelés és vizsgaeredmény nem törlődik. Az eltávolított név a külön lenyitható listából visszaállítható. Lezárt osztálynál előbb újranyitás szükséges. Mentetlen névsorváltozásokat az eltávolítás előtt menteni kell; az új, még nem mentett sor azonnal kivehető a piszkozatból.
+
+A classes.inactive_roster jelöli az eltávolított személyeket; a történeti roster sorrendje megmarad, így a régi statisztikák és a név nélküli betekintő jelölései stabilak. Az aktív létszám az admin osztálylistájában és a betekintő osztálylistájában külön számolódik. Az értékelések összesítése a történeti osztályt tartalmazza. A vizsgariportban az aktív résztvevők mellett megmarad minden korábban rögzített végső eredmény, az eltávolított, döntés nélküli személy kimarad. A kontaktadat megmarad a visszaállíthatósághoz; az osztály összesítő e-mail címzése csak az aktív résztvevőket használja.
+
+Az új admin-RPC szerveroldali jogosultságot, lezárást és névsorverziót ellenőriz. A résztvevői context csak aktív névsort szolgál ki; minden publikus beküldési útvonal a közös, aktív személyt ellenőrző függvényen halad át. A QR-azonosító nem változik. A funkció fejlesztése nem távolított el valódi résztvevőt.

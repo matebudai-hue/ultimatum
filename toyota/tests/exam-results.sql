@@ -26,6 +26,7 @@ do $$declare c uuid;a uuid;p uuid;other_class uuid;other_exam uuid;data jsonb;de
  denied:=false;begin perform public.set_exam_result(a,'Minta Anna','anything',0,0);exception when raise_exception then denied:=true;end;if not denied then raise exception 'Unknown outcome accepted';end if;
  update public.classes set closed_at=now() where id=c;update public.occasions set closed_at=now() where id=a;
  perform public.set_exam_result(a,'Minta Csilla','passed',0,0);
+ update public.classes set closed_at=null where id=c;
  -- Rename two people in opposite directions. Their decisions follow the people atomically.
  perform public.update_class_roster(c,'[{"original":"Minta Anna","name":"Minta Béla","email":""},{"original":"Minta Béla","name":"Minta Anna","email":""},{"original":"Minta Csilla","name":"Minta Csilla","email":""}]');
  data:=public.get_exam_results(a);

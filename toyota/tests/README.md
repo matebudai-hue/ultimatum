@@ -47,3 +47,10 @@ Böngészős minta: `design-concept.html?screen=admin&versions=1#preview=1` két
 Node: személyenként egy riportrekord, döntésre várók szerepeltetése, a pontszámtól független végső döntés, Excel-kompatibilis CSV és képletvédelem, sikeres és elutasított mentés, friss szerveradatból készülő letöltés, csak olvasható betekintői felület.
 
 Böngészős minta: `design-concept.html?screen=exam-results&exam=1#preview=1`. A döntések csak memóriában változnak. A CSV-gomb valódi fájlt tölt le a mintaadatokból. A `closed=class` paraméter a lezárt osztály utólagos eredményrögzítését mutatja. `screen=viewer&exam=1` a név nélküli betekintő, `names=1` névvel.
+
+
+## Résztvevő eltávolítása
+
+`participant-removal.sql`: kizárólag szintetikus, visszagörgetett adatok. Eltávolítás/visszaállítás, pontok és végső döntés megőrzése, korábbi beküldés biztonságos újrapróbálása, új beküldés tiltása, régi névsorverzió visszautasítása, vizsgariport és betekintői jelölések, lezárt osztály és anon/betekintő módosítási tiltás. A Node-próbák az aktív/inaktív sorok megjelenítését, mentetlen piszkozat védelmét és az explicit mentési argumentumokat is ellenőrzik.
+
+Böngészős minta: `design-concept.html?screen=roster#preview=1`; az eltávolítás és visszaállítás csak a memóriában történik, az éles névsort nem érinti. Telepítés: `database/participant_removal.sql`, majd `database/participant_removal_integrations.sql`.
