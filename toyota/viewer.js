@@ -52,6 +52,7 @@ async function viewerDashboard(){
   if(!data.classes.length){viewerUnavailable('Nincs aktív engedélyed. Lehet, hogy lejárt vagy visszavonták. A tréner tud hozzáférést adni.');return;}
   const oldClass=classes.find(c=>c.id===classId),cls=data.classes.find(c=>c.id===data.class_id);
   if(oldClass&&oldClass.show_names!==cls.show_names){document.querySelectorAll('dialog').forEach(d=>d.remove());projectionSnapshot=null;if(projectorWindow&&!projectorWindow.closed)projectorWindow.postMessage({type:'toyota-projection-cleared'},location.origin);}
+  if(projectionSnapshot?.classId===data.class_id&&projectionSnapshot?.occasionId===data.occasion_id&&projectionSnapshot.sourceIds?.some(id=>!data.entries.some(r=>r.id===id)))projectionSettings.frozen=false;
   classes=data.classes;classId=data.class_id;occasions=data.occasions;occasionId=data.occasion_id;entries=data.entries;refreshedAt=new Date();
   adminActive=true;document.body.classList.add('admin-mode');$('bottom').classList.add('hidden');
   const occasion=occasions.find(a=>a.id===occasionId);

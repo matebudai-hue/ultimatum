@@ -14,6 +14,16 @@ A visszavonás az új adatlekéréseket azonnal tiltja; a megnyitott betekintő 
 
 Automatikus meghívólevél nincs: az admin kimásolja és maga küldi el a belépési linket. A fejlesztés és ellenőrzés nem hozott létre valódi külső fiókot, nem engedélyezett valós címzettnek betekintést és nem küldött levelet.
 
+## Elkészült: jelszóhelyreállítás és értékelésenkénti törlés
+
+A belépőoldal **Elfelejtettem a jelszavam** művelete levélben kér helyreállító hivatkozást. A recovery-visszatérés külön új-jelszó felületre vezet, nem léptet automatikusan az adminba. A helyreállító token csak memóriában marad; az új jelszó nincs helyi adattárolásban. Hibás/lejárt hivatkozásnál új levél kérhető. Ha a levél gombja rossz oldalra irányít, a hivatkozás az alkalmazásban is ellenőrizhető. A saját fiók helyreállítása nem ad új admin- vagy betekintési jogosultságot.
+
+A valódi levelezőszolgáltatás, címzettengedélyek és átirányítások továbbra is a Supabase Auth konfigurációjától függenek. A fejlesztés során valódi címre nem küldtünk helyreállító levelet és valódi jelszót nem változtattunk meg.
+
+Az admin **Eredmények** nézetében egyetlen beküldést is törölhet. A megerősítés megmutatja a résztvevőt, a megfigyelőt, a beküldés időpontját és pontszámát. A törlés kiveszi az értékelést az aktív eredményekből, és a saját kivetítő frissül. **További műveletek → Törölt értékelések** alatt visszaállítható. A betekintő sem törölni, sem visszaállítani, sem a törölt értékeléseket listázni nem tudja.
+
+Az értékelés fizikai adatsora megmarad; a végleges megőrzési/törlési szabály továbbra is külön feladat. Az osztály végleges törlése a töröltként jelölt értékeléseit is törli, és ezek számát is belefoglalja a megerősítésbe.
+
 ## Korábban elkészült
 
 - Alkalom és teljes osztály lezárása/újranyitása, eredmények megőrzésével.
@@ -23,4 +33,4 @@ Automatikus meghívólevél nincs: az admin kimásolja és maga küldi el a bel�
 
 ## Később, külön kezelendő
 
-Saját origin/domain; jelszó-visszaállítás; részletes adatkezelési tájékoztató és megőrzési szabály; célzott értékeléstörlés; vizsga végső tréneri döntése; szempontverziók szerinti elkülönített összesítés a szempontok következő módosítása előtt.
+Saját origin/domain; részletes adatkezelési tájékoztató és megőrzési szabály; vizsga végső tréneri döntése; szempontverziók szerinti elkülönített összesítés a szempontok következő módosítása előtt.

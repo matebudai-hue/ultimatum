@@ -65,11 +65,11 @@ async function rawApi(path,body,token,method){
   try{data=raw?JSON.parse(raw):null;}catch{throw requestError('A szerver szokatlan választ adott. Próbáld újra; a megadott adatok megmaradtak.',res.status);}
   if(!res.ok){
    const source=data?.message||data?.msg||data?.error_description||'';
-   const authMessage=path.startsWith('/auth/')?(/invalid login credentials/i.test(source)?'A belépés nem sikerült. Ellenőrizd az e-mail-címet és a jelszót.':/not confirmed/i.test(source)?'Erősítsd meg az e-mail-címed a regisztrációs levélben.':/rate limit|too many/i.test(source)?'Túl sok kérés érkezett. Próbáld újra később.':''):'';
+   const authMessage=path.startsWith('/auth/')?(data?.code==='weak_password'?'A jelszó nem elég erős. Válassz hosszabb, nehezebben kitalálható jelmondatot.':data?.code==='same_password'?'Az új jelszó megegyezik a jelenlegivel. Próbálj belépni vele, vagy válassz másikat.':/otp_expired|token.*expired/i.test(data?.code||source)?'A hivatkozás lejárt vagy már felhasználtad. Kérj új levelet.':/invalid login credentials/i.test(source)?'A belépés nem sikerült. Ellenőrizd az e-mail-címet és a jelszót.':/not confirmed/i.test(source)?'Erősítsd meg az e-mail-címed a regisztrációs levélben.':/rate limit|too many/i.test(source)?'Túl sok kérés érkezett. Próbáld újra később.':''):'';
    const hungarian=/[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]/.test(source);
    const message=authMessage|| (res.status===401?'A belépés lejárt. Lépj be újra.':res.status===429?'Túl sok kérés érkezett. Próbáld újra egy kicsit később.':hungarian?source:res.status===403?'Ehhez a művelethez nincs jogosultságod.':res.status>=500?'A szerver átmenetileg nem elérhető. Próbáld újra.':'A kérés nem fogadható el. Ellenőrizd a megadott adatokat.');
    // A proxy/network error cannot establish whether a write committed.
-   throw requestError(message,res.status,Boolean(data?.code&&res.status>=400&&res.status<500&&res.status!==408&&res.status!==429));
+   const error=requestError(message,res.status,Boolean(data?.code&&res.status>=400&&res.status<500&&res.status!==408&&res.status!==429));error.code=data?.code;throw error;
   }
   return data;
  }catch(err){

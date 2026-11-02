@@ -4,13 +4,13 @@ function projectionData(cls,occasion,records){
  const means=criterionMeans(cls,records),stamp=refreshedAt||new Date();
  return {
  classId:cls.id,occasionId:occasion.id,className:cls.name,kind:exams[cls.kind].name,mode:modeName(occasion.mode),occasion:occasion.name,
- roster:cls.roster,people:cls.roster.length,observed:new Set(records.map(r=>r.seller)).size,submissions:records.length,updated:localStamp(stamp),updatedAt:new Date(stamp).getTime(),
+ sourceIds:records.map(r=>r.id),roster:cls.roster,people:cls.roster.length,observed:new Set(records.map(r=>r.seller)).size,submissions:records.length,updated:localStamp(stamp),updatedAt:new Date(stamp).getTime(),
  namedRecords:records.map(r=>({seller:r.seller,observer:r.observers.name,scores:r.scores})),
  items:exams[cls.kind].items.map((it,index)=>({index,title:it.title,help:it.help,mean:means.find(r=>r.title===it.title)?.mean||0,counts:[0,1,2].map(n=>records.filter(r=>r.scores[index]===n).length)}))
  };
 }
 function selectedProjectionData(){
- const {namedRecords,roster,...aggregate}=projectionSnapshot;
+ const {namedRecords,roster,sourceIds,...aggregate}=projectionSnapshot;
  const {seller,...settings}=projectionSettings;
  let records=namedRecords;
  if(settings.scope==='person'){

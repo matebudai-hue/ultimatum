@@ -49,7 +49,7 @@ function render(data){
 }
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.opener)return;
- if(event.data?.type==='toyota-projection-cleared'){lastData=null;lastReceived=0;screen.classList.remove('with-names');screen.innerHTML='<section class="card empty"><h2>A betekintés lezárult</h2><p>Válassz engedélyezett osztályt a betekintő felületen.</p></section>';return;}
+ if(event.data?.type==='toyota-projection-cleared'){lastData=null;lastReceived=0;screen.classList.remove('with-names');screen.innerHTML=event.data.reason==='updated'?'<section class="card empty"><h2>Az eredmények frissülnek</h2><p>Az értékelések állapota megváltozott. A friss összesítés hamarosan megjelenik.</p></section>':'<section class="card empty"><h2>A betekintés lezárult</h2><p>Válassz engedélyezett osztályt a betekintő felületen.</p></section>';return;}
  if(event.data?.type!=='toyota-projection-data')return;
  const data=event.data.payload;
  if(!data||!['highlights','single','distribution'].includes(data.view)||!Array.isArray(data.items)||data.items.length!==20)return;

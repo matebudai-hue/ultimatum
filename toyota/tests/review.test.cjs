@@ -4,13 +4,13 @@ const root=path.join(__dirname,'..');
 const source=f=>fs.readFileSync(path.join(root,f),'utf8');
 function context(){
  const elements=new Map();
- const element=id=>{if(!elements.has(id))elements.set(id,{id,textContent:'',innerHTML:'',hidden:false,disabled:false,value:'',classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},insertAdjacentHTML(position,html){this.innerHTML=position==='afterbegin'?html+this.innerHTML:this.innerHTML+html;},addEventListener(){}});return elements.get(id);};
+ const element=id=>{if(!elements.has(id))elements.set(id,{id,textContent:'',innerHTML:'',hidden:false,disabled:false,value:'',classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},insertAdjacentHTML(position,html){this.innerHTML=position==='afterbegin'?html+this.innerHTML:this.innerHTML+html;},addEventListener(){},reportValidity(){return true;},focus(){},select(){}});return elements.get(id);};
  const events=[];
- const env={console,URLSearchParams,URL,TextDecoder,AbortController,Blob,TypeError,Date,crypto:require('node:crypto').webcrypto,location:{hash:'',search:'',origin:'https://example.test',pathname:'/toyota/'},navigator:{},localStorage:{getItem(){return null;},setItem(){},removeItem(){}},document:{getElementById:element,addEventListener(){},querySelector(){return null;},querySelectorAll(){return[];},body:{classList:{remove(){},add(){}},append(){}},createElement:()=>element('temporary')},setTimeout:()=>0,clearTimeout(){},setInterval(){},Event,window:{addEventListener(){},dispatchEvent(e){events.push(e.type);},scrollTo(){},print(){}}};
+ const env={console,URLSearchParams,URL,TextDecoder,AbortController,Blob,TypeError,Date,crypto:require('node:crypto').webcrypto,location:{hash:'',search:'',origin:'https://example.test',pathname:'/toyota/',href:'https://example.test/toyota/#admin'},navigator:{},history:{replaceState(){}},localStorage:{getItem(){return null;},setItem(){},removeItem(){}},document:{getElementById:element,addEventListener(){},querySelector(){return null;},querySelectorAll(){return[];},body:{classList:{remove(){},add(){}},append(){}},createElement:()=>element('temporary')},setTimeout:()=>0,clearTimeout(){},setInterval(){},Event,window:{addEventListener(){},dispatchEvent(e){events.push(e.type);},scrollTo(){},print(){}}};
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(){const c=context();load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js','viewer.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -105,4 +105,55 @@ test('verified sessions route admins and viewers through the same login without 
   if(role){await vm.runInContext("acceptAppSession({access_token:'synthetic-test-token'})",c);assert.equal(vm.runInContext('openedRole',c),role);}
   else await assert.rejects(()=>vm.runInContext("acceptAppSession({access_token:'synthetic-test-token'})",c),/nincs engedélyezett hozzáférés/);
  }
+});
+
+test('recovery accepts only project recovery links and explicitly supported local redirects',()=>{
+ const c=ui();
+ const valid='https://wmhyreahavyslxcqlqli.supabase.co/auth/v1/verify?token=synthetic-hash&type=recovery';
+ c.link=valid;assert.equal(vm.runInContext('parseRecoveryLink(link).tokenHash',c),'synthetic-hash');
+ for(const bad of [valid.replace('wmhyreahavyslxcqlqli','other-project'),valid.replace('recovery','signup'),'javascript:alert(1)']){c.link=bad;assert.throws(()=>vm.runInContext('parseRecoveryLink(link)',c));}
+ c.link='http://localhost:3000/#access_token=synthetic&refresh_token=synthetic&type=recovery';
+ assert.equal(vm.runInContext('parseRecoveryLink(link).session.access_token',c),'synthetic');
+});
+test('recovery callbacks never open the dashboard or persist the recovery session',async()=>{
+ const c=ui('#access_token=synthetic&refresh_token=synthetic&type=recovery');
+ vm.runInContext("started=false;startPasswordRecovery=async s=>{started=s.access_token;};acceptAppSession=async()=>{throw Error('Dashboard must not open');};",c);
+ await vm.runInContext('startApp()',c);assert.equal(vm.runInContext('started',c),'synthetic');assert.equal(vm.runInContext('adminSession',c),null);
+});
+test('requesting recovery does not require the old password or send the admin bearer',async()=>{
+ const c=ui();c.calls=[];vm.runInContext("rawApi=async(...args)=>{calls.push(args);return {};};recoveryRequestScreen('minta@example.invalid');",c);
+ c.el('recoveryEmail').value='minta@example.invalid';
+ await c.el('recoveryRequest').onsubmit({preventDefault(){}});
+ assert.equal(c.calls[0][2],'');assert.match(c.calls[0][0],/^\/auth\/v1\/recover\?redirect_to=/);
+ assert.equal(c.calls[0][1].email,'minta@example.invalid');assert.match(c.el('recoveryMessage').textContent,/Ha ehhez a címhez tartozik fiók/);
+});
+test('new password uses only the verified recovery token and rejects mismatched entries',async()=>{
+ const c=ui();c.calls=[];
+ vm.runInContext("access='existing-admin-token';rawApi=async(...args)=>{calls.push(args);return {id:'sample-user',email:'minta@example.invalid'};};",c);
+ await vm.runInContext("startPasswordRecovery({access_token:'recovery-token'})",c);
+ assert.equal(vm.runInContext('adminSession',c),null);
+ c.el('newPassword').value='Synthetic phrase for testing';c.el('repeatPassword').value='Different synthetic phrase';
+ await c.el('newPasswordForm').onsubmit({preventDefault(){}});assert.equal(c.calls.filter(x=>x[3]==='PUT').length,0);
+ c.el('repeatPassword').value=c.el('newPassword').value;
+ await c.el('newPasswordForm').onsubmit({preventDefault(){}});
+ const put=c.calls.find(x=>x[3]==='PUT');assert.equal(put[2],'recovery-token');assert.equal(put[0],'/auth/v1/user');
+ assert.equal(vm.runInContext('recoverySession',c),null);assert.equal(c.el('newPassword').value,'');assert.match(c.el('authMsg').textContent,/elmentettük/);
+});
+test('uncertain password write explains trying the new login without claiming success',async()=>{
+ const c=ui();vm.runInContext("rawApi=async(path,body,token,method)=>{if(method==='PUT')throw requestError('timeout',0);return {id:'sample-user'};};",c);
+ await vm.runInContext("startPasswordRecovery({access_token:'recovery-token'})",c);
+ c.el('newPassword').value='Synthetic test phrase';c.el('repeatPassword').value='Synthetic test phrase';
+ await c.el('newPasswordForm').onsubmit({preventDefault(){}});
+ assert.match(c.el('passwordMessage').textContent,/Próbálj belépni az új jelszóval/);assert.doesNotMatch(c.el('passwordMessage').textContent,/elmentettük/);
+});
+test('only admins see per-record withdrawal actions',()=>{
+ const c=ui();viewerFixture(c);
+ vm.runInContext("appRole='viewer';",c);assert.doesNotMatch(vm.runInContext('resultsTable(fixture.classes[0],fixture.occasions[0],fixture.entries)',c),/data-withdraw-record/);
+ vm.runInContext("appRole='admin';",c);assert.match(vm.runInContext('resultsTable(fixture.classes[0],fixture.occasions[0],fixture.entries)',c),/data-withdraw-record="r1"/);
+});
+test('withdrawn source records invalidate frozen viewer projections, and internal IDs are never projected',async()=>{
+ const c=ui();viewerFixture(c);
+ vm.runInContext("appRole='viewer';classId='class-a';occasionId='opaque-occasion';classes=fixture.classes;projectionSettings.frozen=true;projectionSnapshot={classId:'class-a',occasionId:'opaque-occasion',sourceIds:['r1','removed-id']};api=async()=>fixture;",c);
+ await vm.runInContext('viewerDashboard()',c);
+ assert.equal(vm.runInContext('projectionSettings.frozen',c),false);assert.equal(vm.runInContext('Object.hasOwn(selectedProjectionData(),"sourceIds")',c),false);
 });

@@ -20,3 +20,14 @@ A `viewer_access.sql` adatbázis-frissítés nem módosítja a meglévő táblá
 Új Node-próbák: a csak olvasható felület, hozzáférés visszavonása, nevek letiltása kimerevített kivetítésnél is, jogosultságváltás lapozás közben, admin/betekintő/nem engedélyezett belépési ágak. A név nélküli tesztadat megfigyelőket is jelöléssel ad vissza.
 
 Böngészős mintaoldalak: `design-concept.html?screen=viewer#preview=1` (név nélkül), `?screen=viewer&names=1#preview=1` (névvel), `?screen=access#preview=1` (engedélyezés és visszavonás kizárólag memóriában, szerverhívás nélkül). A minták nem hoznak létre valódi külső hozzáférést.
+
+
+## Jelszóhelyreállítás és visszaállítható törlés
+
+A Node-próbák már a recovery callback helyes elágazását, a helyreállító token elkülönítését, a jelszóegyezést, az ismeretlen mentési eredményt, a megengedett hivatkozásokat és az adminnak kizárólagosan látható törlési gombokat is ellenőrzik. A tesztben szereplő jelszavak kizárólag szintetikus szövegek, nem fiókhoz tartozó hitelesítő adatok.
+
+`withdrawal.sql`: visszagörgetett szintetikus adatbázisteszt. Csak a teszt tranzakciójában helyettesíti a jogosultságvizsgáló függvényeket; nincs valódi munkamenet- vagy tokenhasználat. Ellenőrzi az aktív SELECT szűrését régebbi admin kliensnél is, a törölt listát, a visszaállítást, a megváltozott sorazonosság visszautasítását, a publikus újrapróbálás változatlanul törölt állapotát és a betekintő/anon tiltásokat. A rollback a jogosultságvizsgáló függvényeket is visszaállítja.
+
+A kiadás SQL-sorrendje: a korábbi `review_hardening.sql`, majd `viewer_access.sql` után `observation_withdrawal.sql`, végül `withdrawal_viewer_filter.sql`. A natív migrációtörténet ezeket sorrendben őrzi. A restrictive SELECT policy a megmaradó admin RLS mellett minden authenticated közvetlen lekérésből kiszűri a törölt sorokat; a külön töröltlista-RPC csak az adminnak ad hozzáférést. A betekintő security-definer olvasófüggvénye külön szűr, mert a tábla RLS-ét megkerüli.
+
+Új böngészős minták: `design-concept.html?screen=login#preview=1`, `?screen=recover#preview=1`, `?screen=new-password#preview=1`. Az előnézet hitelesítési hívásai is helyben szimuláltak; nem küld levelet, nem módosít valódi jelszót. Az adminelőnézetben a törlés és a visszaállítás szintén csak memóriában történik.
