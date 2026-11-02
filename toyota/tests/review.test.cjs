@@ -10,7 +10,7 @@ function context(){
  const c=vm.createContext(env);c.events=events;c.el=element;return c;
 }
 function load(c,...files){for(const f of files)vm.runInContext(source(f),c,{filename:f});}
-function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','api.js','admin.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
+function ui(hash=''){const c=context();c.location.hash=hash;load(c,'stats.js','criteria.js','criteria-history.js','api.js','admin.js','comparison.js','projector-controller.js','viewer.js','auth-recovery.js','observation-admin.js');vm.runInContext(source('observation.js').replace(/startApp\(\);\s*$/,''),c);return c;}
 test('names-only paste retains mail, UTF-8 and Windows-1250 import preserve Hungarian characters',async()=>{
  const c=ui();
  const csv='Árvíztűrő Tükörfúrógép;t@example.hu';
@@ -156,4 +156,58 @@ test('withdrawn source records invalidate frozen viewer projections, and interna
  vm.runInContext("appRole='viewer';classId='class-a';occasionId='opaque-occasion';classes=fixture.classes;projectionSettings.frozen=true;projectionSnapshot={classId:'class-a',occasionId:'opaque-occasion',sourceIds:['r1','removed-id']};api=async()=>fixture;",c);
  await vm.runInContext('viewerDashboard()',c);
  assert.equal(vm.runInContext('projectionSettings.frozen',c),false);assert.equal(vm.runInContext('Object.hasOwn(selectedProjectionData(),"sourceIds")',c),false);
+});
+
+test('saved IDs align reordered snapshots without changing original records',()=>{
+ const c=ui();
+ vm.runInContext(`const baseline=CRITERIA_BASELINE.passenger;const scores=baseline.map((_,i)=>i%3);const original={scores,criteria_snapshot:baseline,criteria_version:'toyota-2026-11-v1'};const reordered={scores:[...scores].reverse(),criteria_snapshot:[...baseline].reverse(),criteria_version:'toyota-2026-11-v1'};const before=JSON.stringify(reordered);const aligned=CriterionSets.groups('passenger',[original,reordered]);`,c);
+ assert.equal(vm.runInContext('aligned.length',c),1);
+ assert.equal(vm.runInContext('JSON.stringify(aligned[0].records[0].scores)===JSON.stringify(aligned[0].records[1].scores)',c),true);
+ assert.equal(vm.runInContext('JSON.stringify(reordered)===before',c),true);
+});
+test('changed definitions and unknown originals cannot silently join the current criteria',()=>{
+ const c=ui();vm.runInContext(`const scores=Array(20).fill(2),base={scores,criteria_version:'toyota-2026-11-v1'};const modified=CRITERIA_BASELINE.passenger.map(it=>({...it}));modified[0].title='Megváltozott szempont';const duplicate=modified.map(it=>({...it,id:'duplicate'}));const mixed=CriterionSets.groups('passenger',[base,{scores},{...base,criteria_snapshot:modified},{...base,criteria_version:'future-v2'},{...base,criteria_snapshot:duplicate}]);`,c);
+ assert.equal(vm.runInContext('mixed.length',c),4);
+ assert.equal(vm.runInContext('mixed.find(g=>g.original).records.length',c),2);
+ assert.equal(vm.runInContext('mixed.filter(g=>g.unresolved).length',c),2);
+ assert.equal(vm.runInContext("CriterionSets.definition('passenger',{scores:[NaN]})",c),null);
+});
+test('selected version drives both admin and projection values and keeps keys internal',()=>{
+ const c=ui();vm.runInContext(`const cls={id:'c',kind:'passenger',name:'Minta',roster:['Anna']},occ={id:'a',name:'Első',mode:'practice'};occasionId='a';const items=CRITERIA_BASELINE.passenger.map(it=>({...it}));items[0].title='Új cím';const records=[{id:'one',seller:'Anna',observers:{name:'Péter'},scores:Array(20).fill(0),created_at:'2026-01-01'},{id:'two',seller:'Anna',observers:{name:'Dóra'},scores:Array(20).fill(2),criteria_version:'v2',criteria_snapshot:items,created_at:'2026-02-01'}];projectionSnapshot=projectionData(cls,occ,records);`,c);
+ assert.equal(vm.runInContext('projectionSnapshot.submissions',c),1);
+ assert.equal(vm.runInContext('projectionSnapshot.items[0].title',c),'Új cím');
+ assert.equal(vm.runInContext('criterionMeans(cls,records)[0].mean',c),2);
+ assert.equal(vm.runInContext('Object.hasOwn(selectedProjectionData(),"criteriaKey")',c),false);
+ vm.runInContext("criteriaSelections.set('c:a',CriterionSets.groups('passenger',records).find(g=>g.original).key);projectionSnapshot=projectionData(cls,occ,records);",c);
+ assert.equal(vm.runInContext('projectionSnapshot.items[0].mean',c),0);
+ assert.equal(vm.runInContext('projectionSnapshot.submissions',c),1);
+});
+test('comparison puts escaped feedback first and only differing criteria before the full sheet',()=>{
+ const c=ui();vm.runInContext(`const cls={kind:'passenger'},occ={mode:'practice'};appRole='admin';const records=[{id:'1',seller:'Anna',scores:Array(20).fill(2),observers:{name:'Péter'},notes:'<script>teszt</script>',created_at:'2026-01-01'},{id:'2',seller:'Anna',scores:[0,...Array(19).fill(2)],observers:{name:'Dóra'},notes:'Pontosítsa a következő lépést.',created_at:'2026-01-01'}];const html=comparisonContent(cls,occ,records);`,c);
+ const html=vm.runInContext('html',c);
+ assert.ok(html.indexOf('Szöveges visszajelzések')<html.indexOf('Hol tértek el'));
+ assert.match(html,/&lt;script&gt;teszt/);assert.doesNotMatch(html,/<script>/);
+ assert.match(html,/1 \/ 20 szempont/);assert.match(html,/2 pont eltérés/);
+ assert.match(html,/<details class="comparison-more"><summary>Mind a 20 szempont/);
+ vm.runInContext("appRole='viewer';cls.show_names=false;",c);
+ const hidden=vm.runInContext('comparisonContent(cls,occ,records)',c);
+ assert.doesNotMatch(hidden,/teszt|data-withdraw-record/);assert.match(hidden,/nincs megosztva/);
+});
+test('original archive matches today but remains independent of later current-list edits',()=>{
+ const c=ui();
+ assert.equal(vm.runInContext('CriterionSets.canonical(exams.passenger.items)===CriterionSets.canonical(CRITERIA_BASELINE.passenger)',c),true);
+ vm.runInContext("exams.passenger.items[0].title='Jövőbeli cím';",c);
+ assert.equal(vm.runInContext('CRITERIA_BASELINE.passenger[0].title',c),'A hívás indítása');
+});
+test('unknown list shows no fabricated labels or per-criterion named scores on projection',()=>{
+ const c=ui();load(c,'projection.js');c.data={items:[],unresolved:true,submissions:1,view:'single',showNames:true,namedRecords:[{seller:'Anna',observer:'Péter',scores:Array(20).fill(2)}],className:'Minta',mode:'Megfigyelés',occasion:'Első',scope:'class',observed:1,people:1,updated:'Most'};
+ vm.runInContext('render(data)',c);
+ assert.match(c.el('screen').innerHTML,/eredeti szempontlista hiányzik/);
+ assert.doesNotMatch(c.el('screen').innerHTML,/named-person|Anna|A hívás indítása/);
+});
+test('person projection uses selected version scores and exact distribution',()=>{
+ const c=ui();vm.runInContext(`const cls={id:'c',name:'Minta',kind:'passenger',roster:['Anna','Péter']},occ={id:'a',name:'Első',mode:'practice'};occasionId='a';const records=[{id:'1',seller:'Anna',observers:{name:'Péter'},scores:Array(20).fill(2)},{id:'2',seller:'Anna',observers:{name:'Dóra'},scores:Array(20).fill(0)},{id:'3',seller:'Péter',observers:{name:'Anna'},scores:Array(20).fill(2)}];projectionSnapshot=projectionData(cls,occ,records);projectionSettings.scope='person';projectionSettings.seller='Anna';const payload=selectedProjectionData();`,c);
+ assert.equal(vm.runInContext('payload.items[0].mean',c),1);
+ assert.equal(vm.runInContext('JSON.stringify(payload.items[0].counts)',c),'[1,0,1]');
+ assert.equal(vm.runInContext('payload.submissions',c),2);
 });

@@ -82,6 +82,7 @@ function renderViewerContent(cls,occasion){
  if(viewerMode!=='all'&&occasion?.mode!==viewerMode){$('viewerContent').innerHTML='<section class="panel empty"><h2>Ehhez a célhoz még nincs alkalom</h2><p>Válassz másik szűrőt.</p></section>';return;}
  if(!occasion){$('viewerContent').innerHTML='<section class="panel empty"><h2>Még nincs megtekinthető alkalom</h2></section>';return;}
  $('viewerContent').innerHTML=adminTab==='results'?'<section class="panel"><h2>'+modeName(occasion.mode)+' · '+esc(occasion.name)+'</h2><p class="muted">Minden sor egy megfigyelő értékelése. A pontszámok a megfigyelők saját értékelései.</p>'+resultsTable(cls,occasion,entries)+'</section>':adminOverview(cls,occasion,entries,true);
+ bindCriterionSetPicker(cls,entries,()=>{changeProjectionCriterionSet(cls,occasion);renderViewerContent(cls,occasion);},$('viewerContent'));
  if($('seeResults'))$('seeResults').onclick=()=>{adminTab='results';renderViewerContent(cls,occasion);};
  bindPeople(cls,occasion,entries);
 }

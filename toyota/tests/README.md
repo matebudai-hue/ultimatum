@@ -31,3 +31,10 @@ A Node-próbák már a recovery callback helyes elágazását, a helyreállító
 A kiadás SQL-sorrendje: a korábbi `review_hardening.sql`, majd `viewer_access.sql` után `observation_withdrawal.sql`, végül `withdrawal_viewer_filter.sql`. A natív migrációtörténet ezeket sorrendben őrzi. A restrictive SELECT policy a megmaradó admin RLS mellett minden authenticated közvetlen lekérésből kiszűri a törölt sorokat; a külön töröltlista-RPC csak az adminnak ad hozzáférést. A betekintő security-definer olvasófüggvénye külön szűr, mert a tábla RLS-ét megkerüli.
 
 Új böngészős minták: `design-concept.html?screen=login#preview=1`, `?screen=recover#preview=1`, `?screen=new-password#preview=1`. Az előnézet hitelesítési hívásai is helyben szimuláltak; nem küld levelet, nem módosít valódi jelszót. Az adminelőnézetben a törlés és a visszaállítás szintén csak memóriában történik.
+
+
+## Szempontverziók és összehasonlítás
+
+A Node-próbák ellenőrzik az átrendezett snapshot pontjainak azonosító szerinti illesztését, az eredeti adatok változatlanságát, a v1 legacy csoportot, az eltérő tartalmak és ismeretlen listák elkülönítését, az admin és kivetítés egyező kiválasztását, valamint a visszajelzések escape-elését és jogosultságfüggő megjelenítését.
+
+Böngészős minta: `design-concept.html?screen=admin&versions=1#preview=1` két eltérő listával; `&unresolved=1` ismeretlen eredeti listával. Ezek a szintetikus értékelések kizárólag a helyi előnézeti adatsorban léteznek. A szerverbe nem írnak új szempontverziót vagy értékelést.

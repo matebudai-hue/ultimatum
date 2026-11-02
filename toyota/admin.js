@@ -81,12 +81,13 @@ function parseRoster(text){
  }
  return {names,contacts};
 }
-function criterionMeans(cls,records){return ToyStats.criteria(exams[cls.kind].items,cls.roster,records);}
+function criterionMeans(cls,records){const group=selectedCriterionSet(cls,records);return group.unresolved?[]:ToyStats.criteria(group.items,cls.roster,group.records);}
 function groupReport(cls,occasion,records){
+ const selected=selectedCriterionSet(cls,records);records=selected.records;
  const rank=criterionMeans(cls,records);
  const format=r=>r.title+' · '+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'/2';
  const observed=new Set(records.map(r=>r.seller)).size;
- return [cls.name,modeName(occasion.mode)+' · '+occasion.name,'Összesítés ideje: '+new Date().toLocaleString('hu-HU'),'Megfigyelt résztvevők: '+observed+'/'+cls.roster.length,'Beküldések: '+records.length,'',...(rank.length?['Legmagasabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9).map(format),'','Legalacsonyabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9).map(format),'','Minden szempont',...rank.map(format)]:['Még nincs beküldés.'])].join('\n');
+ return [cls.name,...(selected.groups.length>1?[selected.label+' · elkülönített összesítés']:[]),modeName(occasion.mode)+' · '+occasion.name,'Összesítés ideje: '+new Date().toLocaleString('hu-HU'),'Megfigyelt résztvevők: '+observed+'/'+cls.roster.length,'Beküldések: '+records.length,'',...(rank.length?['Legmagasabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank[0].mean)<1e-9).map(format),'','Legalacsonyabb értékelések',...rank.filter(r=>Math.abs(r.mean-rank.at(-1).mean)<1e-9).map(format),'','Minden szempont',...rank.map(format)]:[selected.unresolved?'Az eredeti szempontlista hiányzik; szempontonkénti összesítés nem készíthető.':'Még nincs beküldés.'])].join('\n');
 }
 
 let adminTab='overview', refreshTimer=null, dashboardRequest=0, adminActive=false, refreshedAt=null, rosterDirty=false;
@@ -103,17 +104,19 @@ function criterionChart(cls,records){
  return '<p class="muted">Átlag 0–2 pont között · minden megfigyelt értékesítő azonos súllyal szerepel</p><div class="criteria">'+rank.map((r,i)=>'<div class="criterion"><span>'+esc(r.title)+'</span><div class="bar"><i style="width:'+r.mean*50+'%"></i></div><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'</b></div>').join('')+'</div>';
 }
 function adminOverview(cls,occasion,records,readOnly=false){
+ const picker=criterionSetPicker(cls,records),selected=selectedCriterionSet(cls,records);records=selected.records;
  const observed=new Set(records.map(r=>r.seller)).size,rank=criterionMeans(cls,records);
  const score=r=>ToyStats.total(r.scores);
  const stats='<div class="stats"><section class="panel"><span>Megfigyelt résztvevők</span><b class="metric">'+observed+'<small> / '+cls.roster.length+'</small></b></section><section class="panel"><span>Beküldött értékelések</span><b class="metric">'+records.length+'</b></section><section class="panel"><span>'+(occasion.mode==='exam'?'Megfelelt értékelések':'Résztvevők pontátlaga')+'</span><b class="metric">'+(occasion.mode==='exam'?records.filter(r=>score(r)>=25).length+'<small> / '+records.length+'</small>':records.length?(ToyStats.meanTotal(cls.roster,records)).toLocaleString('hu-HU',{maximumFractionDigits:1})+'<small> / 40</small>':'—')+'</b></section></div>';
- if(!rank.length)return stats+'<section class="panel waiting-state"><span class="waiting-dot"></span><h2>Várjuk az első értékelést</h2><p>'+(readOnly?'Az összesítés az első beküldés után jelenik meg.':'Vetítsd ki a QR-kódot. A beérkezett eredmények itt automatikusan megjelennek.')+'</p></section><button hidden id="seeResults">Eredmények</button>';
+ if(selected.unresolved)return picker+stats+'<section class="panel"><h2>Az eredeti szempontlista nem azonosítható</h2><p>A pontszámok megmaradtak, de a szempontok címét nem helyettesítjük egy másik listával.</p><button class="secondary" id="seeResults">Értékelések megtekintése</button></section>';
+ if(!rank.length)return picker+stats+'<section class="panel waiting-state"><span class="waiting-dot"></span><h2>Várjuk az első értékelést</h2><p>'+(readOnly?'Az összesítés az első beküldés után jelenik meg.':'Vetítsd ki a QR-kódot. A beérkezett eredmények itt automatikusan megjelennek.')+'</p></section><button hidden id="seeResults">Eredmények</button>';
  const equal=Math.abs(rank[0].mean-rank.at(-1).mean)<1e-9;
  function highlight(title,items,style){
  const displayed=items.slice(0,3),ties=items.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length-displayed.filter(r=>Math.abs(r.mean-displayed.at(-1).mean)<1e-9).length;
  return '<section class="panel '+style+'"><h2>'+title+'</h2><ul class="topthree-list">'+displayed.map(r=>'<li><span>'+esc(r.title)+'</span><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b></li>').join('')+'</ul>'+(ties?'<p class="muted">+'+ties+' szempont azonos értékkel</p>':'')+(items.length>3?'<details class="ranking-more" id="ranking-'+style+'"><summary>További '+(items.length-3)+' szempont</summary><ul class="topthree-list">'+items.slice(3).map(r=>'<li><span>'+esc(r.title)+'</span><b>'+r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'<small> / 2</small></b></li>').join('')+'</ul></details>':'')+'</section>';
  }
  const highlights=equal?'<section class="panel summary-neutral"><b>Minden szempont átlaga azonos · '+rank[0].mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+' / 2</b><p>A részleteket a szempontok megoszlásában nézheted meg.</p></section>':'<div class="highlights">'+highlight('Erősségek',rank,'strong')+highlight('Fejlesztési fókuszok',[...rank].sort((a,b)=>a.mean-b.mean),'weak')+'</div>';
- return stats+'<div class="overview-work"><section class="panel participant-status"><div class="section-head"><h2>Résztvevők állapota</h2><button class="text-button" id="seeResults">Részletek →</button></div>'+participantStatusTable(cls,occasion,records)+'</section><aside>'+highlights+'</aside></div><details class="panel all-criteria" id="allCriteria"><summary>Mind a 20 szempont részletesen</summary>'+criterionChart(cls,records)+'</details>';
+ return picker+stats+'<div class="overview-work"><section class="panel participant-status"><div class="section-head"><h2>Résztvevők állapota</h2><button class="text-button" id="seeResults">Részletek →</button></div>'+participantStatusTable(cls,occasion,records)+'</section><aside>'+highlights+'</aside></div><details class="panel all-criteria" id="allCriteria"><summary>Mind a 20 szempont részletesen</summary>'+criterionChart(cls,records)+'</details>';
 
 }
 
@@ -133,12 +136,6 @@ function resultsTable(cls,occasion,records,includeMissing=true){
  });
  if(includeMissing)for(const name of cls.roster)if(!records.some(r=>r.seller===name))rows.push('<tr><td>'+esc(name)+'</td><td colspan="'+(editable?5:4)+'" class="muted">Még nincs beküldés</td></tr>');
  return '<div class="table-scroll"><table><thead><tr><th>Értékesítő</th><th>Megfigyelő</th><th>Pontszám</th><th>Eredmény</th><th>Beküldés időpontja</th>'+(editable?'<th>Művelet</th>':'')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
-}
-function showPerson(cls,occasion,name,records){
- const rows=records.filter(r=>r.seller===name),items=rows[0]?.criteria_snapshot||exams[cls.kind].items;
- const heads=rows.map(r=>'<th>'+esc(r.observers.name)+'<br><small>'+localStamp(r.created_at)+'</small>'+(appRole==='admin'?'<br><button class="text-button danger-action" data-withdraw-record="'+esc(r.id)+'">Értékelés törlése</button>':'')+'</th>').join('');
- const dialog=modal(name+' · értékelések összehasonlítása','<div class="table-scroll"><table><thead><tr><th>Szempont</th>'+heads+'</tr></thead><tbody>'+items.map((it,i)=>'<tr><th>'+esc(it.title)+'</th>'+rows.map(r=>'<td>'+r.scores[i]+' / 2'+(r.criteria_snapshot?.[i]?.title&&r.criteria_snapshot[i].title!==it.title?'<br><small>'+esc(r.criteria_snapshot[i].title)+'</small>':'')+'<br><small>'+LABELS[r.scores[i]]+'</small></td>').join('')+'</tr>').join('')+'<tr><th>Összesen</th>'+rows.map(r=>{const n=ToyStats.total(r.scores);return '<td><b>'+n+'/40</b>'+(occasion.mode==='exam'?'<br>'+(n>=25?'Megfelelt':'Nem felelt meg'):'')+'</td>';}).join('')+'</tr><tr><th>Szöveges visszajelzés</th>'+rows.map(r=>'<td class="feedback">'+esc(r.notes||'—')+'</td>').join('')+'</tr></tbody></table></div>');
- dialog.querySelectorAll('[data-withdraw-record]').forEach(button=>button.onclick=()=>withdrawObservationDialog(cls,records.find(r=>r.id===button.dataset.withdrawRecord)));
 }
 async function dashboard(){
  if(appRole==='viewer')return viewerDashboard();
@@ -215,7 +212,7 @@ function renderAdminContent(cls,occasion){
  if(!occasion){content.innerHTML='<section class="panel"><h2>Hozz létre egy alkalmat</h2><p>A megfigyeléshez vagy vizsgához saját QR-kód és eredménylista tartozik.</p></section>';return;}
  if(adminTab==='overview'){
  const chartOpen=Boolean($('allCriteria')?.open),strongOpen=Boolean($('ranking-strong')?.open),weakOpen=Boolean($('ranking-weak')?.open);
- content.innerHTML=adminOverview(cls,occasion,entries);if($('allCriteria'))$('allCriteria').open=chartOpen;if($('ranking-strong'))$('ranking-strong').open=strongOpen;if($('ranking-weak'))$('ranking-weak').open=weakOpen;
+ content.innerHTML=adminOverview(cls,occasion,entries);bindCriterionSetPicker(cls,entries,()=>{changeProjectionCriterionSet(cls,occasion);renderAdminContent(cls,occasion);},content);if($('allCriteria'))$('allCriteria').open=chartOpen;if($('ranking-strong'))$('ranking-strong').open=strongOpen;if($('ranking-weak'))$('ranking-weak').open=weakOpen;
  $('seeResults').onclick=()=>{adminTab='results';renderAdminContent(cls,occasion);};
  }else{
  content.innerHTML='<section class="panel"><div class="section-head"><h2>Egyéni eredmények</h2><select id="scope" aria-label="Eredmények köre"><option value="current">Aktuális alkalom</option><option value="practice">Az osztály összes megfigyelése</option><option value="exam">Az osztály összes vizsgája</option></select></div><p class="muted">Kattints az értékesítő nevére a megfigyelők értékeléseinek összehasonlításához.</p><div id="resultRecords">'+resultsTable(cls,occasion,entries)+'</div></section>';
@@ -259,22 +256,6 @@ function scheduleRefresh(){
 async function readEntries(id){
  const all=[];for(let offset=0;;offset+=500){const page=await api('/rest/v1/observations?select=*,observers!inner(occasion_id,name)&observers.occasion_id=eq.'+id+'&withdrawn_at=is.null&order=created_at,id&limit=500&offset='+offset);all.push(...page);if(page.length<500)return all;}
 }
-function overview(cls,occasion,records){
- const items=exams[cls.kind].items, sums=Array(20).fill(0);let observed=0;
- const people=cls.roster.map(name=>{
-  const rows=records.filter(r=>r.seller===name);
-  if(rows.length){observed++;items.forEach((_,i)=>sums[i]+=rows.reduce((sum,r)=>sum+r.scores[i],0)/rows.length);}
-  return `<details class="card"><summary>${esc(name)} · ${rows.length} megfigyelés</summary>${rows.map(r=>{
-   const total=ToyStats.total(r.scores);
-   return `<details><summary>${esc(r.observers.name)} · ${total}/40${occasion.mode==='exam'?' · '+(total>=25?'Megfelelt':'Nem felelt meg'):''}</summary><p>${new Date(r.created_at).toLocaleString('hu-HU')}${cls.kind==='passenger'?' · Telefon: '+r.scores.slice(0,5).reduce((a,b)=>a+b,0)+'/10 · Bemutatás: '+r.scores.slice(5).reduce((a,b)=>a+b,0)+'/30':''}</p><ol>${items.map((it,i)=>`<li>${esc(it.title)} · ${r.scores[i]}/2</li>`).join('')}</ol><p class="feedback">${esc(r.notes)}</p></details>`}).join('')}</details>`;
- });
- const rank=items.map((it,i)=>({title:it.title,mean:sums[i]/observed})).sort((a,b)=>b.mean-a.mean);
- const level=r=>r.mean.toLocaleString('hu-HU',{maximumFractionDigits:2})+'/2';
- const ties=target=>rank.filter(r=>Math.abs(r.mean-target)<1e-9).map(r=>esc(r.title)).join(', ');
- return `<div class="panel"><h2>${modeName(occasion.mode)} · beérkezett eredmények</h2><p>Frissítve: ${new Date().toLocaleString("hu-HU")}</p><p>${observed}/${cls.roster.length} értékesítő · ${records.length} beküldés</p>${observed?`<p><b>Legmagasabb · ${level(rank[0])}</b><br>${ties(rank[0].mean)}</p><p><b>Legalacsonyabb · ${level(rank[19])}</b><br>${ties(rank[19].mean)}</p><details><summary>Mind a 20 szempont átlaga</summary><p>Minden megfigyelt értékesítő azonos súllyal szerepel.</p><ol>${rank.map(r=>`<li>${esc(r.title)} · ${level(r)}</li>`).join('')}</ol></details>`:'Még nincs beküldés.'}</div>${people.join('')}`;
-}
-
-
 async function decodeRosterFile(file){
  const bytes=await file.arrayBuffer();
  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes).replace(/^\uFEFF/,'');}

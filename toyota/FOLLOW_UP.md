@@ -33,4 +33,13 @@ Az értékelés fizikai adatsora megmarad; a végleges megőrzési/törlési sza
 
 ## Később, külön kezelendő
 
-Saját origin/domain; részletes adatkezelési tájékoztató és megőrzési szabály; vizsga végső tréneri döntése; szempontverziók szerinti elkülönített összesítés a szempontok következő módosítása előtt.
+Saját origin/domain; részletes adatkezelési tájékoztató és megőrzési szabály; vizsga végső tréneri döntése.
+
+
+## Elkészült: visszajelzések és szempontlisták összehasonlítása
+
+Az értékesítő nevére kattintva a szöveges visszajelzések kerülnek előre. Ezt a megfigyelők ponteltérései követik, legnagyobb eltéréssel kezdve. Az egész húszas lap lenyitható. A 0–1–2 értékek számot, feliratot és eltérő formát is kapnak. Több mint két értékelésnél a többi visszajelzés lenyitható; mindegyik időbélyeggel, megfigyelővel és alkalommal szerepel. A betekintő visszajelzést csak külön engedéllyel lát.
+
+Az áttekintés, a kivetítés és a levélösszesítés kizárólag azonos szempontlistát használó értékeléseket összesít. A váltó csak több lista esetén látható. A mentett stabil szempontazonosítók rendezik az áthelyezett sorok pontjait; eltérő tartalom vagy verzió külön csoport. A korai, snapshot nélküli v1 adatok külön befagyasztott eredeti listával értelmezhetők, nem a mindenkori aktuális listával. Ismeretlen lista esetén nem találunk ki szempontcímeket. A meglévő adatokat, pontszámokat és szempontszövegeket nem írjuk át.
+
+A verzióváltás a kivetítési kimerevítést feloldja és az első szempontra áll, hogy más listához tartozó kiválasztás ne maradjon aktív. A listaváltó az adminban és a kivetítő vezérlőjében együtt változik. Az adatbázisban továbbra is csak a kanonikus aktuális listával lehet új értékelést beküldeni; a módosított listák előnézeti minták. Új valódi lista bevezetésekor külön szerveroldali regisztráció szükséges.

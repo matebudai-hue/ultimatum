@@ -11,6 +11,11 @@ startApp=async function(){
   notes:'A bemutató közben az ügyfél válaszaiból indult tovább. A következő lépést érdemes pontosabban egyeztetni.',
   created_at:new Date(Date.UTC(2026,10,6,9,42-i,j*15)).toISOString()
  })));
+ if(params.get('versions')==='1'){
+  const items=exams.passenger.items.map(it=>({...it}));items[0].title='A hívás indítása és az alkalmas időpont egyeztetése';items.reverse();
+  const original=records[1];records.push({...original,id:'sample-future',criteria_version:'sample-future-v2',criteria_snapshot:items,scores:items.map((_,i)=>i%3),notes:'Másik szempontlista: ezt az értékelést külön összesítjük.',created_at:'2026-11-06T10:00:00.000Z'});
+ }
+ if(params.get('unresolved')==='1')records.push({...records[0],id:'sample-unknown',criteria_version:'unknown-v9',criteria_snapshot:null,created_at:'2026-11-06T11:00:00.000Z'});
  const viewerOccasions=[{...occ},{id:'sample-exam',class_id:cls.id,name:'November 6. · Vizsga',mode:'exam'}];
  let grants=[{id:'sample-grant',email:'katalin.kovacs@example.invalid',show_names:false,expires_at:new Date(Date.now()+30*86400000).toISOString(),created_at:new Date().toISOString(),revoked_at:null}];
  rawApi=async(path,body,token,method)=>{if(path.startsWith('/auth/v1/recover'))return {};if(path==='/auth/v1/user'&&method!=='PUT')return {id:'sample-user',email:'minta@example.invalid'};if(path==='/auth/v1/user'&&method==='PUT')return {id:'sample-user'};if(path.startsWith('/auth/v1/logout'))return {};throw Error('Mintaadatokkal működő előnézet; valódi fiókművelet nem történik.');};
