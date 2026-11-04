@@ -1487,7 +1487,7 @@ export const localSessionStore = {
     for (const player of session.players) {
       baselineFinalBalance[player.id] = player.currentBalance;
       const before = player.currentBalance;
-      const after = Math.max(before, session.startingCredit);
+      const after = player.poolExcludedFromRound===undefined ? Math.max(before, session.startingCredit) : before;
       restartBalance[player.id] = after;
       player.currentBalance = after;
 
