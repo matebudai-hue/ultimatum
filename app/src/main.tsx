@@ -1,3 +1,4 @@
+import { connectionDeadline } from './browserCompat';
 import { PlayerAccessPanel } from './PlayerAccessPanel';
 import {ReflectionsView, StandingsView, renderReflectionProjection, type ReflectionEntry} from './DebriefExtras';
 import {PersonalReportDelivery} from './PersonalReportDelivery';
@@ -5599,14 +5600,14 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       setJoining(true);setError('');
       const params=new URLSearchParams(window.location.search),token=params.get('recover'),target=params.get('recoverPlayer');
       try{
-        await gameStore.ready();
+        await connectionDeadline(gameStore.ready());
         let resumed:Awaited<ReturnType<typeof gameStore.resumePlayer>>=null;
         let resolvedPlayerId=gameStore.resolvePlayerId(initialPlayerId);
         if(token&&target){
           resumed=await gameStore.recoverPlayer(initial,target,token);resolvedPlayerId=target;
         }else{
           for(let attempt=0;attempt<3;attempt++){
-            try{resumed=await gameStore.resumePlayer(initial,resolvedPlayerId);break;}catch(error){if(attempt===2)throw error;await new Promise(resolve=>window.setTimeout(resolve,1000));if(cancelled)return;}
+            try{resumed=await connectionDeadline(gameStore.resumePlayer(initial,resolvedPlayerId));break;}catch(error){if(attempt===2)throw error;await new Promise(resolve=>window.setTimeout(resolve,1000));if(cancelled)return;}
           }
         }
         if(cancelled)return;
@@ -5650,10 +5651,10 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       const cleanCode = code.trim().toUpperCase();
       const cleanName = name.trim();
       if (cleanCode.length !== 6) throw new Error('A játékkód 6 karakteres.');
-      await gameStore.ready();
+      await connectionDeadline(gameStore.ready());
       const resolvedPlayerId = gameStore.resolvePlayerId(playerId);
       setPlayerId(resolvedPlayerId);
-      const returning=await gameStore.resumePlayer(cleanCode,resolvedPlayerId);
+      const returning=await connectionDeadline(gameStore.resumePlayer(cleanCode,resolvedPlayerId));
       if(returning){setCode(cleanCode);setName(returning.name);setSession(returning.session);setJoined(true);gameStore.recordClientConnection(cleanCode,resolvedPlayerId,'resume_success');const url=new URL(window.location.href);url.searchParams.set('role','player');url.searchParams.set('code',cleanCode);history.replaceState(null,'',url);return;}
       if(!cleanName)throw new Error('Írd be a neved.');
       try {
@@ -5663,7 +5664,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
         if (!message.includes('már elindult')) throw prepareError;
 
         try {
-          const resumed = await gameStore.resumePlayer(cleanCode, resolvedPlayerId);
+          const resumed = await connectionDeadline(gameStore.resumePlayer(cleanCode, resolvedPlayerId));
           if (resumed) {
             setCode(cleanCode);
             setName(resumed.name);
