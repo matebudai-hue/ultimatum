@@ -130,5 +130,15 @@ await assertFails(setDoc(doc(otherDb, 'games', code, 'players', 'late-player'), 
 const playerSnapshot = await getDoc(doc(playerDb, 'games', code, 'players', playerId));
 assert.equal(playerSnapshot.data()?.authUid, playerUid);
 
+// Recovery rendezvous uses only the existing public metadata permissions.
+const mailbox=doc(otherDb,'publicGames','recovery-test-token');
+await assertSucceeds(setDoc(mailbox,{trainerUid:otherUid,recoveryRequest:true,createdAt:new Date().toISOString()}));
+await assertSucceeds(getDoc(doc(trainerDb,'publicGames','recovery-test-token')));
+await assertFails(updateDoc(doc(playerDb,'publicGames','recovery-test-token'),{trainerUid:playerUid}));
+await assertFails(updateDoc(doc(otherDb,'games',code,'players',playerId),{authUid:otherUid}));
+await assertSucceeds(updateDoc(doc(trainerDb,'games',code,'players',playerId),{authUid:otherUid,commands:{}}));
+await assertSucceeds(getDoc(doc(otherDb,'games',code,'players',playerId)));
+await assertFails(getDoc(doc(playerDb,'games',code,'players',playerId)));
+await assertFails(updateDoc(doc(playerDb,'games',code,'players',playerId),{lastSeenAt:Timestamp.now()}));
 await testEnv.cleanup();
 console.log('FIRESTORE DEPLOYED-RULE COMPATIBILITY AUDIT OK');

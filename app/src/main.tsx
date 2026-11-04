@@ -1,3 +1,5 @@
+import { connectionDeadline } from './browserCompat';
+import { PlayerAccessPanel } from './PlayerAccessPanel';
 import {ReflectionsView, StandingsView, renderReflectionProjection, type ReflectionEntry} from './DebriefExtras';
 import {PersonalReportDelivery} from './PersonalReportDelivery';
 import {TakeawayField} from './TakeawayField';
@@ -651,7 +653,7 @@ function TrainerPulse({ session }: { session: GameSession }) {
 }
 
 function TrainerAttention({ session }: { session: GameSession }) {
-  const offline = session.players.filter((player) => !gameStore.isPlayerOnline(player));
+  const offline = session.players.filter((player) => player.poolExcludedFromRound===undefined && !gameStore.isPlayerOnline(player));
   const controlled = session.players.filter((player) => player.botControlled);
   if (offline.length === 0 && controlled.length === 0) return null;
 
@@ -721,10 +723,10 @@ function TrainerIntervention({ session, playerId, pairing }: { session: GameSess
     <strong>{player.name}</strong>
     {issue && <button type="button" onClick={() => run(() => { gameStore.reopenTechnicalDecision(session.code, pairing!.id, playerId); })}>Döntés újranyitása</button>}
     {pending && !player.botControlled && <button type="button" onClick={manual}>Döntés kézi rögzítése</button>}
-    <button type="button" onClick={() => run(() => {
-      if (!player.botControlled && !window.confirm(`${player.name} helyett rendszerjátékos döntsön? Az átvétel a következő körökben is érvényes, amíg vissza nem adod az irányítást.`)) return;
+    {(pairing || player.botControlled)&&<button type="button" onClick={() => run(() => {
+      if (!player.botControlled && !window.confirm(`${player.name} helyett rendszerjátékos döntsön? Az átvétel az első három játékban érvényes. A Közös kassza előtt visszacsatlakoztatásról vagy kihagyásról kell döntened.`)) return;
       gameStore.setPlayerBotControl(session.code, playerId, !player.botControlled);
-    })}>{player.botControlled ? 'Irányítás visszaadása' : 'Rendszerjátékos vegye át'}</button>
+    })}>{player.botControlled ? 'Irányítás visszaadása' : 'Rendszerjátékos vegye át'}</button>}
   </div>;
 }
 
@@ -869,7 +871,7 @@ function PlayerTable({ session }: { session: GameSession }) {
                         <div className="player-sub">
                           <PlayerRoundState session={session} playerId={player.id} />
                           <span>{player.botControlled ? 'BOT irányítja' : online ? 'online' : 'offline'}</span>
-                          {session.status === 'active' && session.roundKey !== 'lobby' && session.roundKey !== 'report' && (
+                          {session.status === 'active' && (STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound) || player.botControlled) && (
                             <button
                               type="button"
                               className={'bot-control-toggle ' + (player.botControlled ? 'is-active' : '')}
@@ -1372,12 +1374,14 @@ function TrainerCockpit({
     primaryIcon = <RefreshCcw size={20} />;
     actionHint = 'A tétek már nem változnak. Az elszámolás módosítja a vagyonokat.';
   } else if (session.roundKey === '4') {
-    const groupsValid = session.groups.length > 0 && session.groups.every((group) => group.memberIds.length > 0);
+    const groupsValid = session.groups.some(g=>!g.archived) && session.groups.every((group) => group.archived || group.memberIds.length > 0);
     primaryLabel = session.publicGoodsRoundNumber === 0 ? 'Első kasszakör indítása' : 'Új kasszakör indítása';
-    primaryDisabled = !groupsValid;
+    primaryDisabled = !groupsValid || session.players.some(p=>p.botControlled && p.poolExcludedFromRound===undefined);
     primaryAction = () => gameStore.startPublicGoodsRound(session.code);
     primaryIcon = <Play size={20} />;
-    actionHint = groupsValid
+    actionHint = session.players.some(p=>p.botControlled && p.poolExcludedFromRound===undefined)
+      ? 'A rendszerirányítású résztvevőket előbb csatlakoztasd vissza vagy vedd ki a Közös kasszából.'
+      : groupsValid
       ? 'A csapatok rendben vannak. Ellenőrizd a minimumokat, majd indítható a kör.'
       : 'A csapatbeosztás még nem érvényes: minden csapatban legyen legalább egy játékos.';
   } else {
@@ -1533,8 +1537,8 @@ function PoolPlanning({ session }: { session: GameSession }) {
   const [groupCount, setGroupCount] = useState(Math.max(1, session.groups.length || 1));
   const editableGroups = session.publicGoodsRoundNumber === 0 && session.publicGoodsPhase === 'setup';
   const editableMinimum = session.publicGoodsPhase === 'setup';
-  const groupsValid = session.groups.length > 0 && session.groups.every((group) => group.memberIds.length > 0);
-  const activePlayers = session.players.filter((player) => !player.isBot && player.active);
+  const groupsValid = session.groups.some(g=>!g.archived) && session.groups.every((group) => group.archived || group.memberIds.length > 0) && !session.players.some(p=>p.botControlled && p.poolExcludedFromRound===undefined);
+  const activePlayers = session.players.filter((player) => !player.isBot && player.active && player.poolExcludedFromRound===undefined);
 
   return (
     <div className="pool-planning pool-setup-flow">
@@ -1587,7 +1591,7 @@ function PoolPlanning({ session }: { session: GameSession }) {
                       onChange={(e) => gameStore.setPlayerGroup(session.code, player.id, e.target.value)}
                     >
                       {!currentGroup && <option value="">Válassz csapatot</option>}
-                      {session.groups.map((group) => (
+                      {session.groups.filter(g=>!g.archived).map((group) => (
                         <option value={group.id} key={group.id}>
                           {group.name} · {group.memberIds.length} fő
                         </option>
@@ -1614,7 +1618,7 @@ function PoolPlanning({ session }: { session: GameSession }) {
           <div className="pool-setup-empty">Előbb hozd létre a csapatokat.</div>
         ) : (
           <div className="minimum-setup-list">
-            {session.groups.map((group) => (
+            {session.groups.filter(g=>!g.archived).map((group) => (
               <div className={'minimum-setup-row ' + (group.memberIds.length === 0 ? 'empty-group' : '')} key={group.id}>
                 <div className="minimum-group-ident">
                   <strong>{group.name}</strong>
@@ -1906,7 +1910,7 @@ function PublicGoodsDashboard({ session }: { session: GameSession }) {
       <PoolPlanning session={session} />
 
       <div className="group-boxes">
-        {session.groups.map((group) => <GroupBox session={session} groupId={group.id} key={group.id} />)}
+        {session.groups.filter(g=>!g.archived).map((group) => <GroupBox session={session} groupId={group.id} key={group.id} />)}
       </div>
     </section>
   );
@@ -3616,7 +3620,8 @@ function PublicGoodsPatterns({
   }
 
   const group = groupsWithRounds.find((item) => item.id === selectedGroupId) ?? groupsWithRounds[0];
-  const displayPlayer = (playerId: string) => showNames ? playerName(session, playerId) : `${group.memberIds.indexOf(playerId) + 1}. résztvevő`;
+  const chartMemberIds = [...new Set(settled.filter(r=>r.groupId===group.id).flatMap(r=>r.memberIds))];
+  const displayPlayer = (playerId: string) => showNames ? playerName(session, playerId) : `${chartMemberIds.indexOf(playerId) + 1}. résztvevő`;
   const rounds = settled.filter((round) => round.groupId === group.id).sort((a, b) => a.roundNumber - b.roundNumber);
 
   const yMax = Math.max(
@@ -3650,7 +3655,7 @@ function PublicGoodsPatterns({
             <h4>{group.name}</h4>
           </div>
           <div className="pool-pattern-legend">
-            {group.memberIds.map((playerId, index) => (
+            {chartMemberIds.map((playerId, index) => (
               <span key={playerId}><i style={{ background: poolPlayerColor(index) }} />{displayPlayer(playerId)}</span>
             ))}
           </div>
@@ -3659,7 +3664,7 @@ function PublicGoodsPatterns({
         {hoveredSegment && hoveredSegment.groupId === group.id && (
           <div className="pool-pattern-hover-card" role="status" aria-live="polite">
             <div className="pool-pattern-hover-person">
-              <i style={{ background: poolPlayerColor(Math.max(0, group.memberIds.indexOf(hoveredSegment.playerId))) }} />
+              <i style={{ background: poolPlayerColor(Math.max(0, chartMemberIds.indexOf(hoveredSegment.playerId))) }} />
               <div>
                 <strong>{displayPlayer(hoveredSegment.playerId)}</strong>
                 <span>{hoveredSegment.roundLabel}</span>
@@ -3716,7 +3721,7 @@ function PublicGoodsPatterns({
                     )}
                     <div className={'pool-pattern-stack' + (hoveredSegment?.roundId === round.id ? ' has-highlight' : '')} style={{ height: Math.min(100, totalPercent / normalizedMax * 100) + '%' }}>
                       {round.memberIds.map((playerId) => {
-                        const memberIndex = group.memberIds.indexOf(playerId);
+                        const memberIndex = chartMemberIds.indexOf(playerId);
                         const amount = round.contributions[playerId] ?? 0;
                         const segmentOfGroupWealth = amount / groupWealth * 100;
                         const ownWealth = round.startingPlayerWealth?.[playerId] ?? 0;
@@ -3767,7 +3772,7 @@ function PublicGoodsPatterns({
                   <div className="pool-round-markers">{round.memberIds.map((id,index)=> {
                     const markers=poolMarkers(round,id);
                     const commented=(session.reflections??[]).some(r=>r.playerId===id && r.decisionId===`decision:publicGoods:r${round.roundNumber}:${round.groupId}:${id}` && r.comment.trim());
-                    return markers.wiped || markers.loss || markers.near || markers.large || commented ? <button type="button" className="pattern-note-trigger" key={id} title={displayPlayer(id)+' · részletek'} onClick={()=>openPatternNote(poolNoteId(round.id,id))} style={{borderLeft:'3px solid '+poolPlayerColor(Math.max(0,group.memberIds.indexOf(id)))}}>{group.memberIds.indexOf(id)+1}. {markers.wiped?'0 ':''}{markers.loss?'− ':''}{markers.near?'≈ ':''}{markers.large?'◆ ':''}{commented?'💬':''}</button> : null;
+                    return markers.wiped || markers.loss || markers.near || markers.large || commented ? <button type="button" className="pattern-note-trigger" key={id} title={displayPlayer(id)+' · részletek'} onClick={()=>openPatternNote(poolNoteId(round.id,id))} style={{borderLeft:'3px solid '+poolPlayerColor(Math.max(0,chartMemberIds.indexOf(id)))}}>{chartMemberIds.indexOf(id)+1}. {markers.wiped?'0 ':''}{markers.loss?'− ':''}{markers.near?'≈ ':''}{markers.large?'◆ ':''}{commented?'💬':''}</button> : null;
                   })}</div>
                   <strong>{learningRound ? 'Tanuló ' + learningIndex + '. kör' : round.roundNumber + '. kör'}</strong>
                   {gap !== undefined && (
@@ -4255,7 +4260,7 @@ function DebriefWorkspace({
   },[onOpenChange]);
   const reflectedPlayers = new Set([...(session.reflections ?? []).map((item) => item.playerId), ...(session.takeaways ?? []).map(item => item.playerId)]).size;
   const eligiblePlayers = session.players.filter(
-    (player) => !player.isBot && !player.botControlled && buildSelfReport(session, player.id).length > 0,
+    (player) => !player.isBot && !player.botControlled && player.poolExcludedFromRound===undefined && buildSelfReport(session, player.id).length > 0,
   ).length;
   const hasData =
     session.closedRounds.length > 0 ||
@@ -4379,6 +4384,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
   useEffect(() => {
     const id = window.setInterval(() => {
       setClock((value) => value + 1);
+      gameStore.observeConnections(code);
       const current = gameStore.get(code);
       if (current && STRATEGIC_ROUNDS.includes(current.roundKey as StrategicRound)) {
         gameStore.reconcileStrategicTimeouts(code);
@@ -4419,6 +4425,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       {testMode && <TestHarness session={session} />}
 
       {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
+      <PlayerAccessPanel session={session} />
       <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
       {session.roundKey === '4' && <PublicGoodsLiveBar session={session} />}
@@ -5583,43 +5590,42 @@ function ParticipantClient({ code: initial }: { code?: string }) {
   const [joined, setJoined] = useState(false);
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const [error, setError] = useState('');
-  const [joining, setJoining] = useState(Boolean(initial && existing));
+  const [joining, setJoining] = useState(Boolean(initial));
 
+  const [resumeAttempt,setResumeAttempt]=useState(0);
   useEffect(() => {
-    if (!initial || !existing || joined) return;
-    let cancelled = false;
-
-    const resumeExisting = async () => {
-      setJoining(true);
-      setError('');
-      try {
-        await gameStore.ready();
-        const resolvedPlayerId = gameStore.resolvePlayerId(initialPlayerId);
-        const resumed = await gameStore.resumePlayer(initial, resolvedPlayerId);
-        if (cancelled || !resumed) return;
-        setPlayerId(resolvedPlayerId);
-        setCode(initial);
-        setName(resumed.name);
-        setSession(resumed.session);
-        setJoined(true);
-      } catch {
-        if (!cancelled) {
-          setError('Az automatikus visszacsatlakozás nem sikerült. Add meg újra a neved, és lépj be.');
+    if(!initial || joined)return;
+    let cancelled=false;
+    const connect=async()=>{
+      setJoining(true);setError('');
+      const params=new URLSearchParams(window.location.search),token=params.get('recover'),target=params.get('recoverPlayer');
+      try{
+        await connectionDeadline(gameStore.ready());
+        let resumed:Awaited<ReturnType<typeof gameStore.resumePlayer>>=null;
+        let resolvedPlayerId=gameStore.resolvePlayerId(initialPlayerId);
+        if(token&&target){
+          resumed=await gameStore.recoverPlayer(initial,target,token);resolvedPlayerId=target;
+        }else{
+          for(let attempt=0;attempt<3;attempt++){
+            try{resumed=await connectionDeadline(gameStore.resumePlayer(initial,resolvedPlayerId));break;}catch(error){if(attempt===2)throw error;await new Promise(resolve=>window.setTimeout(resolve,1000));if(cancelled)return;}
+          }
         }
-      } finally {
-        if (!cancelled) setJoining(false);
-      }
+        if(cancelled)return;
+        if(!resumed){if(existing){gameStore.recordClientConnection(initial,resolvedPlayerId,'resume_failed','identity_not_recognized');}if(existing)setError('A korábbi belépésedet most nem sikerült visszaállítani. Próbáld újra, vagy kérj visszacsatlakozási QR-kódot a trénertől.');return;}
+        setPlayerId(resolvedPlayerId);setCode(initial);setName(resumed.name);setSession(resumed.session);setJoined(true);
+        const url=new URL(window.location.href);url.searchParams.delete('recover');url.searchParams.delete('recoverPlayer');history.replaceState(null,'',url);
+        gameStore.recordClientConnection(initial,resolvedPlayerId,'resume_success',/iPhone|iPad/.test(navigator.userAgent)?'iOS':'egyéb eszköz');
+      }catch(error){if(!cancelled){setError(error instanceof Error?error.message:'A visszacsatlakozás nem sikerült. Kérj visszacsatlakozási QR-kódot a trénertől.');gameStore.recordClientConnection(initial,initialPlayerId,'resume_failed',String((error as {code?:string}).code??'connection_error'));}}
+      finally{if(!cancelled)setJoining(false);}
     };
-
-    void resumeExisting();
-    return () => {
-      cancelled = true;
-    };
-  }, [initial, initialPlayerId, Boolean(existing), joined]);
+    void connect();return()=>{cancelled=true;};
+  },[initial,initialPlayerId,joined,resumeAttempt]);
 
   useEffect(() => {
     if (!joined || !code) return;
     const unsubscribe = gameStore.subscribe(code, setSession);
+    const visibility=()=>gameStore.recordClientConnection(code,playerId,document.visibilityState==='visible'?'page_visible':'page_hidden');
+    document.addEventListener('visibilitychange',visibility);
     const touch = () => gameStore.touchPlayer(code, playerId);
     touch();
     const heartbeat = window.setInterval(touch, 15_000);
@@ -5633,6 +5639,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       unsubscribe();
       window.clearInterval(heartbeat);
       window.clearInterval(timeoutWatcher);
+      document.removeEventListener('visibilitychange',visibility);
     };
   }, [joined, code, playerId]);
 
@@ -5644,11 +5651,12 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       const cleanCode = code.trim().toUpperCase();
       const cleanName = name.trim();
       if (cleanCode.length !== 6) throw new Error('A játékkód 6 karakteres.');
-      if (!cleanName) throw new Error('Írd be a neved.');
-      await gameStore.ready();
+      await connectionDeadline(gameStore.ready());
       const resolvedPlayerId = gameStore.resolvePlayerId(playerId);
       setPlayerId(resolvedPlayerId);
-
+      const returning=await connectionDeadline(gameStore.resumePlayer(cleanCode,resolvedPlayerId));
+      if(returning){setCode(cleanCode);setName(returning.name);setSession(returning.session);setJoined(true);gameStore.recordClientConnection(cleanCode,resolvedPlayerId,'resume_success');const url=new URL(window.location.href);url.searchParams.set('role','player');url.searchParams.set('code',cleanCode);history.replaceState(null,'',url);return;}
+      if(!cleanName)throw new Error('Írd be a neved.');
       try {
         await gameStore.prepareJoin(cleanCode);
       } catch (prepareError) {
@@ -5656,7 +5664,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
         if (!message.includes('már elindult')) throw prepareError;
 
         try {
-          const resumed = await gameStore.resumePlayer(cleanCode, resolvedPlayerId);
+          const resumed = await connectionDeadline(gameStore.resumePlayer(cleanCode, resolvedPlayerId));
           if (resumed) {
             setCode(cleanCode);
             setName(resumed.name);
@@ -5671,7 +5679,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
         } catch {
           // Aktív játékhoz új résztvevő nem csatlakozhat.
         }
-        throw prepareError;
+        throw new Error('A játék már fut, és ezen a telefonon nem sikerült azonosítani a korábbi belépésedet. Kérj visszacsatlakozási QR-kódot a trénertől.');
       }
 
       const result = gameStore.join(cleanCode, resolvedPlayerId, cleanName);
@@ -5684,6 +5692,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       url.searchParams.set('code', cleanCode);
       history.replaceState(null, '', url);
     } catch (err) {
+      gameStore.recordClientConnection(code.trim().toUpperCase(),playerId,'resume_failed',String((err as {code?:string}).code??'join_not_restored'));
       setError(err instanceof Error ? err.message : 'Nem sikerült csatlakozni.');
     } finally {
       setJoining(false);
@@ -5695,8 +5704,8 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       <main className="shell narrow participant-join-shell">
         <header className="brand participant-brand">
           <p className="eyebrow">Kreditjáték · csatlakozás</p>
-          <h1>Belépés folyamatban…</h1>
-          <p>A rendszer rögzíti a csatlakozásodat.</p>
+          <h1 className="reconnect-title">Visszacsatlakozás…</h1>
+          <p>A korábbi belépésedet ellenőrizzük. A visszacsatlakozási QR-kódhoz tartsátok nyitva a tréner oldalát.</p>
         </header>
         <section className="panel participant-waiting-hero join-waiting-state">
           <div className="waiting-pulse" />
@@ -5720,6 +5729,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           <label className="field"><span>Neved</span><input value={name} maxLength={60} autoComplete="name" enterKeyHint="go" onChange={(e) => setName(e.target.value)} /></label>
           {error && <div className="error">{error}</div>}
           <button className="primary big" type="submit">Belépek a játékba</button>
+          {initial&&<><button className="secondary" type="button" onClick={()=>setResumeAttempt(n=>n+1)}>Visszacsatlakozás újrapróbálása</button><p className="participant-reconnect-hint">Ha már játszottál, a tréner a neved mellett új visszacsatlakozási QR-kódot tud adni. Az eddigi döntéseid és kreditjeid megmaradnak.</p></>}
         </form>
       </main>
     );
@@ -5767,7 +5777,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       </div>
 
       <section className="task-card participant-task-card">
-        {currentPlayer?.botControlled && session.status === 'active' ? (
+        {currentPlayer?.poolExcludedFromRound!==undefined && session.roundKey==='4' && session.publicGoodsRoundNumber>=currentPlayer.poolExcludedFromRound ? (<section className="panel"><h2>A további kasszakörökben már nem veszel részt.</h2><p>Az eddigi döntéseid, eredményeid és a kreditnaplód megmaradnak.</p></section>) : currentPlayer?.botControlled && session.status === 'active' ? (
           <div className="participant-waiting-hero bot-controlled-participant">
             <p className="eyebrow">BOT átvette az irányítást</p>
             <h1>A játék folytatódik helyetted.</h1>

@@ -280,6 +280,7 @@ export function createTechnicalAudit(session: GameSession) {
       publicGoodsRound: decision.publicGoodsRound,
       groupId: decision.groupId,
       submissionSource: decision.submissionSource,
+      originalSubmission: decision.originalSubmission,
       submitIntentAt: decision.submitIntentAt,
       processedAt: decision.processedAt,
       timestampSource: decision.timestampSource ?? 'legacy_mixed_clocks',
@@ -367,6 +368,8 @@ export function createTechnicalAudit(session: GameSession) {
       firstContinuationRoundNumber: session.publicGoodsContinuation.firstContinuationRoundNumber,
     });
   }
+
+  for(const event of session.sessionEvents??[])timeline.push({...event,playerName:playerNameFor(event.playerId)});
 
   timeline.sort((a, b) => a.at.localeCompare(b.at));
 

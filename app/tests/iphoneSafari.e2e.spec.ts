@@ -225,3 +225,28 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
   }
 });
 
+
+test('iPhone: elveszett belépés után tréneri linkkel ugyanaz a résztvevő tér vissza',async({browser})=>{
+ test.setTimeout(150000);
+ const contexts=await Promise.all([browser.newContext({...devices['Desktop Safari']}),browser.newContext({...devices['iPhone 13']}),browser.newContext({...devices['iPhone 13']}),browser.newContext({...devices['iPhone 13']})]);
+ try{
+  const [trainer,oldPhone,other,phone]=await Promise.all(contexts.map(c=>c.newPage()));
+  await trainer.goto('/?role=trainer');await trainer.getByRole('button',{name:'Új játék',exact:true}).click();
+  await expect.poll(()=>new URL(trainer.url()).searchParams.get('code')).not.toBeNull();const code=new URL(trainer.url()).searchParams.get('code')!;
+  await Promise.all([joinPlayer(oldPhone,code,'Erika visszatérés'),joinPlayer(other,code,'Partner')]);
+  const originalId=await oldPhone.evaluate(()=>localStorage.getItem('kreditjatek_player_id'));
+  trainer.once('dialog',d=>d.accept());await trainer.getByRole('button',{name:/Játék indítása.*2 fővel/}).click();
+  await expect(trainer.getByRole('heading',{name:'Élő páros helyzetkép'})).toBeVisible();
+  await phone.goto('/?role=player&code='+code);await phone.getByLabel('Neved').fill('Erika visszatérés');await phone.getByRole('button',{name:'Belépek a játékba',exact:true}).tap();await expect(phone.getByText(/nem sikerült azonosítani a korábbi belépésedet/)).toBeVisible();
+  await trainer.getByRole('button',{name:'Résztvevők kezelése',exact:true}).click();
+  const row=trainer.locator('.player-access-row').filter({hasText:'Erika visszatérés'});await row.getByRole('button',{name:'Visszacsatlakoztatás',exact:true}).click();
+  const link=row.getByRole('link',{name:'Visszacsatlakozási link megnyitása'});await expect(link).toBeVisible();const href=await link.getAttribute('href');expect(href).toBeTruthy();await phone.goto(href!);
+  await expect(row.getByText('A visszacsatlakoztatás megtörtént.',{exact:true})).toBeVisible({timeout:70000});
+  await expect.poll(()=>phone.evaluate(()=>localStorage.getItem('kreditjatek_player_id')),{timeout:25000}).toBe(originalId);
+  await expect(phone.getByRole('button',{name:'Belépek a játékba',exact:true})).toHaveCount(0);
+  await phone.evaluate(()=>{for(const key of Object.keys(localStorage))if(key.startsWith('kreditjatek_firebase_player_'))localStorage.removeItem(key);for(const key of Object.keys(sessionStorage))if(key.startsWith('kreditjatek_firebase_player_'))sessionStorage.removeItem(key);});
+  await phone.reload();await expect(phone.locator('.participant-shell')).toBeVisible({timeout:25000});
+  await expect(phone.getByRole('button',{name:'Belépek a játékba',exact:true})).toHaveCount(0);
+  console.log('IPHONE IDENTITY RECOVERY + CACHE-FREE RELOAD PASS');
+ }finally{await Promise.all(contexts.map(c=>c.close()));}
+});

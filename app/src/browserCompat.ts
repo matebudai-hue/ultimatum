@@ -83,3 +83,10 @@ export const parseCreditInput = (raw: string): number | '' => {
   const value = Number(digits);
   return Number.isFinite(value) ? value : '';
 };
+
+export function connectionDeadline<T>(work:Promise<T>,milliseconds=8000):Promise<T>{
+  return new Promise((resolve,reject)=>{
+    const timer=window.setTimeout(()=>reject(new Error('A kapcsolat visszaállítása túl sokáig tart. Ellenőrizd az internetkapcsolatot, majd próbáld újra.')),milliseconds);
+    work.then(value=>{window.clearTimeout(timer);resolve(value);},error=>{window.clearTimeout(timer);reject(error);});
+  });
+}

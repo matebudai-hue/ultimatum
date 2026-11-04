@@ -27,7 +27,7 @@ assert.ok(session.decisions.some(d => d.pairingId === pair.id && d.isBotDecision
 assert.ok(session.strategicTechnicalIssues.find(i => i.pairingId === pair.id)?.resolvedAt);
 session.roundKey = '4'; session.publicGoodsPhase = 'setup'; session.groups = []; session.publicGoodsRoundNumber = 0; session.publicGoodsRounds = [];
 store.replaceFromRemote(session);
-store.randomizeGroups(game.code, 1); store.startPublicGoodsRound(game.code);
+store.randomizeGroups(game.code, 1);assert.throws(()=>store.startPublicGoodsRound(game.code),/rendszerirányítású/);store.excludeFromPublicGoods(game.code,pair.playerA as string); store.startPublicGoodsRound(game.code);
 const id = pair.playerB as string;
 session = store.trainerSubmitPublicGoods(game.code, id, 1000);
 assert.equal(session.decisions.find(d => d.type === 'public_goods_contribution' && d.playerId === id)?.submissionSource, 'manual_correction');
