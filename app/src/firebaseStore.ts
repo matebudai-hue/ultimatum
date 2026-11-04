@@ -15,6 +15,7 @@ import { GameSession, StrategicRound } from './gameTypes';
 import { commandContext, assertCommandContext, type CommandContext } from './commandContext';
 import { STRATEGIC_ROUNDS } from './pairingEngine';
 import { ensureFirebaseUser, firebaseAuth, firestore } from './firebaseClient';
+import { issueRecovery, requestRecovery } from './playerRecovery';
 import { localSessionStore } from './sessionStore';
 import { buildParticipantProjection } from './firebaseProjection';
 import { makeUuid, readStorage, writeStorage } from './browserCompat';
@@ -24,7 +25,8 @@ type CommandType =
   | 'markStrategicSubmitIntent'
   | 'submitStrategicDecision'
   | 'submitPublicGoods'
-  | 'submitReflection';
+  | 'submitReflection'
+  | 'connectionEvent';
 
 type PlayerCommand = {
   id: string;
@@ -295,6 +297,12 @@ const applyCommand = (
 ): { session: GameSession; affected: string[] } => {
   const before = localSessionStore.get(code);
   if (!before) throw new Error('A játék nem található.');
+  if(command.type==='connectionEvent'){
+    const event=String(command.payload?.event??'');
+    if(!['resume_success','resume_failed','page_visible','page_hidden','recovery_completed'].includes(event))throw new Error('Érvénytelen kapcsolati esemény.');
+    const session=localSessionStore.recordSessionEvent(code,playerId,event,String(command.payload?.detail??'').slice(0,300));
+    return {session,affected:[playerId]};
+  }
   assertCommandContext(before, playerId, command.type, command.context, command.createdAt);
 
   if (command.type === 'ackStrategicTaskVisible') {
@@ -371,6 +379,10 @@ const processRemotePlayers = async (code: string) => {
 
     const seen = timestampToIso(remote.lastSeenAt);
     if (seen && current.lastSeenAt !== seen) {
+      if(current.online===false && Date.now()-Date.parse(seen)<45000){
+        session=localSessionStore.recordSessionEvent(code,playerId,'connection_restored');
+        current=session.players.find(p=>p.id===playerId)!;masterChanged=true;affected.add(playerId);
+      }
       current.lastSeenAt = seen;
       current.online = Date.now() - new Date(seen).getTime() < 45_000;
       localPresenceChanged = true;
@@ -664,7 +676,11 @@ export const firebaseSessionStore = {
   async resumePlayer(code: string, playerId: string) {
     const user = await ensureFirebaseUser();
     const normalized = code.toUpperCase();
-    const snapshot = await getDoc(playerRef(normalized, playerId));
+    let snapshot;
+    try{snapshot=await getDoc(playerRef(normalized,playerId));}catch(error){
+      if((error as {code?:string}).code==='permission-denied')return null;
+      throw error;
+    }
     if (!snapshot.exists()) return null;
 
     const data = snapshot.data() as RemotePlayer;
@@ -685,6 +701,35 @@ export const firebaseSessionStore = {
       name: ownPlayer?.name ?? data.name ?? '',
     };
   },
+
+  async issuePlayerRecovery(code:string,playerId:string,onRestored:()=>void,onError:(message:string)=>void=()=>{}) {
+    const session=localSessionStore.get(code);if(!session?.players.some(p=>p.id===playerId)||role()==='player')throw new Error('A résztvevő nem található.');
+    const handle=await issueRecovery(code,playerId,()=>{
+      let current=localSessionStore.get(code)!;
+      if(current.players.find(p=>p.id===playerId)?.botControlled && current.status==='active')current=localSessionStore.setPlayerBotControl(code,playerId,false);
+      current=localSessionStore.recordSessionEvent(code,playerId,'recovery_completed');
+      trainerMutation(code,()=>current,allPlayers(current));onRestored();
+    },onError);
+    const logged=localSessionStore.recordSessionEvent(code,playerId,'recovery_issued');trainerMutation(code,()=>logged,[playerId]);
+    return handle;
+  },
+
+  async recoverPlayer(code:string,playerId:string,token:string){
+    const result=await requestRecovery(code,playerId,token,()=>this.resumePlayer(code,playerId));
+    writeStorage('kreditjatek_player_id',playerId);
+    return result;
+  },
+
+  recordClientConnection(code:string,playerId:string,event:string,detail=''){
+    if(role()!=='player')return;
+    const key='kreditjatek_connection_log';
+    let pending:Array<{event:string;detail:string}>=[];try{pending=JSON.parse(readStorage(key)??'[]');}catch{}
+    pending.push({event,detail:(new Date().toISOString()+' · '+detail).slice(0,300)});pending=pending.slice(-8);writeStorage(key,JSON.stringify(pending));
+    void (async()=>{for(const item of pending)await appendCommand(code,'connectionEvent',item);writeStorage(key,'[]');})().catch(()=>undefined);
+  },
+
+  observeConnections(code:string){const changed=localSessionStore.observeConnections(code);if(changed)return trainerMutation(code,()=>changed,allPlayers(changed));return null;},
+  excludeFromPublicGoods(code:string,playerId:string){const session=localSessionStore.excludeFromPublicGoods(code,playerId);return trainerMutation(code,()=>session,allPlayers(session));},
 
   resolvePlayerId(playerId: string) {
     if (!firebaseAuth.currentUser) throw new Error('A Firebase kapcsolat még nem áll készen.');

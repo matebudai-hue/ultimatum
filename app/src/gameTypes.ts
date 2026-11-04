@@ -23,6 +23,7 @@ export type Player = {
   lastSeenAt?: string;
   isBot?: boolean;
   botControlled?: boolean;
+  poolExcludedFromRound?: number;
 };
 
 export type Pairing = {
@@ -61,6 +62,7 @@ export type Decision = {
   submitIntentAt?: string;
   processedAt?: string;
   timestampSource?: 'command_event' | 'trainer_clock';
+  originalSubmission?: { amount?: number; accepted?: boolean; submittedAt: string; source?: Decision['submissionSource']; isBotDecision: boolean };
   submissionHistory?: Array<{
     amount: number;
     submittedAt: string;
@@ -107,6 +109,7 @@ export type PublicGoodsGroup = {
   name: string;
   memberIds: string[];
   nextMinimumMode: MinimumMode;
+  archived?: boolean;
   nextCustomMinimum?: number;
 };
 
@@ -197,6 +200,7 @@ export type GameSession = {
   debriefPhase?: 'reflection' | 'complete';
   reflections?: ParticipantReflection[];
   takeaways?: Array<{ playerId: string; text: string; submittedAt: string }>;
+  sessionEvents?: Array<{ id: string; at: string; event: string; playerId: string; roundKey: RoundKey; detail?: string }>;
   selfReport?: ParticipantSelfReportItem[];
 };
 

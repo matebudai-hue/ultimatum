@@ -94,6 +94,7 @@ export const buildParticipantProjection = (session: GameSession, playerId: strin
         }
       : undefined,
     pinnedDebriefEventIds: [],
+    sessionEvents: clone((session.sessionEvents??[]).filter(e=>e.playerId===playerId)),
     takeaways: clone((session.takeaways ?? []).filter(item => item.playerId === playerId)),
     reflections: clone((session.reflections ?? []).filter((item) => item.playerId === playerId)),
     selfReport: session.roundKey === 'report' ? clone(buildSelfReport(session, playerId)) : [],

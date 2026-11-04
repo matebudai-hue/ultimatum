@@ -96,13 +96,13 @@ function playPoolRound(code: string, humanRatio = 0.25) {
   session = localSessionStore.get(code)!;
 
   for (const player of session.players) {
-    if (player.botControlled) continue;
+    if (player.botControlled || player.poolExcludedFromRound!==undefined) continue;
     const amount = Math.min(player.currentBalance, Math.round(player.currentBalance * humanRatio));
     localSessionStore.submitPublicGoods(code, player.id, amount);
   }
 
   const progress = localSessionStore.publicGoodsProgress(localSessionStore.get(code)!);
-  assert.equal(progress.complete, true, 'A BOT által átvett játékosok tétei is automatikusan érkezzenek be.');
+  assert.equal(progress.complete, true, 'Az aktív csapattagok tétei érkezzenek be.');
 
   localSessionStore.lockPublicGoodsRound(code);
   localSessionStore.settlePublicGoodsRound(code);
@@ -110,7 +110,7 @@ function playPoolRound(code: string, humanRatio = 0.25) {
 
 function completeReflectionsForHumanControlledPlayers(code: string) {
   let session = localSessionStore.get(code)!;
-  for (const player of session.players.filter((item) => !item.botControlled)) {
+  for (const player of session.players.filter((item) => !item.botControlled && item.poolExcludedFromRound===undefined)) {
     const report = buildSelfReport(session, player.id);
     if (report.length === 0) continue;
     localSessionStore.submitReflection(code, player.id, [{
@@ -208,6 +208,7 @@ function mediumDropoutCase() {
   );
 
   localSessionStore.nextRound(code);
+  for(const p of localSessionStore.get(code)!.players.filter(p=>p.botControlled))localSessionStore.excludeFromPublicGoods(code,p.id);
   localSessionStore.randomizeGroups(code, 3);
 
   // Első kasszakör.
@@ -220,19 +221,15 @@ function mediumDropoutCase() {
   state = localSessionStore.get(code)!;
   const poolDropout = 'medium-10';
   for (const player of state.players) {
-    if (player.id === poolDropout || player.botControlled) continue;
+    if (player.id === poolDropout || player.botControlled || player.poolExcludedFromRound!==undefined) continue;
     localSessionStore.submitPublicGoods(code, player.id, Math.round(player.currentBalance * 0.25));
   }
-  localSessionStore.setPlayerBotControl(code, poolDropout, true);
-  state = localSessionStore.get(code)!;
-  const botPoolDecision = state.decisions.find(
-    (decision) =>
-      decision.type === 'public_goods_contribution' &&
-      decision.playerId === poolDropout &&
-      decision.publicGoodsRound === state.publicGoodsRoundNumber
-  );
-  assert.ok(botPoolDecision?.isBotDecision, 'Kasszakör közbeni kiesésnél a BOT adjon automatikus tétet.');
-  assert.equal(localSessionStore.publicGoodsProgress(state).complete, true);
+  assert.throws(()=>localSessionStore.setPlayerBotControl(code,poolDropout,true),/Közös kasszában/);
+  localSessionStore.excludeFromPublicGoods(code,poolDropout);
+  state=localSessionStore.get(code)!;
+  assert.equal(state.players.find(p=>p.id===poolDropout)?.poolExcludedFromRound,3);
+  assert.equal(localSessionStore.publicGoodsProgress(state).complete,false,'Az aktuális kör tagsága megmarad.');
+  localSessionStore.trainerSubmitPublicGoods(code,poolDropout,0);
   localSessionStore.lockPublicGoodsRound(code);
   localSessionStore.settlePublicGoodsRound(code);
 
@@ -257,19 +254,14 @@ function mediumDropoutCase() {
   const poolRound = state.publicGoodsRounds.find(
     (round) => round.roundNumber === 2 && round.memberIds.includes(poolDropout),
   )!;
-  const botPoolSelfId = `decision:publicGoods:r2:${poolRound.groupId}:${poolDropout}`;
-  assert.equal(
-    eventsBeforeFinish.some((event) => event.selfDecisionIds.includes(botPoolSelfId)),
-    false,
-    'BOT által generált kasszadöntés ne legyen emberi kivezetési esemény.',
-  );
+  assert.equal(state.decisions.some(d=>d.playerId===poolDropout&&d.publicGoodsRound===2&&d.isBotDecision),false,'Kasszakörben ne legyen automatikus helyettesítő döntés.');
 
   localSessionStore.finish(code);
   completeReflectionsForHumanControlledPlayers(code);
   state = localSessionStore.get(code)!;
 
   assert.equal(state.debriefPhase, 'complete');
-  assert.equal(state.players.filter((player) => player.botControlled).length, 3);
+  assert.equal(state.players.filter((player) => player.poolExcludedFromRound!==undefined).length, 3);
   assert.equal(
     new Set((state.reflections ?? []).map((reflection) => reflection.playerId)).size,
     15,

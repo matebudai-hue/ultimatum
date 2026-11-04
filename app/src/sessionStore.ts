@@ -61,6 +61,7 @@ const read = (code: string): GameSession | null => {
     reflections: parsed.reflections ?? [],
     takeaways: parsed.takeaways ?? [],
     selfReport: parsed.selfReport ?? [],
+    sessionEvents: parsed.sessionEvents ?? [],
   };
 };
 
@@ -173,12 +174,13 @@ const upsertPublicGoodsDecision = (
   );
 
   if (existing) {
+    if (source === 'manual_correction') {
+      existing.originalSubmission ??= { amount: existing.amount, submittedAt: existing.submittedAt, source: existing.submissionSource, isBotDecision: existing.isBotDecision ?? false };
+    }
     existing.amount = amount;
     existing.isBotDecision = isBotDecision;
-    if (source !== 'manual_correction') {
-      existing.submittedAt = eventAt;
-      existing.submissionSource = source;
-    }
+    existing.submittedAt = eventAt;
+    existing.submissionSource = source;
     if (source === 'participant') {
       existing.submissionHistory = [
         ...(existing.submissionHistory ?? []),
@@ -281,55 +283,6 @@ const reconcileStrategicTimeouts = (session: GameSession, nowMs = Date.now()) =>
 
 const isBotControlledActor = (session: GameSession, playerId: string | 'BOT') =>
   playerId === 'BOT' || Boolean(session.players.find((player) => player.id === playerId)?.botControlled);
-
-const botPublicGoodsContribution = (session: GameSession, playerId: string) => {
-  const round = currentPublicGoodsRounds(session).find((item) => item.memberIds.includes(playerId));
-  if (!round || round.status !== 'open') return;
-  if (round.contributions[playerId] !== undefined) return;
-
-  const startingWealth = round.startingPlayerWealth?.[playerId] ?? 0;
-  if (startingWealth <= 0) {
-    round.contributions[playerId] = 0;
-    upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, 0, true);
-    return;
-  }
-
-  const currentHumanRatios = round.memberIds
-    .filter((id) => id !== playerId && !session.players.find((player) => player.id === id)?.botControlled)
-    .map((id) => {
-      const contribution = round.contributions[id];
-      const wealth = round.startingPlayerWealth?.[id] ?? 0;
-      return contribution !== undefined && wealth > 0 ? contribution / wealth : null;
-    })
-    .filter((value): value is number => value !== null);
-
-  const historicalHumanRatios = session.publicGoodsRounds
-    .filter((item) => item.status === 'settled' && item.roundNumber < round.roundNumber)
-    .flatMap((item) =>
-      Object.entries(item.contributions).map(([id, contribution]) => {
-        const decision = session.decisions.find((candidate) =>
-          candidate.type === 'public_goods_contribution' &&
-          candidate.playerId === id &&
-          candidate.groupId === item.groupId &&
-          candidate.publicGoodsRound === item.roundNumber
-        );
-        const wealth = item.startingPlayerWealth?.[id] ?? 0;
-        return decision?.isBotDecision || wealth <= 0 ? null : contribution / wealth;
-      })
-    )
-    .filter((value): value is number => value !== null);
-
-  const source = currentHumanRatios.length ? currentHumanRatios : historicalHumanRatios;
-  const ratio = source.length
-    ? source.reduce((sum, value) => sum + value, 0) / source.length
-    : 0.5;
-  const safeRatio = Math.max(0, Math.min(1, ratio));
-  const amount = Math.min(startingWealth, Math.round(startingWealth * safeRatio));
-
-  round.contributions[playerId] = amount;
-  round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
-  upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, amount, true);
-};
 
 const autoBotDecisions = (session: GameSession, pairingId: string) => {
   const pairing = session.pairings.find((item) => item.id === pairingId);
@@ -455,7 +408,7 @@ const HUNGARIAN_GROUP_NAMES = [
 ] as const;
 
 const makeGroups = (session: GameSession, count: number): PublicGoodsGroup[] => {
-  const players = shuffle(session.players.filter((player) => !player.isBot && player.active).map((player) => player.id));
+  const players = shuffle(session.players.filter((player) => !player.isBot && player.active && player.poolExcludedFromRound === undefined).map((player) => player.id));
   const safeCount = Math.max(1, Math.min(count, players.length || 1, 25, HUNGARIAN_GROUP_NAMES.length));
   const groups = Array.from({ length: safeCount }, (_, index) => ({
     id: makeUuid(),
@@ -469,7 +422,7 @@ const makeGroups = (session: GameSession, count: number): PublicGoodsGroup[] => 
 
 const makeManualGroups = (session: GameSession, count: number): PublicGoodsGroup[] => {
   const players = session.players
-    .filter((player) => !player.isBot && player.active)
+    .filter((player) => !player.isBot && player.active && player.poolExcludedFromRound === undefined)
     .map((player) => player.id);
   const safeCount = Math.max(1, Math.min(count, players.length || 1, 25, HUNGARIAN_GROUP_NAMES.length));
   const groups = Array.from({ length: safeCount }, (_, index) => ({
@@ -692,6 +645,46 @@ export const localSessionStore = {
     return session;
   },
 
+
+  recordSessionEvent(code: string, playerId: string, event: string, detail?: string) {
+    const session = read(code); if (!session || !session.players.some(p=>p.id===playerId)) throw new Error('A résztvevő nem található.');
+    session.sessionEvents ??= [];
+    session.sessionEvents.push({id:makeUuid(),at:new Date().toISOString(),event,playerId,roundKey:session.roundKey,detail});
+    write(session); return session;
+  },
+
+  observeConnections(code: string) {
+    const session=read(code); if(!session || session.status!=='active') return null;
+    let changed=false;
+    for(const p of session.players){
+      if(p.isBot || p.botControlled || p.poolExcludedFromRound!==undefined || !p.lastSeenAt || p.online===false || Date.now()-Date.parse(p.lastSeenAt)<45000) continue;
+      p.online=false; session.sessionEvents??=[];session.sessionEvents.push({id:makeUuid(),at:new Date().toISOString(),event:'connection_lost',playerId:p.id,roundKey:session.roundKey});changed=true;
+    }
+    if(changed)write(session);return changed?session:null;
+  },
+
+  excludeFromPublicGoods(code: string, playerId: string) {
+    const session=read(code);if(!session || session.roundKey!=='4' || session.status!=='active')throw new Error('Kivétel csak a Közös kassza során lehetséges.');
+    const player=session.players.find(p=>p.id===playerId&&!p.isBot);if(!player)throw new Error('A résztvevő nem található.');
+    if(player.poolExcludedFromRound!==undefined)return session;
+    player.poolExcludedFromRound=session.publicGoodsRoundNumber+1;player.botControlled=false;
+    if(session.publicGoodsPhase==='setup'){
+      for(const g of session.groups)g.memberIds=g.memberIds.filter(id=>id!==playerId);
+      for(const g of session.groups)if(!g.memberIds.length)g.archived=true;
+    }
+    session.sessionEvents??=[];session.sessionEvents.push({id:makeUuid(),at:new Date().toISOString(),event:'public_goods_player_excluded',playerId,roundKey:'4',detail:'Érvényes ettől a kasszakörtől: '+player.poolExcludedFromRound});
+    write(session);return session;
+  },
+
+  async issuePlayerRecovery(code: string, playerId: string, _onRestored:()=>void, _onError:(message:string)=>void=()=>{}) {
+    const url=new URL(window.location.href);url.search='';url.searchParams.set('test','1');url.searchParams.set('role','player');url.searchParams.set('code',code);url.searchParams.set('testPlayer',playerId);
+    return {url:url.toString(),expiresAt:Date.now()+300000,stop:()=>{}};
+  },
+
+  recordClientConnection(_code:string,_playerId:string,_event:string,_detail='') {},
+
+  async recoverPlayer(_code:string,_playerId:string,_token:string) { throw new Error('A tesztjátékhoz a visszacsatlakozási linket használd.'); },
+
   setPlayerBotControl(code: string, playerId: string, enabled: boolean): GameSession {
     const session = read(code);
     if (!session) throw new Error('A játék nem található.');
@@ -701,6 +694,9 @@ export const localSessionStore = {
     const player = session.players.find((item) => item.id === playerId && !item.isBot);
     if (!player) throw new Error('A résztvevő nem található.');
 
+    if(enabled && !STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound))throw new Error('A Közös kasszában a rendszer nem dönt résztvevő helyett.');
+    if(player.botControlled===enabled)return session;
+    session.sessionEvents??=[];session.sessionEvents.push({id:makeUuid(),at:new Date().toISOString(),event:enabled?'bot_control_enabled':'bot_control_disabled',playerId,roundKey:session.roundKey});
     player.botControlled = enabled;
     if (enabled) player.online = false;
 
@@ -717,8 +713,6 @@ export const localSessionStore = {
           }
         }
       }
-    } else if (session.roundKey === '4' && session.publicGoodsPhase === 'open' && enabled) {
-      botPublicGoodsContribution(session, playerId);
     }
 
     write(session);
@@ -1110,6 +1104,8 @@ export const localSessionStore = {
     );
     if (!decision) throw new Error('Nincs meglévő döntés, amit korrigálni lehet.');
 
+    decision.originalSubmission ??= {amount:decision.amount,accepted:decision.accepted,submittedAt:decision.submittedAt,source:decision.submissionSource,isBotDecision:decision.isBotDecision??false};
+    decision.submissionSource='manual_correction';decision.isBotDecision=false;
     const cleanNote = requireCorrectionNote(note);
     const closed = session.closedRounds.includes(roundKey);
     const oldOutcome = closed ? strategicOutcome(session, pairing) : {};
@@ -1258,6 +1254,7 @@ export const localSessionStore = {
     if (session.publicGoodsRoundNumber > 0 || session.publicGoodsPhase !== 'setup') {
       throw new Error('A csoportok csak az első kasszakör előtt módosíthatók.');
     }
+    if(session.players.find(p=>p.id===playerId)?.poolExcludedFromRound!==undefined)throw new Error('A résztvevőt kivetted a Közös kasszából.');
     for (const group of session.groups) group.memberIds = group.memberIds.filter((id) => id !== playerId);
     const target = session.groups.find((group) => group.id === groupId);
     if (!target) throw new Error('Nincs ilyen csoport.');
@@ -1302,7 +1299,8 @@ export const localSessionStore = {
     if (!session) throw new Error('A játék nem található.');
     if (session.roundKey !== '4') throw new Error('Most nem a Közös kassza fut.');
     if (session.publicGoodsPhase !== 'setup') throw new Error('Az előző kört előbb el kell számolni.');
-    if (session.groups.length === 0 || session.groups.some((group) => group.memberIds.length === 0)) {
+    if(session.players.some(p=>p.botControlled && p.poolExcludedFromRound===undefined))throw new Error('A rendszerirányítású résztvevőket előbb csatlakoztasd vissza vagy vedd ki a Közös kasszából.');
+    if (!session.groups.some(g=>!g.archived) || session.groups.some((group) => !group.archived && group.memberIds.length === 0)) {
       throw new Error('Előbb készíts érvényes csapatokat.');
     }
 
@@ -1313,7 +1311,7 @@ export const localSessionStore = {
     session.roundStartedAt = new Date(now).toISOString();
     session.publicGoodsDeadlineAt = new Date(now + PUBLIC_GOODS_SECONDS * 1000).toISOString();
 
-    for (const group of session.groups) {
+    for (const group of session.groups.filter(g=>!g.archived)) {
       const wealth = groupWealth(session, group);
       session.publicGoodsRounds.push({
         id: makeUuid(),
@@ -1335,9 +1333,6 @@ export const localSessionStore = {
       });
     }
 
-    for (const player of session.players.filter((item) => item.botControlled)) {
-      botPublicGoodsContribution(session, player.id);
-    }
 
     write(session);
     return session;
@@ -1419,12 +1414,8 @@ export const localSessionStore = {
     for (const round of rounds) {
       for (const playerId of round.memberIds) {
         if (round.contributions[playerId] !== undefined) continue;
-        if (session.players.find((player) => player.id === playerId)?.botControlled) {
-          botPublicGoodsContribution(session, playerId);
-        } else {
-          round.contributions[playerId] = 0;
-          upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, 0);
-        }
+        round.contributions[playerId] = 0;
+        upsertPublicGoodsDecision(session, playerId, round.groupId, round.roundNumber, 0);
       }
       round.totalContribution = Object.values(round.contributions).reduce((sum, value) => sum + value, 0);
       round.status = 'locked';
@@ -1458,6 +1449,8 @@ export const localSessionStore = {
     }
 
     session.players = players;
+    for(const group of session.groups)group.memberIds=group.memberIds.filter(id=>{const p=session.players.find(p=>p.id===id);return p?.poolExcludedFromRound===undefined || p.poolExcludedFromRound>session.publicGoodsRoundNumber+1;});
+    for(const g of session.groups)if(!g.memberIds.length)g.archived=true;
     for (const group of session.groups) {
       group.nextMinimumMode = 'none';
       group.nextCustomMinimum = undefined;
@@ -1563,11 +1556,12 @@ export const localSessionStore = {
     session.publicGoodsPhase = 'setup';
     session.roundStartedAt = undefined;
     session.publicGoodsDeadlineAt = undefined;
+    for(const group of session.groups){group.memberIds=group.memberIds.filter(id=>session.players.find(p=>p.id===id)?.poolExcludedFromRound===undefined);if(!group.memberIds.length)group.archived=true;}
     session.roundKey = 'report';
     session.status = 'finished';
     session.reflections = session.reflections ?? [];
     const eligibleForReflection = session.players
-      .filter((player) => !player.isBot && !player.botControlled)
+      .filter((player) => !player.isBot && !player.botControlled && player.poolExcludedFromRound===undefined)
       .some((player) => buildSelfReport(session, player.id).length > 0);
     session.debriefPhase = eligibleForReflection ? 'reflection' : 'complete';
     write(session);
@@ -1620,7 +1614,7 @@ export const localSessionStore = {
     ];
 
     const eligiblePlayerIds = session.players
-      .filter((item) => !item.isBot && !item.botControlled && buildSelfReport(session, item.id).length > 0)
+      .filter((item) => !item.isBot && !item.botControlled && item.poolExcludedFromRound===undefined && buildSelfReport(session, item.id).length > 0)
       .map((item) => item.id);
     const completed = new Set([...(session.reflections ?? []).map((item) => item.playerId), ...(session.takeaways ?? []).map(item => item.playerId)]);
     session.debriefPhase = eligiblePlayerIds.every((id) => completed.has(id)) ? 'complete' : 'reflection';
