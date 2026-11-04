@@ -1,6 +1,6 @@
 import {doc,onSnapshot,setDoc,updateDoc,deleteDoc} from 'firebase/firestore';
 import {ensureFirebaseUser,firestore} from './firebaseClient';
-import {makeUuid} from './browserCompat';
+import {makeUuid,connectionDeadline} from './browserCompat';
 // An unguessable, short-lived rendezvous address. The public document contains
 // only the requesting anonymous UID, never a player name, game state or token.
 // Existing rules let only its creator write it; only the game trainer can grant
@@ -25,11 +25,11 @@ export async function issueRecovery(code:string,playerId:string,onRestored:()=>v
 export async function requestRecovery(code:string,playerId:string,token:string,resume:()=>Promise<{session:import('./gameTypes').GameSession;name:string}|null>){
  if(!/^[a-f0-9-]{73}$/i.test(token)||!playerId)throw new Error('Érvénytelen visszacsatlakozási link.');
  const user=await ensureFirebaseUser(),mailbox=doc(firestore,'publicGames','recovery-'+token);
- await setDoc(mailbox,{trainerUid:user.uid,recoveryRequest:true,createdAt:new Date().toISOString()});
  try{
+  await connectionDeadline(setDoc(mailbox,{trainerUid:user.uid,recoveryRequest:true,createdAt:new Date().toISOString()}));
   const deadline=Date.now()+65000;
   while(Date.now()<deadline){
-   try{const result=await resume();if(result)return result;}catch{/* Ownership transfer may still be in progress. */}
+   try{const result=await connectionDeadline(resume());if(result)return result;}catch{/* Ownership transfer may still be in progress. */}
    await new Promise(resolve=>window.setTimeout(resolve,1000));
   }
   throw new Error('Nem érkezett tréneri visszaigazolás. A tréner oldalán készítsetek új visszacsatlakozási QR-kódot.');

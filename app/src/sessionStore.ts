@@ -181,6 +181,8 @@ const upsertPublicGoodsDecision = (
     existing.isBotDecision = isBotDecision;
     existing.submittedAt = eventAt;
     existing.submissionSource = source;
+    existing.processedAt = new Date().toISOString();
+    existing.timestampSource = submittedAt ? 'command_event' : 'trainer_clock';
     if (source === 'participant') {
       existing.submissionHistory = [
         ...(existing.submissionHistory ?? []),
@@ -199,6 +201,8 @@ const upsertPublicGoodsDecision = (
       isBotDecision,
       submissionSource: source,
       submittedAt: eventAt,
+      processedAt: new Date().toISOString(),
+      timestampSource: submittedAt ? 'command_event' : 'trainer_clock',
       submissionHistory: source === 'participant' ? [{ amount, submittedAt: eventAt }] : undefined,
     });
   }
@@ -1124,6 +1128,7 @@ export const localSessionStore = {
     }
     decision.timedOutRole = undefined;
     decision.submittedAt = new Date().toISOString();
+    decision.processedAt=decision.submittedAt;decision.timestampSource='trainer_clock';
 
     if (closed) {
       const newOutcome = strategicOutcome(session, pairing);

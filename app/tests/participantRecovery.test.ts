@@ -3,7 +3,11 @@ import fs from 'node:fs';
 import {transformSync} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {buildParticipantProjection} from '../src/firebaseProjection';
+import {firestoreTransport} from '../src/firestoreTransport';
 import {createTechnicalAudit} from '../src/report';
+for(const ua of ['Mozilla AppleWebKit Version/26 Safari','Mozilla iPhone AppleWebKit CriOS','Mozilla iPad AppleWebKit'])assert.equal(firestoreTransport(ua).experimentalForceLongPolling,true);
+assert.equal(firestoreTransport('Mozilla AppleWebKit Chrome/140 Safari').experimentalAutoDetectLongPolling,true);
+assert.equal(firestoreTransport('Mozilla AppleWebKit Version/26 Safari').experimentalAutoDetectLongPolling,undefined);
 const dom=new JSDOM('',{url:'http://localhost/'});
 for(const k of ['window','document','localStorage','sessionStorage','CustomEvent','StorageEvent'] as const)Object.defineProperty(globalThis,k,{value:dom.window[k],configurable:true});
 const{connectionDeadline}=await import('../src/browserCompat');
@@ -32,7 +36,7 @@ const audit=createTechnicalAudit(s);assert.ok(audit.timeline.some(e=>e.event==='
 s=store.excludeFromPublicGoods(game.code,'cinti');s=store.excludeFromPublicGoods(game.code,'sanyi');assert.equal(s.groups[0].archived,true);assert.equal(s.publicGoodsRounds.length,2);assert.throws(()=>store.startPublicGoodsRound(game.code),/csapatokat/);
 // Corrections keep original value, original actor and timestamp.
 const second=store.create(100000,2);store.join(second.code,'a','A');store.join(second.code,'b','B');s=store.get(second.code)!;s.status='active';s.roundKey='4';s.groups=[{id:'g',name:'G',memberIds:['a','b'],nextMinimumMode:'none'}];for(const p of s.players)p.currentBalance=100000;store.replaceFromRemote(s);store.startPublicGoodsRound(second.code);store.submitPublicGoods(second.code,'a',1234);s=store.get(second.code)!;const before=s.decisions.find(d=>d.playerId==='a')!;
-s=store.correctPublicGoodsContribution(second.code,1,'a',5678,'szóbeli pontosítás');const corrected=s.decisions.find(d=>d.playerId==='a')!;assert.equal(corrected.submissionSource,'manual_correction');assert.equal(corrected.originalSubmission?.amount,1234);assert.equal(corrected.originalSubmission?.submittedAt,before.submittedAt);assert.equal(corrected.amount,5678);
+s=store.correctPublicGoodsContribution(second.code,1,'a',5678,'szóbeli pontosítás');const corrected=s.decisions.find(d=>d.playerId==='a')!;assert.equal(corrected.submissionSource,'manual_correction');assert.equal(corrected.timestampSource,'trainer_clock');assert.ok(corrected.processedAt);assert.equal(corrected.originalSubmission?.amount,1234);assert.equal(corrected.originalSubmission?.submittedAt,before.submittedAt);assert.equal(corrected.amount,5678);
 const initial=JSON.stringify(s.transactions);s.players[0].lastSeenAt=new Date(Date.now()-50000).toISOString();s.players[0].online=true;store.replaceFromRemote(s);assert.ok(store.observeConnections(second.code));assert.equal(store.observeConnections(second.code),null);assert.equal(JSON.stringify(store.get(second.code)!.transactions),initial);
 // The client initiates remote restoration even when its projection cache is gone.
 const main=fs.readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');assert.doesNotMatch(main,/if \(!initial \|\| !existing \|\| joined\)/);

@@ -708,7 +708,7 @@ export const firebaseSessionStore = {
     const handle=await issueRecovery(code,playerId,()=>{
       let current=localSessionStore.get(code)!;
       if(current.players.find(p=>p.id===playerId)?.botControlled && current.status==='active')current=localSessionStore.setPlayerBotControl(code,playerId,false);
-      current=localSessionStore.recordSessionEvent(code,playerId,'recovery_completed');
+      current=localSessionStore.recordSessionEvent(code,playerId,'recovery_access_granted');
       trainerMutation(code,()=>current,allPlayers(current));onRestored();
     },onError);
     const logged=localSessionStore.recordSessionEvent(code,playerId,'recovery_issued');trainerMutation(code,()=>logged,[playerId]);
@@ -718,6 +718,7 @@ export const firebaseSessionStore = {
   async recoverPlayer(code:string,playerId:string,token:string){
     const result=await requestRecovery(code,playerId,token,()=>this.resumePlayer(code,playerId));
     writeStorage('kreditjatek_player_id',playerId);
+    this.recordClientConnection(code,playerId,'recovery_completed');
     return result;
   },
 

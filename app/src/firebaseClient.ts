@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, User } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
+import {firestoreTransport} from './firestoreTransport';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyAh623-RLDVDkBWFQp6X-F1xBeNi8tLu2Y',
@@ -16,7 +17,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(app);
 export const firestore = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
-  experimentalAutoDetectLongPolling: true,
+  ...firestoreTransport(typeof navigator==='undefined'?'':navigator.userAgent),
 });
 
 let readyPromise: Promise<User> | null = null;
