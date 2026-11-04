@@ -77,6 +77,7 @@ const queues = new Map<string, Promise<void>>();
 const pendingWrites = new Map<string, number>();
 const creationPromises = new Map<string, Promise<void>>();
 const joinPromises = new Map<string, Promise<void>>();
+let connectionLogQueue:Promise<void>=Promise.resolve();
 
 const role = () => {
   if (typeof window === 'undefined') return 'trainer';
@@ -722,10 +723,17 @@ export const firebaseSessionStore = {
 
   recordClientConnection(code:string,playerId:string,event:string,detail=''){
     if(role()!=='player')return;
-    const key='kreditjatek_connection_log';
-    let pending:Array<{event:string;detail:string}>=[];try{pending=JSON.parse(readStorage(key)??'[]');}catch{}
-    pending.push({event,detail:(new Date().toISOString()+' · '+detail).slice(0,300)});pending=pending.slice(-8);writeStorage(key,JSON.stringify(pending));
-    void (async()=>{for(const item of pending)await appendCommand(code,'connectionEvent',item);writeStorage(key,'[]');})().catch(()=>undefined);
+    const key='kreditjatek_connection_log_'+code.toUpperCase();
+    type Pending={id:string;event:string;detail:string};
+    const readPending=():Pending[]=>{try{const items=JSON.parse(readStorage(key)??'[]');return Array.isArray(items)?items:[];}catch{return [];}};
+    const pending=readPending();pending.push({id:makeUuid(),event,detail:(new Date().toISOString()+' · '+detail).slice(0,300)});writeStorage(key,JSON.stringify(pending.slice(-8)));
+    connectionLogQueue=connectionLogQueue.catch(()=>undefined).then(async()=>{
+      for(const item of readPending()){
+        await appendCommand(code,'connectionEvent',{event:item.event,detail:item.detail});
+        writeStorage(key,JSON.stringify(readPending().filter(latest=>latest.id!==item.id)));
+      }
+    });
+    void connectionLogQueue.catch(()=>undefined);
   },
 
   observeConnections(code:string){const changed=localSessionStore.observeConnections(code);if(changed)return trainerMutation(code,()=>changed,allPlayers(changed));return null;},

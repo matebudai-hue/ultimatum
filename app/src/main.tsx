@@ -5624,7 +5624,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
   useEffect(() => {
     if (!joined || !code) return;
     const unsubscribe = gameStore.subscribe(code, setSession);
-    const visibility=()=>{if(document.visibilityState==='visible')gameStore.recordClientConnection(code,playerId,'page_visible');};
+    const visibility=()=>gameStore.recordClientConnection(code,playerId,document.visibilityState==='visible'?'page_visible':'page_hidden');
     document.addEventListener('visibilitychange',visibility);
     const touch = () => gameStore.touchPlayer(code, playerId);
     touch();
@@ -5692,6 +5692,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       url.searchParams.set('code', cleanCode);
       history.replaceState(null, '', url);
     } catch (err) {
+      gameStore.recordClientConnection(code.trim().toUpperCase(),playerId,'resume_failed',String((err as {code?:string}).code??'join_not_restored'));
       setError(err instanceof Error ? err.message : 'Nem sikerült csatlakozni.');
     } finally {
       setJoining(false);

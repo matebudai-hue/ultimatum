@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {transformSync} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {buildParticipantProjection} from '../src/firebaseProjection';
 import {createTechnicalAudit} from '../src/report';
@@ -35,5 +36,14 @@ s=store.correctPublicGoodsContribution(second.code,1,'a',5678,'szóbeli pontosí
 const initial=JSON.stringify(s.transactions);s.players[0].lastSeenAt=new Date(Date.now()-50000).toISOString();s.players[0].online=true;store.replaceFromRemote(s);assert.ok(store.observeConnections(second.code));assert.equal(store.observeConnections(second.code),null);assert.equal(JSON.stringify(store.get(second.code)!.transactions),initial);
 // The client initiates remote restoration even when its projection cache is gone.
 const main=fs.readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');assert.doesNotMatch(main,/if \(!initial \|\| !existing \|\| joined\)/);
+// Delayed transport must not erase newer diagnostic events or mix games.
+const firebaseSource=fs.readFileSync(new URL('../src/firebaseStore.ts',import.meta.url),'utf8');
+const method=firebaseSource.slice(firebaseSource.indexOf('  recordClientConnection('),firebaseSource.indexOf('  observeConnections(',firebaseSource.indexOf('  recordClientConnection(')));
+const loggerJs=transformSync('let connectionLogQueue=Promise.resolve();const logger={'+method+'};',{loader:'ts'}).code;
+const sent:Array<{code:string;event:string}>=[];let release!:()=>void;let count=0;let started!:()=>void;const began=new Promise<void>(resolve=>started=resolve);
+const log=new Function('readStorage','writeStorage','makeUuid','role','appendCommand',loggerJs+';return {logger,done:()=>connectionLogQueue};')((k:string)=>localStorage.getItem(k),(k:string,v:string)=>localStorage.setItem(k,v),()=>String(++count),()=> 'player',async(code:string,_type:string,payload:{event:string})=>{sent.push({code,event:payload.event});if(sent.length===1){started();await new Promise<void>(resolve=>release=resolve);}});
+log.logger.recordClientConnection('AAA111','a','resume_failed');await began;
+log.logger.recordClientConnection('AAA111','a','resume_success');log.logger.recordClientConnection('BBB222','b','page_visible');release();await log.done();
+assert.deepEqual(sent,[{code:'AAA111',event:'resume_failed'},{code:'AAA111',event:'resume_success'},{code:'BBB222',event:'page_visible'}]);assert.equal(localStorage.getItem('kreditjatek_connection_log_AAA111'),'[]');
 console.log('RECOVERY & POOL: takeover gate, no automated stakes, frozen current round, future exclusion, history, exact minimum, provenance, privacy and offline event PASS');
 process.exit(0);
