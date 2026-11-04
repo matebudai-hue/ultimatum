@@ -5704,7 +5704,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
       <main className="shell narrow participant-join-shell">
         <header className="brand participant-brand">
           <p className="eyebrow">Kreditjáték · csatlakozás</p>
-          <h1>Visszacsatlakozás…</h1>
+          <h1 className="reconnect-title">Visszacsatlakozás…</h1>
           <p>A korábbi belépésedet ellenőrizzük. A visszacsatlakozási QR-kódhoz tartsátok nyitva a tréner oldalát.</p>
         </header>
         <section className="panel participant-waiting-hero join-waiting-state">
