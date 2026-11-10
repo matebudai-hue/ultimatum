@@ -3,72 +3,299 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#102f3a">
-  <meta name="description" content="Budai Máté programtára: tréninggyakorlatok, tanulási felületek és játékok egy helyen.">
+  <meta name="theme-color" content="#132823">
+  <meta name="description" content="Budai Máté programtára. Tréninggyakorlatok, képzési felületek és játékok egy helyen.">
   <title>Programtár · Budai Máté</title>
   <style>
-    :root{color-scheme:light;--ink:#102f3a;--muted:#52646b;--paper:#f5f4ee;--line:#d8dfda;--teal:#086f69;--soft:#e7f1ea;--white:#fff;--yellow:#f2ca62}
-    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}a{color:var(--teal);text-underline-offset:4px}button,input{font:inherit}button,a,input,summary{-webkit-tap-highlight-color:transparent}:focus-visible{outline:3px solid #ad5600;outline-offset:5px}a,button{touch-action:manipulation}[hidden]{display:none!important}.wrap{max-width:1200px;margin:auto;padding:0 28px}.skip{position:absolute;top:-100px;left:20px;background:white;padding:12px;z-index:9}.skip:focus{top:12px}
-    header{border-bottom:1px solid var(--line)}.topbar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding-top:23px;padding-bottom:23px}.brand{font-weight:750;letter-spacing:-.03em;font-size:20px}.brand small{font-weight:450;font-size:14px;letter-spacing:0;color:var(--muted);margin-left:12px}.jump{font-size:14px;color:var(--ink);padding:10px 0}.hero{display:grid;grid-template-columns:1fr 220px;gap:35px;align-items:center;padding-top:54px;padding-bottom:42px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:750;color:var(--teal);margin:0 0 12px}h1{font-size:clamp(38px,7vw,70px);font-weight:750;letter-spacing:-.055em;line-height:1.06;margin:0 0 20px}.intro{max-width:620px;font-size:18px;color:var(--muted);margin:0}.mark{height:180px;position:relative;overflow:hidden}.mark .circle{position:absolute;width:140px;height:140px;border-radius:50%;background:var(--yellow);right:10px;top:5px}.mark .square{position:absolute;width:110px;height:110px;background:var(--teal);left:10px;bottom:5px}.mark .bar{position:absolute;width:185px;height:17px;background:var(--ink);left:25px;top:86px;transform:rotate(-38deg)}
-    .tools{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:34px}.searchlabel{display:block;font-size:13px;font-weight:700;margin-bottom:7px}input[type=search]{width:100%;min-height:48px;border:1px solid #a9b9b4;background:#fafbf9;border-radius:9px;padding:10px 14px;color:var(--ink)}.filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.filters button{min-height:44px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);padding:8px 15px;cursor:pointer}.filters button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:white}.count{font-size:13px;color:var(--muted);margin:12px 0 0}.section{margin:0 0 40px}.sectionhead{display:flex;justify-content:space-between;align-items:baseline;gap:15px;margin-bottom:16px}.sectionhead h2{font-size:24px;letter-spacing:-.035em;margin:0}.sectionhead p{font-size:13px;color:var(--muted);margin:0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:23px;display:flex;flex-direction:column;min-width:0;transition:border-color .15s,transform .15s}.card:hover{border-color:#83aaa1;transform:translateY(-2px)}.cardtop{display:flex;align-items:center;gap:9px;margin-bottom:17px}.number{font-size:12px;font-weight:750;color:var(--muted);font-variant-numeric:tabular-nums}.badge{font-size:11px;font-weight:750;background:var(--soft);color:#245649;padding:4px 8px;border-radius:5px}.badge.dev{background:#fff1ce;color:#70500c}.badge.personal{background:#e9edf8;color:#3b4b79}.card h3{font-size:23px;letter-spacing:-.035em;line-height:1.2;margin:0 0 9px}.card p{font-size:14px;color:var(--muted);margin:0 0 21px}.open{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);color:white;text-decoration:none;min-height:46px;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:650}.open:hover{background:#1a4c59}.open span:last-child{font-size:19px}.extras{display:flex;flex-wrap:wrap;gap:3px 15px;margin-top:13px}.extras a{font-size:12px;padding:5px 0}.note{font-size:12px!important;margin:13px 0 0!important}.empty{padding:25px;border:1px dashed #9baea6;border-radius:12px;margin-bottom:35px}.empty h2{margin:0 0 7px;font-size:21px}.empty p{margin:0;color:var(--muted)}
-    .reference{border-top:1px solid var(--line);padding:24px 0}.reference summary{cursor:pointer;font-weight:650;min-height:44px;padding:8px 0}.reference p{color:var(--muted);font-size:14px}.reference ul{padding-left:20px}.reference li{margin:10px 0;font-size:14px}.archivegrid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.archivegrid h3{font-size:16px;margin-bottom:9px}.archivelinks{display:flex;flex-wrap:wrap;gap:8px}.archivelinks a{font-size:13px;min-height:44px;display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;padding:8px 12px;text-decoration:none;background:white}.refhint{padding:13px 16px;background:#e9eee8;border-radius:8px}.reference code{font-size:12px;overflow-wrap:anywhere}footer{border-top:1px solid var(--line);padding:23px 0 30px;font-size:12px;color:var(--muted);margin-top:25px}.footrow{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.footrow a{color:var(--muted)}
-    @media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr 150px}.mark{transform:scale(.8);transform-origin:center right}.brand small{display:none}}
-    @media(max-width:580px){.wrap{padding-left:18px;padding-right:18px}.topbar{padding-top:15px;padding-bottom:15px}.brand{font-size:18px}.hero{display:block;padding-top:35px;padding-bottom:28px}.mark{display:none}.intro{font-size:16px}.grid{grid-template-columns:1fr}.card{padding:21px}.sectionhead{display:block}.sectionhead p{margin-top:4px}.archivegrid{grid-template-columns:1fr}.tools{padding:14px}.filters{gap:6px}.filters button{padding-left:11px;padding-right:11px;font-size:14px}.section{margin-bottom:30px}.jump{font-size:12px}}
-    @media(prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}
+    :root {
+      color-scheme: light;
+      --ink: #132823;
+      --muted: #4c5f56;
+      --canvas: #eff2ee;
+      --surface: #fff;
+      --line: #cdd8d0;
+      --accent: #086b53;
+      --accent-soft: #e6f4ed;
+      --radius: 6px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.4 system-ui, sans-serif; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    button, input { font: inherit; }
+    button, summary { cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    .wrap { width: min(1360px, 100%); margin-inline: auto; padding-inline: 24px; }
+    .skip { position: absolute; z-index: 1; top: 8px; left: 8px; padding: 8px; background: var(--surface); }
+    .skip:not(:focus) { clip-path: inset(50%); }
+    .mast { background: var(--ink); color: var(--surface); border-bottom: 3px solid #47d5a1; }
+    .mast-inner { display: flex; align-items: center; justify-content: space-between; min-height: 56px; gap: 10px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    h1 { margin: 0; font-size: 25px; line-height: 1; letter-spacing: -.04em; }
+    .brand small { color: #c7d7cf; padding-left: 12px; border-left: 1px solid #60736a; font-size: 13px; }
+    .mast a { color: #d0e6d9; font-size: 13px; padding-block: 8px; }
+    .mast a:focus-visible { outline-color: #47d5a1; }
+    .toolbar { display: flex; gap: 12px; align-items: center; margin: 16px 0 12px; }
+    .search { position: relative; flex: 1; min-width: 180px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .search input { width: 100%; min-height: 40px; padding: 7px 10px 7px 35px; border: 1px solid #98a99e; border-radius: var(--radius); background: var(--surface); color: var(--ink); }
+    .search svg { position: absolute; pointer-events: none; left: 11px; top: 12px; color: var(--muted); }
+    .filters { display: flex; flex-wrap: wrap; gap: 4px; }
+    .filters button { min-height: 36px; padding: 5px 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); font-size: 13px; }
+    .filters button:hover { border-color: var(--accent); }
+    .filters button[aria-pressed="true"] { color: var(--surface); background: var(--accent); border-color: var(--accent); }
+    .count { min-width: 85px; margin: 0; text-align: right; color: var(--muted); font: 12px/1.4 ui-monospace, monospace; }
+    .board { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 12px; }
+    .board:has(> [hidden]) { grid-template-columns: minmax(0, 1fr); }
+    .column { display: grid; align-content: start; gap: 12px; min-width: 0; }
+    .panel, details, .empty { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+    h2 { display: flex; align-items: center; gap: 8px; padding: 7px 12px; margin: 0; background: #e2e9e3; border-bottom: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+    .section-count { margin-left: auto; color: var(--muted); font: 12px ui-monospace, monospace; }
+    .entries { list-style: none; margin: 0; padding: 0; }
+    .entry:not([hidden]) ~ .entry:not([hidden]) { border-top: 1px solid var(--line); }
+    .launch { display: flex; align-items: center; gap: 10px; min-height: 49px; padding: 5px 12px; color: var(--ink); text-decoration: none; }
+    .launch:hover { background: var(--accent-soft); }
+    .launch:focus-visible { outline-offset: -2px; }
+    .entry-copy { flex: 1; min-width: 0; }
+    .entry-copy strong, .desc { display: block; }
+    .entry-copy strong { font-weight: 720; overflow-wrap: anywhere; }
+    .desc { color: var(--muted); font-size: 12px; }
+    .tag { padding: 2px 5px; background: var(--accent-soft); color: #175342; border-radius: 3px; font-size: 11px; white-space: nowrap; }
+    .arrow { flex: 0 0 25px; text-align: center; color: var(--accent); font-size: 17px; }
+    .extras { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 7px; }
+    .extras a { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 7px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; text-decoration: none; }
+    .extras a:hover { background: var(--accent-soft); border-color: var(--accent); }
+    .reference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    summary { padding: 8px 12px; font-weight: 650; font-size: 13px; }
+    details ul, details p { margin: 4px 12px 10px; font-size: 13px; }
+    details li + li { margin-top: 4px; }
+    details li span { color: var(--muted); }
+    .empty { margin: 0; padding: 14px; color: var(--muted); }
+    .footrow { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding-block: 14px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) {
+      .toolbar { flex-wrap: wrap; }
+      .search { flex-basis: 100%; }
+      .count { margin-left: auto; }
+    }
+    @media (max-width: 690px) {
+      .wrap { padding-inline: 12px; }
+      .board, .reference-grid { grid-template-columns: minmax(0, 1fr); }
+      .filters button { min-height: 40px; }
+      .extras a { min-height: 36px; }
+    }
+    @media (max-width: 360px) {
+      .brand small, .tag { display: none; }
+    }
   </style>
 </head>
 <body>
 <a class="skip" href="#programok">Ugrás a programokhoz</a>
-<header><div class="wrap topbar"><div class="brand">Budai Máté <small>Digitális műhely</small></div><a class="jump" href="#terkep">Mi hol található? ↓</a></div></header>
-<main class="wrap" id="programok">
-  <section class="hero" aria-labelledby="page-title"><div><p class="eyebrow">Tréningek · tanulás · játék</p><h1 id="page-title">Programtár.</h1><p class="intro">Minden program egy helyen. Válassz egyet, és már indulhat is.</p></div><div class="mark" aria-hidden="true"><div class="circle"></div><div class="square"></div><div class="bar"></div></div></section>
-  <div class="tools" id="tools" hidden><label class="searchlabel" for="search">Melyik programot keresed?</label><input id="search" type="search" placeholder="Például: Explorer, kikötő, sziget, Toyota…" autocomplete="off"><div class="filters" role="group" aria-label="Programok szűrése"><button type="button" data-filter="all" aria-pressed="true">Mind</button><button type="button" data-filter="training" aria-pressed="false">Tréning és tanulás</button><button type="button" data-filter="personal" aria-pressed="false">Személyes játékok</button><button type="button" data-filter="development" aria-pressed="false">Fejlesztés</button></div><p class="count" id="count" role="status" aria-live="polite"></p></div>
-  <section class="section" data-section="training" aria-labelledby="training-title"><div class="sectionhead"><h2 id="training-title">Tréning és tanulás</h2><p>A foglalkozásokhoz használt felületek</p></div><div class="grid">
-    <article class="card" data-category="training" data-keywords="halastó halasto halász tó fenntarthatóság együttműködés"><div class="cardtop"><span class="number">01</span><span class="badge">Szimuláció</span></div><h3>Halastó</h3><p>Közös tó, egyéni döntések. Tréneri vezérlés, telefonos részvétel, kivetítés és riportok.</p><a class="open" href="https://matebudai-hue.github.io/halasto/"><span>Halastó megnyitása</span><span aria-hidden="true">↗</span></a></article>
-    <article class="card" data-category="training" data-keywords="kredit ultimátum ultimatum diktátor bizalom közös kassza"><div class="cardtop"><span class="number">02</span><span class="badge">Négy játék</span></div><h3>Kreditjáték</h3><p>Ultimátum, Diktátor, Bizalom és Közös kassza. Egy közös tréneri felületről.</p><a class="open" href="https://matebudai-hue.github.io/ultimatum/dashboard/"><span>Kreditjáték megnyitása</span><span aria-hidden="true">↗</span></a></article>
-    <article class="card" data-category="training" data-keywords="explorer kikötő kikoto tréningterem trénerképzés kilencedik évfolyam"><div class="cardtop"><span class="number">03</span><span class="badge">Trénerképzés</span></div><h3>Explorer · Kikötő</h3><p>Feladatok, esettanulmányok és saját berendezhető tréningterem. A 9. évfolyam tanulási felülete.</p><a class="open" href="https://matebudai-hue.github.io/ultimatum/explorer/"><span>Belépés a kikötőbe</span><span aria-hidden="true">↗</span></a></article>
-    <article class="card" data-category="training" data-keywords="omotenashi toyota manager ichigo ichie andon kaizen sztenderd napló kvíz"><div class="cardtop"><span class="number">04</span><span class="badge">Toyota</span></div><h3>Omotenashi</h3><p>Tanulási napló, gyári megfigyelések, vezetői terv és mobilos workshopesetek.</p><a class="open" href="https://matebudai-hue.github.io/ultimatum/omotenashi/"><span>Omotenashi megnyitása</span><span aria-hidden="true">↗</span></a><nav class="extras" aria-label="Omotenashi tananyagok"><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/kviz.html">Kvíz</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/ichigo-ichie.html">Ichigo Ichie</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/andon.html">Andon</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/sztenderdizalas.html">Sztenderdizálás</a></nav></article>
-    <article class="card" data-category="training" data-keywords="mátra matra hard trail hideg fejjel döntés v11 alapjáték"><div class="cardtop"><span class="number">06</span><span class="badge">Döntési szimuláció</span></div><h3>Mátra · Hideg fejjel</h3><p>A Mátra alapjátéka. Az indítóoldal a v11-es változatot nyitja meg.</p><a class="open" href="https://matebudai-hue.github.io/matra-hardtrail/"><span>Mátra megnyitása</span><span aria-hidden="true">↗</span></a></article>
-    
-    <article class="card" data-category="training" data-keywords="skorpió skorpio csípés felelősség idővonal tréner dashboard"><div class="cardtop"><span class="number">07</span><span class="badge">Tréneri eszköz</span></div><h3>Skorpió</h3><p>Események, idő, felelősség és döntések rögzítése. Kivetítés, idővonal és közös feldolgozás.</p><a class="open" href="https://matebudai-hue.github.io/skorpio/"><span>Skorpió megnyitása</span><span aria-hidden="true">↗</span></a></article>
-  </div></section>
-  <section class="section" data-section="personal" aria-labelledby="personal-title"><div class="sectionhead"><h2 id="personal-title">Személyes játékok</h2><p>Gyakorlás és közös játék</p></div><div class="grid">
-    <article class="card" data-category="personal" data-keywords="ádám adam matek sziget szigetes matematika ötödik 5 osztály"><div class="cardtop"><span class="number">08</span><span class="badge personal">Gyakorlás</span></div><h3>Matek-sziget</h3><p>Ádám szigetes matekja: feladatok, dolgozatpróba és pontokból épülő saját sziget.</p><a class="open" href="https://matebudai-hue.github.io/ultimatum/matek/"><span>Irány a sziget</span><span aria-hidden="true">↗</span></a></article>
-    <article class="card" data-category="personal" data-keywords="autós autos bajnokok ligája bl kisautó verseny sorsolás"><div class="cardtop"><span class="number">09</span><span class="badge personal">Verseny</span></div><h3>Autós Bajnokok Ligája</h3><p>32 autó, sorsolás, mérkőzések és tabella. A korábbi tornák és az autók története is visszanézhető.</p><a class="open" href="https://autos-bajnokok-ligaja.mbudai.chatgpt.site"><span>Bajnokság megnyitása</span><span aria-hidden="true">↗</span></a><p class="note">Saját tárhelyen; a hozzáféréshez bejelentkezés szükséges lehet.</p></article>
-  </div></section>
-  <section class="section" data-section="development" aria-labelledby="dev-title"><div class="sectionhead"><h2 id="dev-title">Fejlesztés és kipróbálás</h2><p>Ezek a változatok változhatnak</p></div><div class="grid">
-    <article class="card" data-category="development" data-keywords="halastó halasto 2 3 utód új két part fejlesztés"><div class="cardtop"><span class="number">10</span><span class="badge dev">Fejlesztés</span></div><h3>Halastó 2</h3><p>A Halastó továbbfejlesztendő utódja. A korábbi technikai címén érhető el.</p><a class="open" href="https://matebudai-hue.github.io/halasto/halasto-3/"><span>Halastó 2 megnyitása</span><span aria-hidden="true">↗</span></a><p class="note">Technikai útvonal: halasto-3.</p></article>
-    <article class="card" data-category="development" data-keywords="halastó halasto sandbox teszt tesztkörnyezet"><div class="cardtop"><span class="number">11</span><span class="badge dev">Tesztkörnyezet</span></div><h3>Halastó · Sandbox</h3><p>A Halastó fejlesztési próbáihoz. A régi sandboxcím is ide irányít.</p><a class="open" href="https://matebudai-hue.github.io/halasto/sandbox/"><span>Sandbox megnyitása</span><span aria-hidden="true">↗</span></a></article>
-    <article class="card" data-category="development" data-keywords="mátra matra sandbox alapjáték másolat fejlesztés"><div class="cardtop"><span class="number">12</span><span class="badge dev">Kísérleti változat</span></div><h3>Mátra · Sandbox</h3><p>Az alapjáték azonos másolata, külön mentéssel. A további fejlesztések és próbák helye.</p><a class="open" href="https://matebudai-hue.github.io/matra_sandbox/"><span>Mátra sandbox megnyitása</span><span aria-hidden="true">↗</span></a></article>
-  </div></section>
-  <section class="empty" id="empty" hidden><h2>Nincs ilyen találat.</h2><p>Próbálj rövidebb nevet, vagy válaszd a „Mind” szűrőt.</p></section>
-  <div id="terkep" class="reference"><details><summary>Mi hol található a GitHubon?</summary><p>A programnevek és a repónevek néha eltérnek. A fő alkalmazások innen érhetők el:</p><ul><li><a href="https://github.com/matebudai-hue/ultimatum">ultimatum</a> — Kreditjáték, Explorer/Kikötő, Omotenashi, Matek-sziget és ez a Programtár. Az Autós BL a <a href="https://github.com/matebudai-hue/ultimatum/tree/autos-bajnokok-ligaja/games/autos-bajnokok-ligaja">saját ágán</a> található.</li><li><a href="https://github.com/matebudai-hue/halasto">halasto</a> — az eredeti Halastó, a sandbox és az utódváltozat forrásai. Az eredeti játék a <code>main / halasto-2</code>, az új Halastó 2 a <code>halasto-3 / halasto-3</code> helyen van.</li><li><a href="https://github.com/matebudai-hue/matra-hardtrail">matra-hardtrail</a> — a Mátra alapjátéka.</li><li><a href="https://github.com/matebudai-hue/matra_sandbox">matra_sandbox</a> — az alapjáték azonos másolata, külön mentéssel.</li><li><a href="https://github.com/matebudai-hue/skorpio">skorpio</a> — az önálló tréneri eszköz.</li></ul><p class="refhint">A privát repók megnyitásához GitHub-hozzáférés kell. A fenti alkalmazáslinkek ettől külön működnek.</p></details></div>
-  <div class="reference"><details><summary>Korábbi változatok és fejlesztői eszközök</summary><p>Ezeket az áttekinthetőség kedvéért külön gyűjtöttük. A hétköznapi használathoz a fenti programkártyákból indulj.</p><ul><li><a href="https://drive.google.com/file/d/16GrOl9LIA6fZm1i5gB67kdHzuhgGbPhE/view?usp=drivesdk">Halastó RC — Drive-archívum</a>. A korábbi kiadási automatizmust kivezettük; a teljes forrás az archívumban marad.</li><li><a href="https://github.com/matebudai-hue/halasto-sandbox">Régi Halastó sandbox-repó</a>. A <a href="https://matebudai-hue.github.io/halasto-sandbox/">régi webcím</a> az új sandboxra irányít.</li><li><a href="https://matebudai-hue.github.io/halasto/halasto-2/">Halastó megtartott technikai címe</a>. Az eredeti játék másik elérési útja.</li></ul><p>A korábbi Mátra-változatok <a href="https://drive.google.com/file/d/1rd4Zc_KQIwmWGAKdJdDmQVabWqsRAwSr/view?usp=drivesdk">az alapjáték archívumában</a> és <a href="https://drive.google.com/file/d/1T8PZtUFrURtR4ua9qN_3Bi0EBYJn5GbL/view?usp=drivesdk">a sandbox archívumában</a> maradnak meg. Aktív Mátra-felületként az alapjáték és azonos sandboxmásolata érhető el. A Mélyvíz jelenleg fejlesztési specifikáció; alkalmazáslinkje még nincs.</p></details></div>
+<header class="mast">
+  <div class="wrap mast-inner">
+    <div class="brand"><h1>Programtár</h1><small>Budai Máté</small></div>
+    <a href="#terkep">GitHub és archívum ↓</a>
+  </div>
+</header>
+<main class="wrap" id="programok" tabindex="-1">
+  <div class="toolbar" id="tools" hidden>
+    <div class="search" role="search">
+      <label class="sr-only" for="search">Keresés a programok között</label>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>
+      <input id="search" type="search" placeholder="Keresés név vagy témakör szerint" autocomplete="off">
+    </div>
+    <div class="filters" role="group" aria-label="Programok szűrése">
+      <button type="button" data-filter="all" aria-pressed="true">Mind</button>
+      <button type="button" data-filter="training" aria-pressed="false">Tréning</button>
+      <button type="button" data-filter="portal" aria-pressed="false">Képzési felületek</button>
+      <button type="button" data-filter="personal" aria-pressed="false">Egyéb</button>
+      <button type="button" data-filter="development" aria-pressed="false">Fejlesztés</button>
+    </div>
+    <p class="count" id="count" role="status"></p>
+  </div>
+  <div class="board">
+    <div class="column">
+    <section class="panel" data-section="training" aria-labelledby="training-title">
+      <h2 id="training-title">Tréninggyakorlatok <span class="section-count" aria-hidden="true">06</span></h2>
+      <ul class="entries">
+        <li class="entry" data-keywords="eredeti halász fenntarthatóság">
+          <a class="launch" href="https://matebudai-hue.github.io/halasto/">
+            <span class="entry-copy"><strong>Halastó</strong><span class="desc">Közös erőforrás, egyéni döntések</span></span>
+            <span class="tag">Szimuláció</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="halasto ket part kétpartos">
+          <a class="launch" href="https://matebudai-hue.github.io/halasto/halasto-3/ket-part/">
+            <span class="entry-copy"><strong>Halastó 2 · A két part</strong><span class="desc">Két part, nyolc halászcsalád</span></span>
+            <span class="tag">Kipróbálás</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="kredit ultimatum közös kassza">
+          <a class="launch" href="https://matebudai-hue.github.io/ultimatum/dashboard/">
+            <span class="entry-copy"><strong>Kreditjáték</strong><span class="desc">Ultimátum, Diktátor, Bizalom, Közös kassza</span></span>
+            <span class="tag">Négy játék</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="csirke nyúl gyáva autó futam kitérés">
+          <a class="launch" href="https://matebudai-hue.github.io/chickenrun/">
+            <span class="entry-copy"><strong>Chicken Run</strong><span class="desc">Páros döntési dilemma, két játékmóddal</span></span>
+            <span class="tag">Szimuláció</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="matra hard trail alap v11">
+          <a class="launch" href="https://matebudai-hue.github.io/matra-hardtrail/">
+            <span class="entry-copy"><strong>Mátra · Hideg fejjel</strong><span class="desc">Túlélési döntések a Mátrában</span></span>
+            <span class="tag">Alapjáték</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="skorpio csípés felelősség dashboard">
+          <a class="launch" href="https://matebudai-hue.github.io/skorpio/">
+            <span class="entry-copy"><strong>Skorpió</strong><span class="desc">Eseménynapló, idővonal és kivetítés</span></span>
+            <span class="tag">Tréneri eszköz</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <section class="panel" data-section="portal" aria-labelledby="portal-title">
+      <h2 id="portal-title">Képzési felületek <span class="section-count" aria-hidden="true">03</span></h2>
+      <ul class="entries">
+        <li class="entry" data-keywords="explorer kikötő kikoto tréningterem kilencedik évfolyam">
+          <a class="launch" href="https://matebudai-hue.github.io/explorer-kikoto/">
+            <span class="entry-copy"><strong>Explorer · Kikötő</strong><span class="desc">Trénerképzés, tananyag és hospitálás</span></span>
+            <span class="tag">Portál</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="minősítő flotta személyautó megfigyelőapp">
+          <a class="launch" href="https://matebudai-hue.github.io/minosito/">
+            <span class="entry-copy"><strong>Toyota · Megfigyelés és minősítés</strong><span class="desc">Gyakorlás, 360°-os értékelés és vizsga</span></span>
+            <span class="tag">Toyota</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+          <nav class="extras" aria-label="Toyota · Megfigyelés és minősítés gyorslinkek"><a href="https://matebudai-hue.github.io/minosito/#admin">Admin</a></nav>
+        </li>
+        <li class="entry" data-keywords="omotenashi manager kaizen kvíz">
+          <a class="launch" href="https://matebudai-hue.github.io/ultimatum/omotenashi/">
+            <span class="entry-copy"><strong>Omotenashi</strong><span class="desc">Tanulási napló és workshopanyagok</span></span>
+            <span class="tag">Toyota</span><span class="arrow" aria-hidden="true">↗</span>
+          </a>
+          <nav class="extras" aria-label="Omotenashi gyorslinkek"><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/kviz.html">Kvíz</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/ichigo-ichie.html">Ichigo Ichie</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/andon.html">Andon</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/sztenderdizalas.html">Sztenderdizálás</a></nav>
+        </li>
+      </ul>
+    </section>
+    </div>
+    <div class="column">
+    <section class="panel" data-section="personal" aria-labelledby="personal-title">
+      <h2 id="personal-title">Egyéb oldalak <span class="section-count" aria-hidden="true">03</span></h2>
+      <ul class="entries">
+        <li class="entry" data-keywords="mateksziget matek sziget ádám matematika nyelvtan foci">
+          <a class="launch" href="https://matebudai-hue.github.io/ultimatum/matek/">
+            <span class="entry-copy"><strong>Matek-sziget</strong><span class="desc">Matek, nyelvtan és Fradi U12-es feladatok</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="autós bl kisautó verseny">
+          <a class="launch" href="https://autos-bajnokok-ligaja.mbudai.chatgpt.site">
+            <span class="entry-copy"><strong>Autós Bajnokok Ligája</strong><span class="desc">Sorsolás, meccsek és tabella</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="ki vagyok jégtörő budai máté honlap">
+          <a class="launch" href="https://matebudai-hue.github.io/kivagyok/">
+            <span class="entry-copy"><strong>Jégtörő</strong><span class="desc">Szakmai honlap</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <section class="panel" data-section="development" aria-labelledby="development-title">
+      <h2 id="development-title">Fejlesztési változatok <span class="section-count" aria-hidden="true">03</span></h2>
+      <ul class="entries">
+        <li class="entry" data-keywords="halasto 2 3 utód">
+          <a class="launch" href="https://matebudai-hue.github.io/halasto/halasto-3/">
+            <span class="entry-copy"><strong>Halastó 2 · Korábbi változat</strong><span class="desc">A Halastó 2 korábbi fejlesztési felülete</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="halasto sandbox teszt">
+          <a class="launch" href="https://matebudai-hue.github.io/halasto/sandbox/">
+            <span class="entry-copy"><strong>Halastó · Sandbox</strong><span class="desc">A Halastó tesztkörnyezete</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+        <li class="entry" data-keywords="matra sandbox alapjáték másolat teszt">
+          <a class="launch" href="https://matebudai-hue.github.io/matra_sandbox/">
+            <span class="entry-copy"><strong>Mátra · Sandbox</strong><span class="desc">Külön mentéssel futó tesztkörnyezet</span></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+    </div>
+  </div>
+  <p class="empty" id="empty" hidden>Nincs találat. Próbálj rövidebb keresést, vagy válaszd a Mind szűrőt.</p>
+  <div class="reference-grid">
+  <div id="terkep" class="reference"><details><summary>Mi hol található a GitHubon?</summary>
+    <ul>
+      <li><a href="https://github.com/matebudai-hue/ultimatum">ultimatum</a> <span>Kreditjáték, Omotenashi, Matek-sziget és Programtár</span></li>
+      <li><a href="https://github.com/matebudai-hue/halasto">halasto</a> <span>Halastó és A két part</span></li>
+      <li><a href="https://github.com/matebudai-hue/chickenrun">chickenrun</a> <span>Chicken Run</span></li>
+      <li><a href="https://github.com/matebudai-hue/explorer-kikoto">explorer-kikoto</a> <span>Explorer Kikötő</span></li>
+      <li><a href="https://github.com/matebudai-hue/minosito">minosito</a> <span>Toyota megfigyelés és minősítés</span></li>
+      <li><a href="https://github.com/matebudai-hue/skorpio">skorpio</a> <span>Skorpió</span></li>
+      <li><a href="https://github.com/matebudai-hue/matra-hardtrail">matra-hardtrail</a> <span>Mátra</span></li>
+      <li><a href="https://github.com/matebudai-hue/matra_sandbox">matra_sandbox</a> <span>Mátra sandbox</span></li>
+      <li><a href="https://github.com/matebudai-hue/kivagyok">kivagyok</a> <span>Jégtörő · publikált honlap</span></li>
+      <li><a href="https://github.com/matebudai-hue/jegtoro-budai-mate">jegtoro-budai-mate</a> <span>Jégtörő · külön forrásrepo</span></li>
+      <li><a href="https://github.com/matebudai-hue/halasto-sandbox">halasto-sandbox</a> <span>Régi Halastó sandbox</span></li>
+      <li><a href="https://github.com/matebudai-hue/halasto-rc">halasto-rc</a> <span>Korábbi Halastó kiadási környezet</span></li>
+      <li><a href="https://github.com/matebudai-hue/ultimatum/tree/autos-bajnokok-ligaja/games/autos-bajnokok-ligaja">Autós BL · fejlesztési ág</a></li>
+    </ul>
+    <p>A privát repókhoz GitHub-hozzáférés kell.</p>
+  </details></div>
+  <div class="reference"><details><summary>Korábbi változatok és archívum</summary><ul><li><a href="https://matebudai-hue.github.io/ultimatum/explorer/">Explorer · eredeti Kikötő</a></li><li><a href="https://matebudai-hue.github.io/explorer-kikoto/explorer/">Explorer · átvett gyakorlófelület</a></li><li><a href="https://drive.google.com/file/d/16GrOl9LIA6fZm1i5gB67kdHzuhgGbPhE/view?usp=drivesdk">Halastó RC — Drive-archívum</a>. A korábbi kiadási automatizmust kivezettük; a teljes forrás az archívumban marad.</li><li><a href="https://github.com/matebudai-hue/halasto-sandbox">Régi Halastó sandbox-repó</a>. A <a href="https://matebudai-hue.github.io/halasto-sandbox/">régi webcím</a> az új sandboxra irányít.</li><li><a href="https://matebudai-hue.github.io/halasto/halasto-2/">Halastó megtartott technikai címe</a>. Az eredeti játék másik elérési útja.</li></ul><p>A korábbi Mátra-változatok <a href="https://drive.google.com/file/d/1rd4Zc_KQIwmWGAKdJdDmQVabWqsRAwSr/view?usp=drivesdk">az alapjáték archívumában</a> és <a href="https://drive.google.com/file/d/1T8PZtUFrURtR4ua9qN_3Bi0EBYJn5GbL/view?usp=drivesdk">a sandbox archívumában</a> maradnak meg. Aktív Mátra-felületként az alapjáték és azonos sandboxmásolata érhető el. A Mélyvíz jelenleg fejlesztési specifikáció; alkalmazáslinkje még nincs.</p></details></div>
+  </div>
 </main>
-<footer><div class="wrap footrow"><span>Budai Máté · Programtár · 2026</span><span>Linkjegyzék frissítve: 2026. október 25. · <a href="https://github.com/matebudai-hue/ultimatum/blob/main/PROGRAMTAR.md">Nyilvántartás</a></span></div></footer>
+<footer class="wrap footrow"><span>Budai Máté · Programtár</span><span>Frissítve: 2026. november 10. · <a href="https://github.com/matebudai-hue/ultimatum/blob/main/PROGRAMTAR.md">Nyilvántartás</a></span></footer>
 <script>
   (() => {
     'use strict';
     const search = document.getElementById('search');
-    const cards = Array.from(document.querySelectorAll('.card'));
-    const sections = Array.from(document.querySelectorAll('[data-section]'));
-    const buttons = Array.from(document.querySelectorAll('[data-filter]'));
+    const buttons = [...document.querySelectorAll('[data-filter]')];
+    const columns = [...document.querySelectorAll('.column')];
     const count = document.getElementById('count');
+    const empty = document.getElementById('empty');
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('hu');
-    const texts = new Map(cards.map(card => [card, normalize(card.textContent + ' ' + card.dataset.keywords)]));
+    const sections = [...document.querySelectorAll('[data-section]')].map(panel => ({
+      panel,
+      count: panel.querySelector('.section-count'),
+      entries: [...panel.querySelectorAll('.entry')].map(entry => ({
+        entry,
+        text: normalize(entry.textContent + ' ' + entry.dataset.keywords)
+      }))
+    }));
+    const total = sections.reduce((sum, section) => sum + section.entries.length, 0);
     let filter = 'all';
+
     function render() {
       const terms = normalize(search.value).trim().split(/\s+/).filter(Boolean);
       let visible = 0;
-      cards.forEach(card => {
-        const match = (filter === 'all' || card.dataset.category === filter) && terms.every(term => texts.get(card).includes(term));
-        card.hidden = !match;
-        if (match) visible++;
+      sections.forEach(({ panel, count, entries }) => {
+        const showSection = filter === 'all' || filter === panel.dataset.section;
+        let matches = 0;
+        entries.forEach(({ entry, text }) => {
+          const match = showSection && terms.every(term => text.includes(term));
+          entry.hidden = !match;
+          if (match) matches++;
+        });
+        panel.hidden = matches === 0;
+        count.textContent = String(matches).padStart(2, '0');
+        visible += matches;
       });
-      sections.forEach(section => { section.hidden = !Array.from(section.querySelectorAll('.card')).some(card => !card.hidden); });
-      count.textContent = visible + ' / ' + cards.length + ' program és változat';
-      document.getElementById('empty').hidden = visible !== 0;
+      columns.forEach(column => {
+        column.hidden = !column.querySelector('[data-section]:not([hidden])');
+      });
+      empty.hidden = visible !== 0;
+      count.textContent = visible + ' / ' + total + ' találat';
     }
+
     search.addEventListener('input', render);
     buttons.forEach(button => button.addEventListener('click', () => {
       filter = button.dataset.filter;

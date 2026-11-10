@@ -1,6 +1,6 @@
 # Programtár – nyilvántartás
 
-Ellenőrzés: 2026. október 25. Fiók: `matebudai-hue`.
+Ellenőrzés: 2026. november 10. Fiók: `matebudai-hue`.
 
 Közös indítóoldal: https://matebudai-hue.github.io/ultimatum/kozpont/
 
@@ -14,7 +14,11 @@ A központban a tréningprogramok, a személyes játékok, a fejlesztési válto
 |---|---|---|
 | Halastó – eredeti | `halasto`, `main`, `halasto-2/` | https://matebudai-hue.github.io/halasto/ |
 | Kreditjáték | `ultimatum`, `main`, forrás `app/`, build `dashboard/` | https://matebudai-hue.github.io/ultimatum/dashboard/ |
-| Explorer / Kikötő | `ultimatum`, `main`, `explorer/` | https://matebudai-hue.github.io/ultimatum/explorer/ |
+| Explorer / Kikötő | `explorer-kikoto`, `main`, `index.html` | https://matebudai-hue.github.io/explorer-kikoto/ |
+| Chicken Run | `chickenrun`, `main`, `docs/` | https://matebudai-hue.github.io/chickenrun/ |
+| Halastó 2 – A két part | `halasto`, `halasto-3` | https://matebudai-hue.github.io/halasto/halasto-3/ket-part/ |
+| Toyota megfigyelés és minősítés | `minosito`, `main` | https://matebudai-hue.github.io/minosito/ |
+| Jégtörő | `kivagyok`, `main`, `dist/` | https://matebudai-hue.github.io/kivagyok/ |
 | Omotenashi | `ultimatum`, `main`, `omotenashi/` | https://matebudai-hue.github.io/ultimatum/omotenashi/ |
 | Mátra – alapjáték | `matra-hardtrail`, `main`, `matra-v11.html` | https://matebudai-hue.github.io/matra-hardtrail/ |
 | Skorpió | `skorpio`, `main` | https://matebudai-hue.github.io/skorpio/ |
@@ -25,9 +29,11 @@ Az Autós BL külön tárhelyen, a dokumentáció szerint tulajdonosi hozzáfér
 
 ## Fejlesztés, technikai címek
 
+A korábbi Explorer felületek továbbra is elérhetők: [eredeti Kikötő](https://matebudai-hue.github.io/ultimatum/explorer/) és [átvett gyakorlófelület](https://matebudai-hue.github.io/explorer-kikoto/explorer/).
+
 | Név | Forrás / szerep | Cím |
 |---|---|---|
-| Halastó 2 – utód | `halasto` repó, `halasto-3` ág, `halasto-3/` | https://matebudai-hue.github.io/halasto/halasto-3/ |
+| Halastó 2 – korábbi fejlesztési felület | `halasto` repó, `halasto-3` ág, `halasto-3/` | https://matebudai-hue.github.io/halasto/halasto-3/ |
 | Halastó sandbox | `halasto` repó, `halasto-sandbox` ág, `halasto-2/` | https://matebudai-hue.github.io/halasto/sandbox/ |
 | Mátra sandbox | `matra_sandbox`, `main`, az alapjáték azonos v11-es kódja | https://matebudai-hue.github.io/matra_sandbox/ |
 | Eredeti Halastó alternatív címe | Ugyanaz a publikált eredeti program | https://matebudai-hue.github.io/halasto/halasto-2/ |
@@ -36,6 +42,7 @@ Az Autós BL külön tárhelyen, a dokumentáció szerint tulajdonosi hozzáfér
 
 ## Közvetlen segédoldalak
 
+- Toyota megfigyelés és minősítés, admin: https://matebudai-hue.github.io/minosito/#admin
 - Omotenashi-kvíz: https://matebudai-hue.github.io/ultimatum/omotenashi/kviz.html
 - Ichigo Ichie: https://matebudai-hue.github.io/ultimatum/omotenashi/ichigo-ichie.html
 - Andon: https://matebudai-hue.github.io/ultimatum/omotenashi/andon.html
