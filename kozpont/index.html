@@ -3,101 +3,168 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#132823">
+  <meta name="theme-color" content="#f8f5ee">
   <meta name="description" content="Budai Máté programtára. Tréninggyakorlatok, képzési felületek és játékok egy helyen.">
   <title>Programtár · Budai Máté</title>
   <style>
     :root {
       color-scheme: light;
-      --ink: #132823;
-      --muted: #4c5f56;
-      --canvas: #eff2ee;
-      --surface: #fff;
-      --line: #cdd8d0;
-      --accent: #086b53;
-      --accent-soft: #e6f4ed;
-      --radius: 6px;
+      --ink: #211d1a;
+      --muted: #60564f;
+      --paper: #f8f5ee;
+      --band: #eee8de;
+      --line: #d9d0c3;
+      --accent: #b83120;
+      --accent-wash: #fae9e1;
+      --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      --number: 46px;
+      --actions: 275px;
+      --launch: 100px;
+      --gutter: clamp(12px, 3vw, 42px);
+      --list-columns: var(--number) minmax(0, 1.08fr) minmax(0, 1fr) var(--actions) var(--launch);
     }
     * { box-sizing: border-box; }
-    body { margin: 0; color: var(--ink); background: var(--canvas); font: 15px/1.4 system-ui, sans-serif; }
-    a { color: var(--accent); text-underline-offset: 3px; }
-    button, input { font: inherit; }
-    button, summary { cursor: pointer; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.35 system-ui, sans-serif; }
+    a { color: inherit; text-underline-offset: 3px; }
+    button, input, select { font: inherit; }
+    button, summary, select { cursor: pointer; }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     [hidden] { display: none !important; }
-    .wrap { width: min(1360px, 100%); margin-inline: auto; padding-inline: 24px; }
-    .skip { position: absolute; z-index: 1; top: 8px; left: 8px; padding: 8px; background: var(--surface); }
-    .skip:not(:focus) { clip-path: inset(50%); }
-    .mast { background: var(--ink); color: var(--surface); border-bottom: 3px solid #47d5a1; }
-    .mast-inner { display: flex; align-items: center; justify-content: space-between; min-height: 56px; gap: 10px; }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    h1 { margin: 0; font-size: 25px; line-height: 1; letter-spacing: -.04em; }
-    .brand small { color: #c7d7cf; padding-left: 12px; border-left: 1px solid #60736a; font-size: 13px; }
-    .mast a { color: #d0e6d9; font-size: 13px; padding-block: 8px; }
-    .mast a:focus-visible { outline-color: #47d5a1; }
-    .toolbar { display: flex; gap: 12px; align-items: center; margin: 16px 0 12px; }
-    .search { position: relative; flex: 1; min-width: 180px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    .search input { width: 100%; min-height: 40px; padding: 7px 10px 7px 35px; border: 1px solid #98a99e; border-radius: var(--radius); background: var(--surface); color: var(--ink); }
-    .search svg { position: absolute; pointer-events: none; left: 11px; top: 12px; color: var(--muted); }
-    .filters { display: flex; flex-wrap: wrap; gap: 4px; }
-    .filters button { min-height: 36px; padding: 5px 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); font-size: 13px; }
+    .wrap { width: min(1440px, 100%); margin-inline: auto; padding-inline: var(--gutter); }
+    .skip { position: absolute; z-index: 4; top: 8px; left: 8px; padding: 8px; background: var(--paper); }
+    .skip:not(:focus), .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .mast-inner { display: flex; align-items: center; justify-content: space-between; min-height: 68px; gap: 12px; border-bottom: 3px solid var(--ink); }
+    .brand { display: flex; align-items: baseline; min-width: 0; gap: clamp(8px, 2vw, 24px); }
+    h1 { margin: 0; font-size: clamp(26px, 4.4vw, 56px); font-weight: 900; line-height: .94; letter-spacing: -.067em; }
+    .brand small { border-left: 3px solid var(--accent); padding-left: 8px; font-weight: 750; white-space: nowrap; }
+    .mast a { padding-block: 10px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+
+    .pins { display: grid; grid-template-columns: 118px repeat(3, minmax(0, 1fr)); align-items: stretch; margin-top: 8px; border: 1px solid var(--line); }
+    .pins h2 { display: flex; align-items: center; margin: 0; padding: 4px 10px; background: var(--ink); color: var(--paper); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+    .pin { display: grid; grid-template-columns: minmax(0, 1fr) 59px; min-width: 0; min-height: 39px; border-left: 1px solid var(--line); }
+    .pin-main { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 9px; font-weight: 760; text-decoration: none; }
+    .pin-main[href]:hover { background: var(--accent-wash); color: var(--accent); }
+    .pin-main:focus-visible { outline-offset: -2px; }
+    .pin-main:not([href]) { color: var(--muted); font-weight: 500; }
+    .pin-index { color: var(--accent); font: 700 11px/1 var(--mono); }
+    .pin-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pin-control { position: relative; display: grid; place-items: center; border-left: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    .pin-control:hover, .pin-control:focus-within { color: var(--accent); background: var(--accent-wash); }
+    .pin-control:focus-within { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .pin-control select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+
+    .toolbar { position: sticky; z-index: 3; top: 0; display: flex; gap: 8px; align-items: center; padding-block: 8px; background: var(--paper); }
+    .search { position: relative; flex: 1; min-width: 150px; }
+    .search input { width: 100%; min-height: 36px; padding: 5px 9px 5px 32px; border: 1px solid #a3988d; border-radius: 0; background: #fffdf8; color: var(--ink); }
+    .search svg { position: absolute; pointer-events: none; left: 9px; top: 10px; color: var(--muted); }
+    .filters { display: flex; flex-wrap: wrap; gap: 3px; }
+    .filters button { min-height: 36px; padding: 4px 10px; background: transparent; color: var(--ink); border: 1px solid transparent; font-size: 13px; font-weight: 680; }
     .filters button:hover { border-color: var(--accent); }
-    .filters button[aria-pressed="true"] { color: var(--surface); background: var(--accent); border-color: var(--accent); }
-    .count { min-width: 85px; margin: 0; text-align: right; color: var(--muted); font: 12px/1.4 ui-monospace, monospace; }
-    .board { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 12px; }
-    .board:has(> [hidden]) { grid-template-columns: minmax(0, 1fr); }
-    .column { display: grid; align-content: start; gap: 12px; min-width: 0; }
-    .panel, details, .empty { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-    h2 { display: flex; align-items: center; gap: 8px; padding: 7px 12px; margin: 0; background: #e2e9e3; border-bottom: 1px solid var(--line); border-radius: var(--radius) var(--radius) 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
-    .section-count { margin-left: auto; color: var(--muted); font: 12px ui-monospace, monospace; }
+    .filters button[aria-pressed="true"] { color: white; background: var(--accent); border-color: var(--accent); }
+    .count { min-width: 82px; margin: 0; text-align: right; color: var(--muted); font: 11px/1.3 var(--mono); }
+
+    .list-head { display: grid; grid-template-columns: var(--list-columns); align-items: center; min-height: 24px; border-block: 1px solid var(--ink); color: var(--muted); font: 700 10px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; }
+    .list-head span:nth-child(1) { grid-column: 2; }
+    .list-head span:nth-child(2) { grid-column: 3; }
+    .list-head span:nth-child(3) { grid-column: 4 / -1; justify-self: end; padding-right: 10px; }
+    .panel h2 { display: flex; align-items: center; min-height: 23px; margin: 0; padding: 3px 10px 3px 0; background: var(--band); border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: .075em; text-transform: uppercase; }
+    .section-index { width: var(--number); flex: 0 0 var(--number); padding-left: 9px; color: var(--accent); font: 750 11px/1 var(--mono); }
+    .section-count { margin-left: auto; color: var(--muted); font: 11px/1 var(--mono); }
     .entries { list-style: none; margin: 0; padding: 0; }
-    .entry:not([hidden]) ~ .entry:not([hidden]) { border-top: 1px solid var(--line); }
-    .launch { display: flex; align-items: center; gap: 10px; min-height: 49px; padding: 5px 12px; color: var(--ink); text-decoration: none; }
-    .launch:hover { background: var(--accent-soft); }
+    .entry { display: grid; grid-template-columns: minmax(0, 1fr) var(--actions) var(--launch); border-bottom: 1px solid var(--line); }
+    .launch { grid-area: 1 / 1 / 2 / -1; display: grid; grid-template-columns: var(--list-columns); align-items: center; min-height: 33px; color: var(--ink); text-decoration: none; }
+    .launch:hover { background: var(--accent-wash); }
+    .launch:hover .program { text-decoration: underline; text-decoration-thickness: 1px; }
     .launch:focus-visible { outline-offset: -2px; }
-    .entry-copy { flex: 1; min-width: 0; }
-    .entry-copy strong, .desc { display: block; }
-    .entry-copy strong { font-weight: 720; overflow-wrap: anywhere; }
-    .desc { color: var(--muted); font-size: 12px; }
-    .tag { padding: 2px 5px; background: var(--accent-soft); color: #175342; border-radius: 3px; font-size: 11px; white-space: nowrap; }
-    .arrow { display: grid; place-items: center; flex: 0 0 25px; color: var(--accent); }
-    .arrow svg { display: block; }
-    .extras { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 7px; }
-    .extras a { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 7px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; text-decoration: none; }
-    .extras a:hover { background: var(--accent-soft); border-color: var(--accent); }
-    .reference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    summary { padding: 8px 12px; font-weight: 650; font-size: 13px; }
-    details ul, details p { margin: 4px 12px 10px; font-size: 13px; }
+    .row-index { padding-left: 9px; color: var(--muted); font: 11px/1 var(--mono); }
+    .program { min-width: 0; padding: 4px 12px 4px 0; font-size: 14px; font-weight: 780; overflow-wrap: anywhere; }
+    .desc { min-width: 0; padding-right: 10px; color: var(--muted); font-size: 12px; }
+    .start { grid-column: 5; display: flex; justify-content: flex-end; align-items: center; gap: 5px; padding-right: 9px; color: var(--accent); font-size: 12px; font-weight: 750; }
+    .start svg { display: block; }
+    .extras { grid-area: 1 / 2; align-self: center; justify-self: end; z-index: 1; display: flex; flex-wrap: wrap; gap: 3px; margin-right: 3px; }
+    .extras a { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 5px; border: 1px solid var(--line); background: var(--paper); font-size: 11px; font-weight: 650; text-decoration: none; white-space: nowrap; }
+    .extras a:hover { border-color: var(--accent); color: var(--accent); }
+
+    .reference-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    .reference { scroll-margin-top: 104px; border-block: 1px solid var(--line); }
+    summary { padding: 7px 3px; font-weight: 700; font-size: 12px; }
+    details ul, details p { margin: 4px 9px 10px; font-size: 13px; overflow-wrap: anywhere; }
     details li + li { margin-top: 4px; }
-    details li span { color: var(--muted); }
-    .empty { margin: 0; padding: 14px; color: var(--muted); }
-    .footrow { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding-block: 14px; color: var(--muted); font-size: 12px; }
-    @media (max-width: 900px) {
+    details li span, .empty { color: var(--muted); }
+    .empty { padding: 12px; margin: 0; border-block: 1px solid var(--line); }
+    .footrow { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 12px; padding-block: 8px; color: var(--muted); font-size: 11px; }
+
+    @media (max-width: 1050px) {
+      :root { --number: 35px; --actions: 252px; --launch: 79px; }
+      .launch { min-height: 36px; }
+    }
+    @media (max-width: 820px) {
+      .mast-inner { min-height: 55px; }
       .toolbar { flex-wrap: wrap; }
       .search { flex-basis: 100%; }
+      .filters button { min-height: 34px; padding-inline: 7px; }
       .count { margin-left: auto; }
+      .list-head { display: none; }
+      .entry { display: block; }
+      .launch { grid-template-columns: var(--number) minmax(0, 1fr) 26px; min-height: 47px; padding-block: 5px; }
+      .row-index, .start { grid-row: 1 / 3; }
+      .program, .desc { grid-column: 2; }
+      .program { padding-block: 0; }
+      .start { grid-column: 3; }
+      .start-text { display: none; }
+      .extras { margin: 0; padding: 0 8px 5px var(--number); }
+      .extras a { min-height: 31px; }
     }
-    @media (max-width: 690px) {
-      .wrap { padding-inline: 12px; }
-      .board, .reference-grid { grid-template-columns: minmax(0, 1fr); }
-      .filters button { min-height: 40px; }
-      .extras a { min-height: 36px; }
+    @media (max-width: 550px) {
+      .mast-inner { gap: 5px; }
+      .brand small, .mast a { font-size: 10px; }
+      .pins { grid-template-columns: 1fr; }
+      .pins h2 { min-height: 21px; }
+      .pin { min-height: 35px; border-top: 1px solid var(--line); border-left: 0; }
+      .reference-grid { grid-template-columns: 1fr; gap: 4px; }
+      .count { min-width: 0; }
     }
-    @media (max-width: 360px) {
-      .brand small, .tag { display: none; }
+    @media (max-width: 375px) {
+      .filters { flex-basis: 100%; }
+      .count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .mast a { white-space: normal; text-align: right; }
     }
   </style>
 </head>
 <body>
 <a class="skip" href="#programok">Ugrás a programokhoz</a>
-<header class="mast">
-  <div class="wrap mast-inner">
-    <div class="brand"><h1>Programtár</h1><small>Budai Máté</small></div>
+<header class="wrap mast">
+  <div class="mast-inner">
+    <div class="brand"><h1>PROGRAMTÁR</h1><small>Budai Máté</small></div>
     <a href="#terkep">GitHub és archívum ↓</a>
   </div>
 </header>
 <main class="wrap" id="programok" tabindex="-1">
+  <section class="pins" id="pins" aria-labelledby="pins-title" hidden>
+    <h2 id="pins-title">Gyorsindító</h2>
+    <div class="pin">
+      <a class="pin-main"><span class="pin-index" aria-hidden="true">01</span><span class="pin-name"></span></a>
+      <label class="pin-control">
+        <span class="pin-control-text" aria-hidden="true"></span>
+        <select aria-label="1. gyorsindító beállítása"></select>
+      </label>
+    </div>
+    <div class="pin">
+      <a class="pin-main"><span class="pin-index" aria-hidden="true">02</span><span class="pin-name"></span></a>
+      <label class="pin-control">
+        <span class="pin-control-text" aria-hidden="true"></span>
+        <select aria-label="2. gyorsindító beállítása"></select>
+      </label>
+    </div>
+    <div class="pin">
+      <a class="pin-main"><span class="pin-index" aria-hidden="true">03</span><span class="pin-name"></span></a>
+      <label class="pin-control">
+        <span class="pin-control-text" aria-hidden="true"></span>
+        <select aria-label="3. gyorsindító beállítása"></select>
+      </label>
+    </div>
+  </section>
+  <p id="pin-storage" role="status" hidden>A gyorsindító beállításait ebben a böngészőben most nem sikerült elmenteni.</p>
   <div class="toolbar" id="tools" hidden>
     <div class="search" role="search">
       <label class="sr-only" for="search">Keresés a programok között</label>
@@ -114,122 +181,149 @@
     <p class="count" id="count" role="status"></p>
   </div>
   <div class="board">
-    <div class="column">
+    <div class="list-head" id="list-head" aria-hidden="true"><span>Program</span><span>Mire való</span><span>Gyorslinkek</span></div>
     <section class="panel" data-section="training" aria-labelledby="training-title">
-      <h2 id="training-title">Tréninggyakorlatok <span class="section-count" aria-hidden="true">06</span></h2>
+      <h2 id="training-title"><span class="section-index" aria-hidden="true">01 /</span>Tréninggyakorlatok <span class="section-count" aria-hidden="true">06</span></h2>
       <ul class="entries">
-        <li class="entry" data-keywords="eredeti halász fenntarthatóság">
+        <li class="entry" data-keywords="eredeti halász fenntarthatóság szimuláció">
           <a class="launch" href="https://matebudai-hue.github.io/halasto/">
-            <span class="entry-copy"><strong>Halastó</strong><span class="desc">Közös erőforrás, egyéni döntések</span></span>
-            <span class="tag">Szimuláció</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">01</span>
+            <strong class="program">Halastó</strong>
+            <span class="desc">Közös erőforrás, egyéni döntések</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
-        <li class="entry" data-keywords="halasto ket part kétpartos">
+        <li class="entry" data-keywords="halasto ket part kétpartos kipróbálás">
           <a class="launch" href="https://matebudai-hue.github.io/halasto/halasto-3/ket-part/">
-            <span class="entry-copy"><strong>Halastó 2 · A két part</strong><span class="desc">Két part, nyolc halászcsalád</span></span>
-            <span class="tag">Kipróbálás</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">02</span>
+            <strong class="program">Halastó 2 · A két part</strong>
+            <span class="desc">Két part, nyolc halászcsalád</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
-        <li class="entry" data-keywords="kredit ultimatum közös kassza">
+        <li class="entry" data-keywords="kredit ultimatum közös kassza négy játék">
           <a class="launch" href="https://matebudai-hue.github.io/ultimatum/dashboard/">
-            <span class="entry-copy"><strong>Kreditjáték</strong><span class="desc">Ultimátum, Diktátor, Bizalom, Közös kassza</span></span>
-            <span class="tag">Négy játék</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">03</span>
+            <strong class="program">Kreditjáték</strong>
+            <span class="desc">Ultimátum, Diktátor, Bizalom, Közös kassza</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
-        <li class="entry" data-keywords="csirke nyúl gyáva autó futam kitérés">
+        <li class="entry" data-keywords="csirke nyúl gyáva autó futam kitérés szimuláció">
           <a class="launch" href="https://matebudai-hue.github.io/chickenrun/">
-            <span class="entry-copy"><strong>Chicken Run</strong><span class="desc">Páros döntési dilemma, két játékmóddal</span></span>
-            <span class="tag">Szimuláció</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">04</span>
+            <strong class="program">Chicken Run</strong>
+            <span class="desc">Páros döntési dilemma, két játékmóddal</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
-        <li class="entry" data-keywords="matra hard trail alap v11">
+        <li class="entry" data-keywords="matra hard trail alap v11 alapjáték">
           <a class="launch" href="https://matebudai-hue.github.io/matra-hardtrail/">
-            <span class="entry-copy"><strong>Mátra · Hideg fejjel</strong><span class="desc">Túlélési döntések a Mátrában</span></span>
-            <span class="tag">Alapjáték</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">05</span>
+            <strong class="program">Mátra · Hideg fejjel</strong>
+            <span class="desc">Túlélési döntések a Mátrában</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
-        <li class="entry" data-keywords="skorpio csípés felelősség dashboard">
+        <li class="entry" data-keywords="skorpio csípés felelősség dashboard tréneri eszköz">
           <a class="launch" href="https://matebudai-hue.github.io/skorpio/">
-            <span class="entry-copy"><strong>Skorpió</strong><span class="desc">Eseménynapló, idővonal és kivetítés</span></span>
-            <span class="tag">Tréneri eszköz</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">06</span>
+            <strong class="program">Skorpió</strong>
+            <span class="desc">Eseménynapló, idővonal és kivetítés</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
       </ul>
     </section>
     <section class="panel" data-section="portal" aria-labelledby="portal-title">
-      <h2 id="portal-title">Képzési felületek <span class="section-count" aria-hidden="true">03</span></h2>
+      <h2 id="portal-title"><span class="section-index" aria-hidden="true">02 /</span>Képzési felületek <span class="section-count" aria-hidden="true">03</span></h2>
       <ul class="entries">
-        <li class="entry" data-keywords="explorer kikötő kikoto tréningterem kilencedik évfolyam">
+        <li class="entry" data-keywords="explorer kikötő kikoto tréningterem kilencedik évfolyam portál">
           <a class="launch" href="https://matebudai-hue.github.io/explorer-kikoto/">
-            <span class="entry-copy"><strong>Explorer · Kikötő</strong><span class="desc">Trénerképzés, tananyag és hospitálás</span></span>
-            <span class="tag">Portál</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">07</span>
+            <strong class="program">Explorer · Kikötő</strong>
+            <span class="desc">Trénerképzés, tananyag és hospitálás</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
         <li class="entry" data-keywords="minősítő flotta személyautó megfigyelőapp">
           <a class="launch" href="https://matebudai-hue.github.io/minosito/">
-            <span class="entry-copy"><strong>Toyota · Megfigyelés és minősítés</strong><span class="desc">Gyakorlás, 360°-os értékelés és vizsga</span></span>
-            <span class="tag">Toyota</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">08</span>
+            <strong class="program">Toyota · Megfigyelés és minősítés</strong>
+            <span class="desc">Gyakorlás, 360°-os értékelés és vizsga</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
-          <nav class="extras" aria-label="Toyota · Megfigyelés és minősítés gyorslinkek"><a href="https://matebudai-hue.github.io/minosito/#admin">Admin</a></nav>
+          <nav class="extras" aria-label="Toyota · Megfigyelés és minősítés gyorslinkek"><a href="https://matebudai-hue.github.io/minosito/#admin" data-pin-name="Toyota · Admin">Admin</a></nav>
         </li>
         <li class="entry" data-keywords="omotenashi manager kaizen kvíz">
           <a class="launch" href="https://matebudai-hue.github.io/ultimatum/omotenashi/">
-            <span class="entry-copy"><strong>Omotenashi</strong><span class="desc">Tanulási napló és workshopanyagok</span></span>
-            <span class="tag">Toyota</span><span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">09</span>
+            <strong class="program">Omotenashi</strong>
+            <span class="desc">Tanulási napló és workshopanyagok</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
           <nav class="extras" aria-label="Omotenashi gyorslinkek"><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/kviz.html">Kvíz</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/ichigo-ichie.html">Ichigo Ichie</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/andon.html">Andon</a><a href="https://matebudai-hue.github.io/ultimatum/omotenashi/sztenderdizalas.html">Sztenderdizálás</a></nav>
         </li>
       </ul>
     </section>
-    </div>
-    <div class="column">
     <section class="panel" data-section="personal" aria-labelledby="personal-title">
-      <h2 id="personal-title">Egyéb oldalak <span class="section-count" aria-hidden="true">03</span></h2>
+      <h2 id="personal-title"><span class="section-index" aria-hidden="true">03 /</span>Egyéb oldalak <span class="section-count" aria-hidden="true">03</span></h2>
       <ul class="entries">
         <li class="entry" data-keywords="mateksziget matek sziget ádám matematika nyelvtan foci">
           <a class="launch" href="https://matebudai-hue.github.io/ultimatum/matek/">
-            <span class="entry-copy"><strong>Matek-sziget</strong><span class="desc">Matek, nyelvtan és Fradi U12-es feladatok</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">10</span>
+            <strong class="program">Matek-sziget</strong>
+            <span class="desc">Matek, nyelvtan és Fradi U12-es feladatok</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
         <li class="entry" data-keywords="autós bl kisautó verseny">
           <a class="launch" href="https://autos-bajnokok-ligaja.mbudai.chatgpt.site">
-            <span class="entry-copy"><strong>Autós Bajnokok Ligája</strong><span class="desc">Sorsolás, meccsek és tabella</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">11</span>
+            <strong class="program">Autós Bajnokok Ligája</strong>
+            <span class="desc">Sorsolás, meccsek és tabella</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
         <li class="entry" data-keywords="ki vagyok jégtörő budai máté honlap">
           <a class="launch" href="https://matebudai-hue.github.io/kivagyok/">
-            <span class="entry-copy"><strong>Jégtörő</strong><span class="desc">Szakmai honlap</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">12</span>
+            <strong class="program">Jégtörő</strong>
+            <span class="desc">Szakmai honlap</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
       </ul>
     </section>
     <section class="panel" data-section="development" aria-labelledby="development-title">
-      <h2 id="development-title">Fejlesztési változatok <span class="section-count" aria-hidden="true">03</span></h2>
+      <h2 id="development-title"><span class="section-index" aria-hidden="true">04 /</span>Fejlesztési változatok <span class="section-count" aria-hidden="true">03</span></h2>
       <ul class="entries">
         <li class="entry" data-keywords="halasto 2 3 utód">
           <a class="launch" href="https://matebudai-hue.github.io/halasto/halasto-3/">
-            <span class="entry-copy"><strong>Halastó 2 · Korábbi változat</strong><span class="desc">A Halastó 2 korábbi fejlesztési felülete</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">13</span>
+            <strong class="program">Halastó 2 · Korábbi változat</strong>
+            <span class="desc">A Halastó 2 korábbi fejlesztési felülete</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
         <li class="entry" data-keywords="halasto sandbox teszt">
           <a class="launch" href="https://matebudai-hue.github.io/halasto/sandbox/">
-            <span class="entry-copy"><strong>Halastó · Sandbox</strong><span class="desc">A Halastó tesztkörnyezete</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">14</span>
+            <strong class="program">Halastó · Sandbox</strong>
+            <span class="desc">A Halastó tesztkörnyezete</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
         <li class="entry" data-keywords="matra sandbox alapjáték másolat teszt">
           <a class="launch" href="https://matebudai-hue.github.io/matra_sandbox/">
-            <span class="entry-copy"><strong>Mátra · Sandbox</strong><span class="desc">Külön mentéssel futó tesztkörnyezet</span></span>
-            <span class="arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+            <span class="row-index" aria-hidden="true">15</span>
+            <strong class="program">Mátra · Sandbox</strong>
+            <span class="desc">Külön mentéssel futó tesztkörnyezet</span>
+            <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
         </li>
       </ul>
     </section>
-    </div>
   </div>
   <p class="empty" id="empty" hidden>Nincs találat. Próbálj rövidebb keresést, vagy válaszd a Mind szűrőt.</p>
   <div class="reference-grid">
@@ -260,7 +354,7 @@
     'use strict';
     const search = document.getElementById('search');
     const buttons = [...document.querySelectorAll('[data-filter]')];
-    const columns = [...document.querySelectorAll('.column')];
+    const listHead = document.getElementById('list-head');
     const count = document.getElementById('count');
     const empty = document.getElementById('empty');
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('hu');
@@ -290,9 +384,7 @@
         count.textContent = String(matches).padStart(2, '0');
         visible += matches;
       });
-      columns.forEach(column => {
-        column.hidden = !column.querySelector('[data-section]:not([hidden])');
-      });
+      listHead.hidden = visible === 0;
       empty.hidden = visible !== 0;
       count.textContent = visible + ' / ' + total + ' találat';
     }
@@ -303,6 +395,63 @@
       buttons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
       render();
     }));
+    const pinOptions = new Map([...document.querySelectorAll('.launch, [data-pin-name]')].map(link => [
+      link.getAttribute('href'),
+      link.dataset.pinName || link.querySelector('.program').textContent.trim()
+    ]));
+    const slots = [...document.querySelectorAll('.pin')].map(pin => ({
+      link: pin.querySelector('.pin-main'),
+      name: pin.querySelector('.pin-name'),
+      select: pin.querySelector('select'),
+      control: pin.querySelector('.pin-control-text')
+    }));
+    const storageKey = 'programtar.quick-launch.v1';
+    const defaults = [
+      'https://matebudai-hue.github.io/halasto/',
+      'https://matebudai-hue.github.io/ultimatum/dashboard/',
+      'https://matebudai-hue.github.io/skorpio/'
+    ];
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+    const initial = Array.isArray(saved) && saved.length === slots.length ? saved : defaults;
+    const pinned = initial.map((href, index) => pinOptions.has(href) && initial.indexOf(href) === index ? href : '');
+
+    slots.forEach(({ select }, index) => {
+      select.add(new Option('Üres hely', ''));
+      pinOptions.forEach((name, href) => select.add(new Option(name, href)));
+      select.addEventListener('change', () => {
+        pinned[index] = select.value;
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(pinned));
+        } catch {
+          document.getElementById('pin-storage').hidden = false;
+        }
+        renderPins();
+      });
+    });
+
+    function renderPins() {
+      slots.forEach(({ link, name, select, control }, index) => {
+        const href = pinned[index];
+        select.value = href;
+        [...select.options].forEach(option => {
+          option.disabled = option.value !== '' && option.value !== href && pinned.includes(option.value);
+        });
+        if (href) {
+          link.setAttribute('href', href);
+        } else {
+          link.removeAttribute('href');
+        }
+        const label = pinOptions.get(href) || 'Üres hely';
+        name.textContent = label;
+        link.title = label;
+        control.textContent = href ? 'Csere' : 'Választás';
+      });
+    }
+
+    renderPins();
+    document.getElementById('pins').hidden = false;
+
     document.getElementById('tools').hidden = false;
     render();
   })();
