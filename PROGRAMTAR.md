@@ -16,6 +16,7 @@ A központban a tréningprogramok, a személyes játékok, a fejlesztési válto
 | Kreditjáték | `ultimatum`, `main`, forrás `app/`, build `dashboard/` | https://matebudai-hue.github.io/ultimatum/dashboard/ |
 | Explorer / Kikötő | `explorer-kikoto`, `main`, `index.html` | https://matebudai-hue.github.io/explorer-kikoto/ |
 | Chicken Run | `chickenrun`, `main`, `docs/` | https://matebudai-hue.github.io/chickenrun/ |
+| Nagy X/Y | `chickenrun`, `main`, `docs/xy/` | https://matebudai-hue.github.io/chickenrun/xy/ |
 | Halastó 2 – A két part | `halasto`, `halasto-3` | https://matebudai-hue.github.io/halasto/halasto-3/ket-part/ |
 | Toyota megfigyelés és minősítés | `minosito`, `main` | https://matebudai-hue.github.io/minosito/ |
 | Jégtörő | `kivagyok`, `main`, `dist/` | https://matebudai-hue.github.io/kivagyok/ |
