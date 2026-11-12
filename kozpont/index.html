@@ -224,7 +224,9 @@
             <span class="desc">Négycsapatos fogolydilemma változó tétekkel</span>
             <span class="start" aria-hidden="true"><span class="start-text">Indítás</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
           </a>
-          <nav class="extras" aria-label="Nagy X/Y gyorslinkek"><a href="https://matebudai-hue.github.io/chickenrun/xy/activity.html" data-pin-name="Nagy X/Y · Játékaktivitás" title="Tulajdonosi hozzáférés">Játékaktivitás</a></nav>
+          <template id="owner-activity">
+            <nav class="extras" aria-label="Nagy X/Y gyorslinkek"><a href="https://matebudai-hue.github.io/chickenrun/xy/activity.html" data-pin-name="Nagy X/Y · Játékaktivitás" title="Tulajdonosi hozzáférés">Játékaktivitás</a></nav>
+          </template>
         </li>
         <li class="entry" data-keywords="matra hard trail alap v11 alapjáték">
           <a class="launch" href="https://matebudai-hue.github.io/matra-hardtrail/">
@@ -359,8 +361,21 @@
 </main>
 <footer class="wrap footrow"><span>Budai Máté · Programtár</span><span>Frissítve: 2026. november 12. · <a href="https://github.com/matebudai-hue/ultimatum/blob/main/PROGRAMTAR.md">Nyilvántartás</a></span></footer>
 <script>
-  (() => {
+  (async () => {
     'use strict';
+    const activityTemplate = document.getElementById('owner-activity');
+    try {
+      const ownerKey = localStorage.getItem('xy:activity-owner');
+      if (/^[a-f0-9]{32}$/.test(ownerKey || '')) {
+        const access = await fetch('https://chicken-run.mbudai.chatgpt.site/api/xy/activity', {
+          headers: { Authorization: 'Bearer ' + ownerKey },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(3000)
+        });
+        if (access.ok) activityTemplate.replaceWith(activityTemplate.content.cloneNode(true));
+      }
+    } catch {}
+    activityTemplate.remove();
     const search = document.getElementById('search');
     const buttons = [...document.querySelectorAll('[data-filter]')];
     const listHead = document.getElementById('list-head');
