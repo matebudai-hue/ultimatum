@@ -17,6 +17,7 @@ A központban a tréningprogramok, a személyes játékok, a fejlesztési válto
 | Explorer / Kikötő | `explorer-kikoto`, `main`, `index.html` | https://matebudai-hue.github.io/explorer-kikoto/ |
 | Chicken Run | `chickenrun`, `main`, `docs/` | https://matebudai-hue.github.io/chickenrun/ |
 | Nagy X/Y | `chickenrun`, `main`, `docs/xy/` | https://matebudai-hue.github.io/chickenrun/xy/ |
+| Nagy X/Y · Játékaktivitás (tulajdonosi) | `chickenrun`, `main`, `docs/xy/activity.html` | https://matebudai-hue.github.io/chickenrun/xy/activity.html |
 | Halastó 2 – A két part | `halasto`, `halasto-3` | https://matebudai-hue.github.io/halasto/halasto-3/ket-part/ |
 | Toyota megfigyelés és minősítés | `minosito`, `main` | https://matebudai-hue.github.io/minosito/ |
 | Jégtörő | `kivagyok`, `main`, `dist/` | https://matebudai-hue.github.io/kivagyok/ |
