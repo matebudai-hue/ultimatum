@@ -129,6 +129,12 @@
       .count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
       .mast a { white-space: normal; text-align: right; }
     }
+    .mast-links { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; column-gap: 14px; }
+    .mast-links .development-inventory { color: var(--ink); font-weight: 800; text-underline-offset: 3px; }
+    @media (max-width: 550px) {
+      .mast-links { flex-direction: column; align-items: flex-end; }
+      .mast-links a { padding-block: 5px; }
+    }
   </style>
 </head>
 <body>
@@ -136,7 +142,10 @@
 <header class="wrap mast">
   <div class="mast-inner">
     <div class="brand"><h1>PROGRAMTÁR</h1><small>Budai Máté</small></div>
-    <a href="#terkep">GitHub és archívum ↓</a>
+    <nav class="mast-links" aria-label="Dokumentumok és archívum">
+      <a class="development-inventory" href="https://chatgpt.com/library?file_id=libfile_e71c4d7f1bcc8191af3faf1576d0f021&amp;account_id=personal" target="_blank" rel="noopener noreferrer">Fejlesztési leltár</a>
+      <a href="#terkep">GitHub és archívum ↓</a>
+    </nav>
   </div>
 </header>
 <main class="wrap" id="programok" tabindex="-1">
