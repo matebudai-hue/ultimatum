@@ -16,9 +16,11 @@ const js = transformSync(taskSource, { loader: 'tsx', jsx: 'transform', target: 
 let confirmed = true;
 let failSubmit = false;
 const sent: number[] = [];
-const Task = new Function('React','useState','useEffect','useAmountDraft','AmountInput','confirmAmount','gameStore','formatCredits','DeadlineTimer','Check','publicGoodsPlayerPayout',
+const CreditTable = ({value,onChange,max,disabled}: Parameters<typeof AmountInput>[0]) =>
+  <AmountInput value={value} onChange={onChange} max={max} disabled={disabled} required={false} />;
+const Task = new Function('React','useState','useEffect','useAmountDraft','CreditTable','CreditEncounter','confirmAmount','gameStore','formatCredits','DeadlineTimer','Check','publicGoodsPlayerPayout',
   js + '; return PublicGoodsParticipantTask;')(
-  React, useState, useEffect, useAmountDraft, AmountInput, () => confirmed,
+  React, useState, useEffect, useAmountDraft, CreditTable, () => null, () => confirmed,
   { submitPublicGoods: (_c: string, _p: string, amount: number) => { if (failSubmit) throw new Error('Lejárt a döntési idő.'); sent.push(amount); } },
   (value: number) => value.toLocaleString('hu-HU') + ' kr', () => null, () => null, publicGoodsPlayerPayout);
 let session: any = { code:'TEST', players:[{id:'p',currentBalance:12000000}],groups:[{id:'g',name:'Teszt',memberIds:['p']}],
@@ -68,7 +70,7 @@ assert.match(document.body.textContent!, /200\s?000/);
 assert.equal(document.querySelector('form'), null, 'A döntés előtt meg kell jeleníteni a minimumot.');
 await act(async () => Array.from(document.querySelectorAll('button')).find(b => /Megértettem/.test(b.textContent ?? ''))!.click());
 assert.ok(document.querySelector('form'));
-assert.match(document.body.textContent!, /CSOPORT MINIMUMA/);
+assert.match(document.body.textContent!, /Minimum · 200\s?000/);
 await act(async () => root.unmount());
 console.log('PUBLIC GOODS UI: confirmation, delayed acknowledgement, saved state and interrupted modification PASS');
 
