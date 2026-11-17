@@ -15,12 +15,12 @@ export function useAmountDraft(key: string, fallback: number | '' = '') {
   return [amount, setAmount] as const;
 }
 
-export function AmountInput({ value, onChange, max, disabled = false }: {
-  value: number | ''; onChange: (value: number | '') => void; max: number; disabled?: boolean;
+export function AmountInput({ value, onChange, max, disabled = false, required = true }: {
+  value: number | ''; onChange: (value: number | '') => void; max: number; disabled?: boolean; required?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return <>
-    <input type="text" inputMode="numeric" autoComplete="off" required
+    <input type="text" inputMode="numeric" autoComplete="off" required={required}
       disabled={disabled} value={focused ? value : formatCreditInput(value)}
       placeholder="Írd be az összeget"
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}

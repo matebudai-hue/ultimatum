@@ -1,3 +1,4 @@
+import { CreditTable, CreditOffer, CreditOutcome, CreditEncounter, VaultOutcome } from './CreditTable';
 import { connectionDeadline } from './browserCompat';
 import { PlayerAccessPanel } from './PlayerAccessPanel';
 import {ReflectionsView, StandingsView, renderReflectionProjection, type ReflectionEntry} from './DebriefExtras';
@@ -5,9 +6,9 @@ import {PersonalReportDelivery} from './PersonalReportDelivery';
 import {TakeawayField} from './TakeawayField';
 import {ParticipantJourneyPanel, renderJourneyProjection} from './ParticipantJourney';
 import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
-import { AmountInput, useAmountDraft, confirmAmount } from './AmountInput';
+import { useAmountDraft, confirmAmount } from './AmountInput';
 import { publicGoodsPlayerPayout } from './gameEngine';
-import React, { FormEvent, useEffect, useMemo, useState } from 'react';
+import React, { createContext, FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
@@ -24,6 +25,8 @@ import {
   Users,
 } from 'lucide-react';
 import './styles.css';
+import './participant.css';
+import './participantResults.css';
 import {
   Decision,
   GameSession,
@@ -3104,8 +3107,10 @@ function LiveDebriefNotes({ session }: { session: GameSession }) {
 
 function SelfReportMiniCard({
   item,
+  timeline = false,
 }: {
   item: ReturnType<typeof buildSelfReport>[number];
+  timeline?: boolean;
 }) {
   let main = '';
   let secondary = '';
@@ -3169,7 +3174,8 @@ function SelfReportMiniCard({
 
   return (
     <div className="self-report-mini-card">
-      <span>{item.roundLabel}</span>
+      <span>{timeline && item.game !== 'publicGoods'
+        ? ROUND_LABELS[item.roundKey] : item.roundLabel}</span>
       <strong>{main}</strong>
       <small>{secondary}</small>
       {item.isBotDecision && <em className="self-report-bot-note">BOT döntése</em>}
@@ -4424,7 +4430,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} debriefOpen={debriefOpen} />
       {testMode && <TestHarness session={session} />}
 
-      {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
+      {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p><a href={joinUrl} target="_blank" rel="noopener noreferrer">Játékos belépési link</a></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
       <PlayerAccessPanel session={session} />
       <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
@@ -4456,15 +4462,25 @@ function Timer({ startedAt }: { startedAt?: string }) {
   return <div className={'timer ' + (remaining === 0 ? 'expired' : '')}>{remaining > 0 ? remaining + ' mp' : 'Lejárt'}</div>;
 }
 
-function DeadlineTimer({ deadlineAt }: { deadlineAt?: string }) {
-  const [now, setNow] = useState(Date.now());
+const ParticipantClockSlot = createContext<HTMLDivElement | null>(null);
+
+function DeadlineTimer({ deadlineAt, inHeader = false }: {
+  deadlineAt?: string;
+  inHeader?: boolean;
+}) {
+  const slot = useContext(ParticipantClockSlot);
+  const [now, setNow] = useState(Date.now);
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(id);
   }, []);
-  if (!deadlineAt) return null;
-  const remaining = Math.max(0, Math.ceil((new Date(deadlineAt).getTime() - now) / 1000));
-  return <div className={'timer ' + (remaining === 0 ? 'expired' : '')}>{remaining > 0 ? remaining + ' mp' : 'Idő lejárt'}</div>;
+  const deadline = deadlineAt ? Date.parse(deadlineAt) : undefined;
+  if (deadline === undefined) return null;
+  const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const clock = <div className={'timer ' + (remaining === 0 ? 'expired' : remaining <= 10 ? 'urgent' : '')}>
+    {remaining > 0 ? remaining + ' mp' : 'Idő lejárt'}
+  </div>;
+  return inHeader && slot ? createPortal(clock, slot) : clock;
 }
 
 function AmountDecision({
@@ -4486,7 +4502,7 @@ function AmountDecision({
   submitting?: boolean;
   draftKey: string;
 }) {
-  const [amount, setAmount] = useAmountDraft(draftKey);
+  const [amount, setAmount] = useAmountDraft(draftKey, 0);
   const numericAmount = amount === '' ? null : Math.round(amount);
   return (
     <form className="decision-form" onSubmit={(event) => {
@@ -4494,49 +4510,11 @@ function AmountDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <label className="field">
-        <span>{label}</span>
-        <AmountInput value={amount} onChange={setAmount} max={max} disabled={submitting} />
-      </label>
-      <p className="limit">0 – {formatCredits(max)}</p>
-      {numericAmount !== null && (
-        <div className="decision-consequence">
-          <span>{giveLabel}: <strong>{formatCredits(numericAmount)}</strong></span>
-          <span>{keepLabel}: <strong>{formatCredits(Math.max(0, max - numericAmount))}</strong></span>
-        </div>
-      )}
+      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label={label} destination={giveLabel} source={keepLabel} mechanism={giveLabel === 'Ajánlatod az asztalon' ? 'bridge' : 'chute'} />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : button}
       </button>
     </form>
-  );
-}
-
-function UltimatumRules({ credit, role }: { credit: number; role: 'proposer' | 'receiver' }) {
-  return (
-    <div className="game-rules-card">
-      {role === 'proposer' ? (
-        <>
-          <p>
-            <strong>Kapsz {formatCredits(credit)} kreditet.</strong> A rendszer összesorsol egy idegennel, aki ugyanazt tudja, mint Te. Ebből az összegből te döntöd el, mennyit ajánlasz fel neki.
-          </p>
-          <p>
-            Ha elfogadja az ajánlatodat, a bank mindkettőtöknek jóváírja az elosztást: ő megkapja a felajánlott összeget, nálad marad a többi. <strong>Ha elutasítja, egyikőtök sem kap semmit.</strong>
-          </p>
-          <p><strong>Alku nincs.</strong></p>
-        </>
-      ) : (
-        <>
-          <p>
-            <strong>A másik játékos {formatCredits(credit)} kreditet kapott.</strong> Ebből az összegből ő dönti el, mennyit ajánl fel neked.
-          </p>
-          <p>
-            Ha elfogadod az ajánlatát, a bank mindkettőtöknek jóváírja az elosztást. <strong>Ha elutasítod, egyikőtök sem kap semmit.</strong>
-          </p>
-          <p><strong>Alku nincs.</strong></p>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -4551,26 +4529,15 @@ function TrustSendDecision({
   submitting?: boolean;
   draftKey: string;
 }) {
-  const [amount, setAmount] = useAmountDraft(draftKey);
+  const [amount, setAmount] = useAmountDraft(draftKey, 0);
   const numericAmount = amount === '' ? null : Math.round(amount);
-  const tripled = numericAmount === null ? null : numericAmount * 3;
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <label className="field">
-        <span>Mennyit küldesz a másik játékosnak?</span>
-        <AmountInput value={amount} onChange={setAmount} max={max} disabled={submitting} />
-      </label>
-      {numericAmount !== null && tripled !== null && (
-        <div className="decision-consequence">
-          <span>Te küldesz: <strong>{formatCredits(numericAmount)}</strong></span>
-          <span>Nálad marad: <strong>{formatCredits(Math.max(0, max - numericAmount))}</strong></span>
-          <span>A másikhoz kerül: <strong>{formatCredits(tripled)}</strong></span>
-        </div>
-      )}
+      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label="Mennyit küldesz a másik játékosnak?" destination="Te küldesz" multiplier={3} mechanism="tripler" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : 'Küldés'}
       </button>
@@ -4589,25 +4556,15 @@ function TrustReturnDecision({
   submitting?: boolean;
   draftKey: string;
 }) {
-  const [amount, setAmount] = useAmountDraft(draftKey);
+  const [amount, setAmount] = useAmountDraft(draftKey, 0);
   const numericAmount = amount === '' ? null : Math.round(amount);
-  const kept = numericAmount === null ? null : Math.max(0, available - numericAmount);
   return (
     <form className="decision-form" onSubmit={(event) => {
       event.preventDefault();
       if (numericAmount === null || numericAmount < 0 || numericAmount > available) return;
       if (!submitting && confirmAmount(numericAmount, available)) onSubmit(numericAmount);
     }}>
-      <label className="field">
-        <span>Mennyit adsz vissza?</span>
-        <AmountInput value={amount} onChange={setAmount} max={available} disabled={submitting} />
-      </label>
-      {numericAmount !== null && kept !== null && (
-        <div className="decision-consequence">
-          <span>Visszaadsz: <strong>{formatCredits(numericAmount)}</strong></span>
-          <span>Nálad marad: <strong>{formatCredits(kept)}</strong></span>
-        </div>
-      )}
+      <CreditTable value={amount} onChange={setAmount} max={available} disabled={submitting} label="Mennyit adsz vissza?" destination="Visszaadsz" mechanism="return" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > available}>
         {submitting ? 'Küldés…' : 'Visszaadás elküldése'}
       </button>
@@ -4680,7 +4637,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       const ownTimeout = timeout.playerId === playerId;
       return (
         <>
-          <UltimatumRules credit={session.startingCredit} role={isA ? 'proposer' : 'receiver'} />
+
           <div className="submitted timeout-result">
             <strong>{ownTimeout ? 'Lejárt a 60 másodperced.' : 'A másik játékos ideje lejárt.'}</strong>
             <span>Ebből a párosításból egyikőtök sem kap kreditet.</span>
@@ -4695,11 +4652,14 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       const ownCredit = accepted ? (isA ? session.startingCredit - offer : offer) : 0;
       return (
         <>
-          <UltimatumRules credit={session.startingCredit} role={isA ? 'proposer' : 'receiver'} />
+          <CreditOutcome mechanism="bridge" left={isA ? session.startingCredit - offer : offer}
+            right={isA ? offer : session.startingCredit - offer} rejected={!accepted} />
+
           <div className={'submitted ' + (accepted ? '' : 'timeout-result')}>
-            <Check size={28} />
-            <strong>{accepted ? 'Az ajánlatot elfogadták.' : 'Az ajánlatot elutasították.'}</strong>
-            <span>{accepted ? `Ebben a körben ${formatCredits(ownCredit)} került a vagyonodhoz.` : 'Ebből a körből egyikőtök sem kapott kreditet.'}</span>
+            <strong>{isA
+              ? (accepted ? 'Elfogadták az ajánlatod.' : 'Elutasították az ajánlatod.')
+              : (accepted ? 'Elfogadtad az ajánlatot.' : 'Elutasítottad az ajánlatot.')}</strong>
+
           </div>
         </>
       );
@@ -4710,24 +4670,24 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
         const proposerDeadline = gameStore.ultimatumDeadlineAt(session, pairing.id, playerId);
         return (
           <>
-            <UltimatumRules credit={session.startingCredit} role="proposer" />
             <div className="participant-pool-heading">
               <div>
-                <h2>Mennyit ajánlasz fel a másik játékosnak?</h2>
-                <p>{ULTIMATUM_PROPOSER_SECONDS} másodperced van a döntésre.</p>
+                <h2>Mennyit ajánlasz fel?</h2>
+                <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
               </div>
-              <DeadlineTimer deadlineAt={proposerDeadline} />
+              <DeadlineTimer deadlineAt={proposerDeadline} inHeader />
             </div>
             <AmountDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
               max={session.startingCredit}
               label="A másik játékosnak felajánlott kredit"
               button="Ajánlat elküldése"
-              giveLabel="Felajánlasz"
+              giveLabel="Ajánlatod az asztalon"
               keepLabel="Elfogadáskor nálad marad"
               onSubmit={(amount) => submit({ type: 'ultimatum_offer', amount })}
               submitting={submitting}
             />
+
           </>
         );
       }
@@ -4735,14 +4695,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       const receiverDeadline = gameStore.ultimatumDeadlineAt(session, pairing.id, pairing.playerB);
       return (
         <>
-          <UltimatumRules credit={session.startingCredit} role="proposer" />
-          <div className="submitted">
-            <Check size={28} />
-            <strong>Ajánlat elküldve: {formatCredits(offerDecision.amount ?? 0)}</strong>
+          <CreditOffer own={session.startingCredit - (offerDecision.amount ?? 0)} other={offerDecision.amount ?? 0} />
+          <div className="credit-waiting" role="status">
             <span>
               {partnerTechnicalIssue
                 ? 'A másik játékos döntése technikai ellenőrzés alatt van. A tréner látja.'
-                : 'Várakozás a másik játékos döntésére.'}
+                : 'Az ajánlatod elküldve.'}
             </span>
             {receiverDeadline && <DeadlineTimer deadlineAt={receiverDeadline} />}
           </div>
@@ -4753,10 +4711,9 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     if (!offerDecision) {
       return (
         <>
-          <UltimatumRules credit={session.startingCredit} role="receiver" />
-          <div className="waiting-box">
-            Várakozás a másik játékos ajánlatára… A te 60 másodperced még nem indult el.
-          </div>
+
+          <CreditEncounter mechanism="bridge" own={0} other={session.startingCredit}
+            ownLabel="Ajánlatra vársz" otherLabel="Ő osztja el" partner="A másik játékos készül az ajánlattal" />
         </>
       );
     }
@@ -4765,14 +4722,14 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       const receiverDeadline = gameStore.ultimatumDeadlineAt(session, pairing.id, playerId);
       return (
         <>
-          <UltimatumRules credit={session.startingCredit} role="receiver" />
           <div className="participant-pool-heading">
             <div>
-              <h2>A másik játékos {formatCredits(offerDecision.amount ?? 0)} kreditet ajánlott neked.</h2>
-              <p>Elfogadod? {ULTIMATUM_RECEIVER_SECONDS} másodperced van dönteni.</p>
+              <h2>Elfogadod az ajánlatot?</h2>
+              <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
             </div>
-            <DeadlineTimer deadlineAt={receiverDeadline} />
+            <DeadlineTimer deadlineAt={receiverDeadline} inHeader />
           </div>
+          <CreditOffer own={offerDecision.amount ?? 0} other={session.startingCredit - (offerDecision.amount ?? 0)} receiving />
           <div className="decision-buttons">
             <button className="primary" disabled={submitting} onClick={() => submit({ type: 'ultimatum_response', accepted: true })}>
               {submitting ? 'Küldés…' : 'Elfogadom'}
@@ -4781,17 +4738,19 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               {submitting ? 'Küldés…' : 'Elutasítom'}
             </button>
           </div>
+
         </>
       );
     }
 
     return (
       <>
-        <UltimatumRules credit={session.startingCredit} role="receiver" />
+        <CreditOutcome mechanism="bridge" left={offerDecision.amount ?? 0}
+          right={session.startingCredit - (offerDecision.amount ?? 0)} rejected={!responseDecision.accepted} />
         <div className="submitted">
           <Check size={28} />
           <strong>{responseDecision.accepted ? 'Elfogadtad az ajánlatot.' : 'Elutasítottad az ajánlatot.'}</strong>
-          <span>Várakozás a kör könyvelésére.</span>
+          <span>Jóváírás a kör lezárásakor.</span>
         </div>
       </>
     );
@@ -4802,43 +4761,20 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     const given = giveDecision?.amount ?? 0;
 
     if (!isA) {
-      if (closed) {
-        return (
-          <>
-            <div className="game-rules-card">
-              <p>
-                <strong>A másik játékos {formatCredits(session.startingCredit)} kreditet kapott.</strong> Ő döntötte el, mennyit ad neked.
-              </p>
-              <p>
-                <strong>Neked ebben a körben nem volt döntési lehetőséged:</strong> azt az összeget kaptad, amit ő adott neked.
-              </p>
-            </div>
-            <div className="submitted">
-              <Check size={28} />
-              <strong>{formatCredits(given)} kreditet kaptál.</strong>
-              <span>Ez az összeg bekerült a vagyonodba.</span>
-            </div>
-          </>
-        );
-      }
-
       return (
         <>
-          <div className="game-rules-card">
-            <p>
-              <strong>A másik játékos {formatCredits(session.startingCredit)} kreditet kapott.</strong> A rendszer összesorsolt vele, és ő dönti el, mennyit ad neked.
-            </p>
-            <p>
-              <strong>Neked ebben a körben nincs döntési lehetőséged:</strong> azt az összeget kapod, amit ő ad neked.
-            </p>
+          <div className="participant-scene-heading">
+            <h2>{giveDecision ? 'Ennyit kaptál' : 'A másik játékos oszt'}</h2>
           </div>
-          <div className="waiting-box">
-            {giveDecision
-              ? (giveDecision.timedOutRole === 'dictator'
-                ? 'A másik játékos nem döntött 60 másodpercen belül, ezért 0 kreditet kapsz.'
-                : `A másik játékos ${formatCredits(given)} kreditet adott neked. Várakozás a kör könyvelésére…`)
-              : 'Várakozás a másik játékos döntésére…'}
-          </div>
+          {closed ? <CreditOutcome mechanism="chute" left={given} right={session.startingCredit - given} />
+            : <CreditEncounter mechanism="chute" own={given} other={session.startingCredit - given}
+                ownLabel={giveDecision ? 'Neked jut' : 'Ide érkezik'}
+                otherLabel={giveDecision ? 'Nála marad' : 'Ennyiből oszt'}
+                partner={giveDecision ? 'Az elosztás elkészült' : 'A másik játékos dönt'} />}
+          {giveDecision && <p className="kredit-inline-status" role="status">
+            {giveDecision.timedOutRole === 'dictator' ? 'A másik játékos ideje lejárt.'
+              : closed ? 'Jóváírva a vagyonodban.' : 'Jóváírás a kör lezárásakor.'}
+          </p>}
         </>
       );
     }
@@ -4846,23 +4782,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     if (!giveDecision) {
       return (
         <>
-          <div className="game-rules-card">
-            <p>
-              <strong>Most is kapsz {formatCredits(session.startingCredit)} kreditet.</strong> A rendszer összesorsol egy idegennel, aki ugyanazt tudja, mint Te. A kapott kreditből eldöntheted, mennyit adsz neki.
-            </p>
-            <p>
-              <strong>A döntés kizárólag a tiéd. A másik félnek nincs döntési lehetősége: azt az összeget kapja, amit te adsz neki.</strong>
-            </p>
-            <p>
-              Amit neki adsz, azt a bank az ő vagyonához írja. Ami nálad marad, azt a te vagyonodhoz írja. <strong>Alku nincs.</strong>
-            </p>
-          </div>
           <div className="participant-pool-heading">
             <div>
               <h2>Mennyit adsz a másik játékosnak?</h2>
-              <p>{STRATEGIC_DECISION_SECONDS} másodperced van. Ha nem döntesz, 0 kreditet adsz.</p>
+
             </div>
-            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
+            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
           </div>
           <AmountDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4880,16 +4805,11 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
 
     return (
       <>
-        <div className="game-rules-card">
-          <p>
-            <strong>Most is kapsz {formatCredits(session.startingCredit)} kreditet.</strong> Te döntöttél az elosztásról.
-          </p>
-        </div>
+        <CreditOutcome mechanism="chute" left={session.startingCredit - given} right={given} />
         <div className="submitted">
           <Check size={28} />
           <strong>{giveDecision?.timedOutRole === 'dictator' ? 'Lejárt a 60 másodperc. 0 kreditet adtál.' : `${formatCredits(given)} kreditet adtál a másik játékosnak.`}</strong>
-          <span>Nálad {formatCredits(session.startingCredit - given)} kredit marad ebből a körből.</span>
-          <span>{closed ? 'A kör könyvelve.' : 'Várakozás a kör könyvelésére.'}</span>
+          <span>{closed ? 'Jóváírva.' : 'Jóváírás a kör lezárásakor.'}</span>
         </div>
       </>
     );
@@ -4902,26 +4822,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     if (!sentDecision) {
       return (
         <>
-          <div className="game-rules-card">
-            <p>
-              <strong>Kapsz {formatCredits(session.startingCredit)} kreditet.</strong> A rendszer összesorsol egy idegennel, aki ugyanazt tudja, mint Te.
-            </p>
-            <p>
-              Eldöntheted, hogy a kapott kreditből mennyit küldesz neki. <strong>A bank az elküldött összeget megháromszorozza</strong>, és ezt kapja meg a másik játékos.
-            </p>
-            <p>
-              Ezután ő dönt arról, hogy a hozzá került összegből mennyit ad vissza neked. Akár semmit is visszaadhat.
-            </p>
-            <p>
-              Ami nálad maradt, az a tiéd. Ehhez hozzáadódik az az összeg, amit a másik játékos visszaad.
-            </p>
-          </div>
           <div className="participant-pool-heading">
             <div>
               <h2>Mennyit küldesz a másik játékosnak?</h2>
-              <p>{STRATEGIC_DECISION_SECONDS} másodperced van. Ha nem döntesz, 0 kreditet küldesz.</p>
+              <p>A bank megháromszorozza, amit elküldesz.</p>
             </div>
-            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
+            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
           </div>
           <TrustSendDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4938,12 +4844,14 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
 
     if (!returnedDecision) {
       return (
+        <>
+        <CreditEncounter mechanism="tripler" own={session.startingCredit - sent} other={tripled}
+          ownLabel="Nálad maradt" otherLabel="Hozzá érkezett (×3)" partner="A másik játékos dönt a visszaadásról" />
         <div className="submitted">
           <Check size={28} />
           <strong>{sentDecision.timedOutRole === 'sender' ? 'Lejárt a 60 másodperc. Nem küldtél kreditet.' : `Elküldtél ${formatCredits(sent)} kreditet.`}</strong>
-          <span>A bank {formatCredits(tripled)} kreditet adott a másik játékosnak.</span>
-          <span>Várakozás arra, hogy eldöntse, mennyit ad vissza.</span>
         </div>
+        </>
       );
     }
 
@@ -4952,13 +4860,15 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     const totalGain = keptFromStart + returned;
 
     return (
+      <>
+      <CreditOutcome mechanism="return" left={totalGain} right={tripled - returned} />
       <div className="submitted">
         <Check size={28} />
         <strong>A másik játékos {formatCredits(returned)} kreditet adott vissza.</strong>
         <span>Az induló összegből nálad maradt {formatCredits(keptFromStart)}, és {formatCredits(returned)} kreditet kaptál vissza.</span>
-        <span><strong>Ebben a körben {formatCredits(totalGain)} kerül a vagyonodhoz.</strong></span>
-        <span>{closed ? 'A kör könyvelve.' : 'Várakozás a kör könyvelésére.'}</span>
+        <span>{closed ? 'Jóváírva.' : 'Jóváírás a kör lezárásakor.'}</span>
       </div>
+      </>
     );
   }
 
@@ -4970,7 +4880,8 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <strong>A másik játékos most arról dönt, mennyit küld neked.</strong> A bank az általa elküldött összeget megháromszorozza. Ezután te döntöd el, mennyit adsz vissza neki.
           </p>
         </div>
-        <div className="waiting-box">Várakozás a másik játékos döntésére…</div>
+        <CreditEncounter mechanism="tripler" own={0} other={session.startingCredit}
+          ownLabel="Hozzád érkezett" otherLabel="Ebből küldhet" partner="A másik játékos dönt" />
       </>
     );
   }
@@ -4981,19 +4892,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   if (!returnedDecision) {
     return (
       <>
-        <div className="game-rules-card">
-          <p>
-            <strong>A másik játékos {formatCredits(sent)} kreditet küldött neked.</strong> A bank ezt megháromszorozta, ezért <strong>{formatCredits(tripled)} kredit került hozzád.</strong>
-          </p>
-          <p>Most te döntesz. Ebből az összegből mennyit adsz vissza a másik játékosnak?</p>
-          <p>Amit visszaadsz, azt ő kapja meg. Ami megmarad, az a te vagyonodhoz kerül.</p>
-        </div>
         <div className="participant-pool-heading">
           <div>
             <h2>Mennyit adsz vissza?</h2>
-            <p>{STRATEGIC_DECISION_SECONDS} másodperced van. Ha nem döntesz, 0 kreditet adsz vissza.</p>
+            <p>A beérkezett kreditből adsz vissza.</p>
           </div>
-          <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} />
+          <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
         </div>
         <TrustReturnDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -5007,13 +4911,15 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
 
   const returned = returnedDecision.amount ?? 0;
   return (
+    <>
+    <CreditOutcome mechanism="return" left={tripled - returned} right={session.startingCredit - sent + returned} />
     <div className="submitted">
       <Check size={28} />
       <strong>{formatCredits(tripled)} kredit került hozzád.</strong>
       <span>{returnedDecision.timedOutRole === 'returner' ? 'Lejárt a 60 másodperc, ezért 0 kreditet adtál vissza.' : `${formatCredits(returned)} kreditet visszaadtál.`}</span>
-      <span><strong>{formatCredits(tripled - returned)} kredit marad nálad.</strong></span>
-      <span>{closed ? 'A kör könyvelve.' : 'Várakozás a kör könyvelésére.'}</span>
+      <span>{closed ? 'Jóváírva.' : 'Jóváírás a kör lezárásakor.'}</span>
     </div>
+    </>
   );
 }
 
@@ -5025,7 +4931,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     (item) => item.roundNumber === session.publicGoodsRoundNumber && item.memberIds.includes(playerId),
   );
   const existingAmount = currentRound?.contributions[playerId];
-  const [amount, setAmount] = useAmountDraft(session.code + ':' + playerId + ':pool:' + session.publicGoodsRoundNumber, existingAmount ?? '');
+  const [amount, setAmount] = useAmountDraft(session.code + ':' + playerId + ':pool:' + session.publicGoodsRoundNumber, existingAmount ?? 0);
   const [editingRound, setEditingRound] = useState<string | null>(null);
   const editing = existingAmount === undefined || editingRound === currentRound?.id || amount !== existingAmount;
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
@@ -5088,50 +4994,26 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
     const payout = publicGoodsPlayerPayout(currentRound, playerId);
     const personalResult = payout - contribution;
 
-    if (currentRound.success) {
-      return (
-        <>
-          <div className="game-rules-card">
-            <p><strong>A kör lezárult.</strong></p>
-            <p>
-              A csoport összesen <strong>{formatCredits(currentRound.totalContribution)}</strong> kreditet tett a közös kasszába.
-              A bank ezt megduplázta: <strong>{formatCredits(currentRound.totalContribution * 2)}</strong>.
-            </p>
-            <p>
-              Te <strong>{formatCredits(payout)}</strong> kreditet kaptál vissza. A kerekítési maradék miatt legfeljebb 1 kredit eltérés lehet a csoporttagok között.
-            </p>
-          </div>
-          <div className="submitted">
-            <Check size={28} />
-            <strong>Te befizettél: {formatCredits(contribution)}</strong>
-            <span>Visszakaptál: {formatCredits(payout)}</span>
-            <span>A kör eredménye számodra: {personalResult >= 0 ? '+' : ''}{formatCredits(personalResult)}</span>
-            <span><strong>Új vagyonod: {formatCredits(player.currentBalance)}</strong></span>
-          </div>
-          <div className="waiting-box">Várakozás a következő körre…</div>
-        </>
-      );
-    }
-
     return (
-      <>
-        <div className="game-rules-card">
-          <p><strong>A kör lezárult.</strong></p>
-          <p>
-            A közös kassza nem érte el a körhöz szükséges minimumot.
-          </p>
-          <p>
-            A bank ebben a körben <strong>nem fizet vissza</strong>.
-          </p>
-        </div>
-        <div className="submitted timeout-result">
-          <strong>Te befizettél: {formatCredits(contribution)}</strong>
-          <span>Visszakaptál: 0 kredit</span>
-          <span>A befizetett összeget elvesztetted.</span>
-          <span><strong>Új vagyonod: {formatCredits(player.currentBalance)}</strong></span>
-        </div>
-        <div className="waiting-box">Várakozás a következő körre…</div>
-      </>
+      <section className="kredit-settlement" aria-label="Kasszaelszámolás">
+        <header className="kredit-result-hero" data-tone={personalResult < 0 ? 'loss' : personalResult > 0 ? 'gain' : 'even'}>
+          <div>
+            <p>A kör egyenlege</p>
+            <strong>{signedCredits(personalResult)}</strong>
+          </div>
+          <span>{currentRound.minimumAmount === undefined ? 'Elszámolva'
+            : currentRound.success ? 'Minimum teljesült' : 'Minimum alatt'}</span>
+        </header>
+        <dl className="kredit-personal-settlement">
+          <div><dt>Befizettél</dt><dd>{formatCredits(contribution)}</dd></div>
+          <div><dt>Visszakaptál</dt><dd>{formatCredits(payout)}</dd></div>
+        </dl>
+        <VaultOutcome total={currentRound.totalContribution} minimum={currentRound.minimumAmount} />
+        <dl className="kredit-result-breakdown">
+          {currentRound.success && <div><dt>A bank duplázása után</dt><dd>{formatCredits(currentRound.totalContribution * 2)}</dd></div>}
+        </dl>
+        <p className="kredit-result-wait" role="status">Várakozás a következő körre…</p>
+      </section>
     );
   }
 
@@ -5169,32 +5051,14 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
 
   return (
     <>
-      {currentGroup && <div className="participant-group-mini">Csoport: <strong>{currentGroup.name}</strong></div>}
-      <div className="game-rules-card">
-        <p>
-          <strong>Közös kassza · {session.publicGoodsRoundNumber}. kör</strong>
-        </p>
-        <p>Jelenlegi vagyonod: <strong>{formatCredits(player.currentBalance)}</strong>.</p>
-        {minimumVisible ? (
-          <p>
-            A kör minimum kasszája: <strong>{formatCredits(currentRound.minimumAmount ?? 0)}</strong>.
-          </p>
-        ) : (
-          <p>Ebben a körben nincs minimum kassza.</p>
-        )}
-        <p>
-          A csoport teljes befizetését a bank megduplázza, majd egyenlő részben osztja vissza a csoport tagjai között.
-        </p>
-      </div>
-
       <div className="participant-pool-heading">
         <div>
           <h2>Mennyit teszel a közös kasszába?</h2>
-          <p>A 90 másodperc alatt többször is módosíthatod a tétedet. Mindig az utolsó mentett összeg számít.</p>
+          <p>A határidőig módosíthatod. Az utolsó mentett tét számít.</p>
         </div>
-        <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} />
+        <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} inHeader />
       </div>
-      {minimumVisible && <div className="minimum-warning" role="status"><strong>A CSOPORT MINIMUMA: {formatCredits(currentRound.minimumAmount ?? 0)}</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
+      {minimumVisible && <div className="minimum-warning" role="status"><strong>Minimum · {formatCredits(currentRound.minimumAmount ?? 0)}</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
 
       {submitError && <div className="error" role="alert">{submitError}</div>}
       {editing && existingAmount !== undefined && amount !== existingAmount && <p role="status">A módosításod még nincs beküldve. A korábbi beérkezett tét marad érvényben.</p>}
@@ -5219,16 +5083,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           }
         }
       }}>
-        <label className="field">
-          <span>Befizetés</span>
-          <AmountInput value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} />
-        </label>
-        {amount !== '' && (
-          <div className="decision-consequence">
-            <span>Beteszel: <strong>{formatCredits(amount)}</strong></span>
-            <span>Nálad marad: <strong>{formatCredits(Math.max(0, player.currentBalance - amount))}</strong></span>
-          </div>
-        )}
+        <CreditTable value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} label="Befizetés" destination="Saját téted" mechanism="vault" />
         {amount !== '' && amount > player.currentBalance && (
           <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
         )}
@@ -5237,6 +5092,9 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
         </button>
       </form>}
 
+      {!editing && existingAmount !== undefined && <CreditEncounter mechanism="vault"
+        own={player.currentBalance - existingAmount} other={existingAmount}
+        ownLabel="Nálad marad" otherLabel="Mentett téted" partner="A csoport tétjei rejtve vannak" center="other" />}
       {currentRound.contributions[playerId] !== undefined && (
         <div className="stake-saved" role="status">
           Beérkezett: <strong>{formatCredits(existingAmount ?? 0)}</strong>
@@ -5263,7 +5121,7 @@ function ParticipantLedger({ session, playerId }: { session: GameSession; player
             <strong className={transaction.amount >= 0 ? 'good' : 'bad'}>
               {transaction.amount >= 0 ? '+' : ''}{formatCredits(transaction.amount)}
             </strong>
-            <small>{formatCredits(transaction.balanceAfter)}</small>
+            <small aria-label={'Egyenleg ' + formatCredits(transaction.balanceAfter)}>{formatCredits(transaction.balanceAfter)}</small>
           </div>
         ))}
       </div>
@@ -5271,20 +5129,20 @@ function ParticipantLedger({ session, playerId }: { session: GameSession; player
   );
 }
 
-function ParticipantStageRail({ session }: { session: GameSession }) {
-  const stageIndex =
-    session.roundKey === 'lobby' ? 0 :
+function participantStageIndex(session: GameSession) {
+  return session.roundKey === 'lobby' ? 0 :
     session.roundKey === '1a' || session.roundKey === '1b' ? 1 :
     session.roundKey === '2a' || session.roundKey === '2b' ? 2 :
     session.roundKey === '3a' || session.roundKey === '3b' ? 3 :
     session.roundKey === '4' ? 4 : 5;
+}
 
+function ParticipantStageRail({ stageIndex }: { stageIndex: number }) {
   const stages = ['Belépés', 'Ultimátum', 'Diktátor', 'Bizalom', 'Kassza', 'Reflexió'];
   return (
-    <div className="participant-stage-rail">
+    <div className="participant-stage-rail" aria-label="Játékmenet">
       {stages.map((label, index) => (
-        <div key={label} className={'participant-stage ' + (index === stageIndex ? 'active' : index < stageIndex ? 'done' : '')}>
-          <i>{index < stageIndex ? '✓' : index + 1}</i>
+        <div key={label} aria-current={index === stageIndex ? 'step' : undefined} className={'participant-stage ' + (index === stageIndex ? 'active' : index < stageIndex ? 'done' : '')}>
           <span>{label}</span>
         </div>
       ))}
@@ -5329,9 +5187,9 @@ function ParticipantReflectionCard({
 }) {
   return (
     <article className={'participant-reflection-card ' + (selected ? 'selected' : '') + (disabled ? ' disabled' : '')}>
-      <button type="button" className="participant-reflection-select" onClick={onToggle} disabled={disabled && !selected}>
-        <span className="reflection-check">{selected ? '✓' : ''}</span>
-        <SelfReportMiniCard item={item} />
+      <button type="button" className="participant-reflection-select" aria-pressed={selected} onClick={onToggle} disabled={disabled && !selected}>
+        <span className="reflection-check" aria-hidden="true">{selected ? '✓' : '+'}</span>
+        <SelfReportMiniCard item={item} timeline />
       </button>
       {selected && (
         <label className="participant-reflection-comment">
@@ -5477,15 +5335,13 @@ function ParticipantReflectionPanel({
   if (submitted) {
     return (
       <div className="participant-own-report">
-        <p className="eyebrow">Saját riportom</p>
-        <h1>A reflexiód elkészült.</h1>
-        <p>A saját döntéseidet és a kiemelt gondolataidat később is visszanézheted ezen a képernyőn.</p>
+        <h1>A játékod története</h1>
         <div className="participant-own-report-grid">
           {report.map((item) => {
             const reflection = ownReflections.find((entry) => entry.decisionId === item.id);
             return (
               <div className={'participant-own-report-item ' + (reflection ? 'highlighted' : '')} key={item.id}>
-                <SelfReportMiniCard item={item} />
+                <SelfReportMiniCard item={item} timeline />
                 {reflection && (
                   <div className="own-reflection-text">
                     <strong>Mi célból döntöttél így?</strong>
@@ -5544,12 +5400,15 @@ function ParticipantReflectionPanel({
 
   return (
     <div className="participant-reflection">
-      <p className="eyebrow">Játék vége · saját reflexió</p>
-      <h1>Melyik döntésed volt számodra a legérdekesebb?</h1>
-      <p>Kiemelhetsz legfeljebb 3 döntést, és leírhatod, mi célból döntöttél így. Legalul a játék egészéről is írhatsz.</p>
-      <div className="reflection-selection-status">
-        <strong>{selected.length}/3 kiválasztva</strong>
-        <span>{selected.length === 3 ? 'Elérted a maximumot.' : 'Még választhatsz.'}</span>
+      <header className="kredit-reflection-heading">
+        <h1>Melyik döntésed maradt meg benned?</h1>
+        <p>Válassz legfeljebb három pillanatot, és írd le, mi vezérelt. A játék egészéről külön is írhatsz.</p>
+      </header>
+      <div className="reflection-selection-status" role="status">
+        <strong>{selected.length} / 3 kiválasztva</strong>
+        <span className="kredit-selection-marks" aria-hidden="true">
+          {[0, 1, 2].map(index => <i key={index} data-selected={index < selected.length} />)}
+        </span>
       </div>
       <div className="participant-reflection-grid">
         {report.map((item) => (
@@ -5581,7 +5440,8 @@ function ParticipantReflectionPanel({
 }
 
 function ParticipantClient({ code: initial }: { code?: string }) {
-  const initialPlayerId = useMemo(() => sessionPlayerId(), []);
+  const [clockSlot, setClockSlot] = useState<HTMLDivElement | null>(null);
+  const initialPlayerId = useMemo(sessionPlayerId, []);
   const [playerId, setPlayerId] = useState(initialPlayerId);
   const initialSession = initial ? gameStore.get(initial) : null;
   const existing = initialSession?.players.find((player) => player.id === initialPlayerId);
@@ -5703,14 +5563,14 @@ function ParticipantClient({ code: initial }: { code?: string }) {
     return (
       <main className="shell narrow participant-join-shell">
         <header className="brand participant-brand">
-          <p className="eyebrow">Kreditjáték · csatlakozás</p>
+          <p className="eyebrow">Kreditjáték</p>
           <h1 className="reconnect-title">Visszacsatlakozás…</h1>
-          <p>A korábbi belépésedet ellenőrizzük. A visszacsatlakozási QR-kódhoz tartsátok nyitva a tréner oldalát.</p>
+          <p>Keressük a korábbi belépésedet.</p>
         </header>
         <section className="panel participant-waiting-hero join-waiting-state">
-          <div className="waiting-pulse" />
+          <div className="waiting-pulse" aria-hidden="true" />
           <h2>Várj egy pillanatot.</h2>
-          <p>Amint a belépésed rögzült, itt fogod látni, hogy várnod kell a többiekre.</p>
+          <p>Hamarosan megjelenik a játék.</p>
         </section>
       </main>
     );
@@ -5720,16 +5580,16 @@ function ParticipantClient({ code: initial }: { code?: string }) {
     return (
       <main className="shell narrow participant-join-shell">
         <header className="brand participant-brand">
-          <p className="eyebrow">Kreditjáték · résztvevő</p>
-          <h1>Csatlakozás</h1>
-          <p>{initial ? 'Add meg a neved. Ezen a telefonon kapod a döntéseidet.' : 'Olvasd be a tréner QR-kódját, vagy nyisd meg a tőle kapott meghívólinket.'}</p>
+          <p className="eyebrow">Belépés a játékba</p>
+          <h1>KREDIT<span>JÁTÉK</span></h1>
+          <p>{initial ? 'Add meg a neved. Ezen a telefonon kapod a döntéseidet.' : 'Írd be a trénertől kapott játékkódot és a neved.'}</p>
         </header>
         <form className="panel join-panel" onSubmit={submitJoin}>
           {!initial && <label className="field"><span>Játékkód</span><input value={code} maxLength={6} autoCapitalize="characters" autoComplete="off" onChange={e => setCode(e.target.value.toUpperCase())} /></label>}
           <label className="field"><span>Neved</span><input value={name} maxLength={60} autoComplete="name" enterKeyHint="go" onChange={(e) => setName(e.target.value)} /></label>
           {error && <div className="error">{error}</div>}
           <button className="primary big" type="submit">Belépek a játékba</button>
-          {initial&&<><button className="secondary" type="button" onClick={()=>setResumeAttempt(n=>n+1)}>Visszacsatlakozás újrapróbálása</button><p className="participant-reconnect-hint">Ha már játszottál, a tréner a neved mellett új visszacsatlakozási QR-kódot tud adni. Az eddigi döntéseid és kreditjeid megmaradnak.</p></>}
+          {initial && <><button className="secondary" type="button" onClick={()=>setResumeAttempt(n=>n+1)}>Visszacsatlakozás újrapróbálása</button><p className="participant-reconnect-hint">Ha már játszottál, a tréner a neved mellett új visszacsatlakozási QR-kódot tud adni. Az eddigi döntéseid és kreditjeid megmaradnak.</p></>}
         </form>
       </main>
     );
@@ -5744,7 +5604,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           <p>A játékállapot betöltése folyamatban van.</p>
         </header>
         <section className="panel participant-waiting-hero join-waiting-state">
-          <div className="waiting-pulse" />
+          <div className="waiting-pulse" aria-hidden="true" />
           <h2>Várj a többiekre.</h2>
           <p>A játék automatikusan megjelenik itt, amikor a tréner elindítja.</p>
         </section>
@@ -5752,30 +5612,28 @@ function ParticipantClient({ code: initial }: { code?: string }) {
     );
   }
   const currentPlayer = session.players.find((player) => player.id === playerId);
+  const stageIndex = participantStageIndex(session);
 
   return (
-    <main className="shell participant-shell participant-v2">
+    <main className="shell participant-shell participant-v2" data-stage={stageIndex}>
       <FirebaseSyncBanner />
-      <header className="participant-head">
-        <span>Játék <strong>{code}</strong></span>
-        <span className="participant-name">{name}</span>
-      </header>
-
-      <ParticipantStageRail session={session} />
-
-      <div className="participant-context-bar">
-        <div>
-          <span className="context-round">{session.roundKey === 'report' ? 'Reflexió' : ROUND_LABELS[session.roundKey]}</span>
-          <strong>{participantRole(session, playerId)}</strong>
+      <ParticipantStageRail stageIndex={stageIndex} />
+      <header className="participant-head participant-masthead">
+        <div className="participant-round-mark">
+          <span>{session.roundKey === '4' ? `Közös kassza · ${session.publicGoodsRoundNumber}. kör`
+            : session.roundKey === 'report' ? 'Reflexió' : ROUND_LABELS[session.roundKey]}</span>
+          <strong>{participantRole(session, playerId).replace(/^Szereped: /, '')}</strong>
         </div>
-        {currentPlayer && (
+        <div className="participant-turn-clock" ref={setClockSlot} />
+        {currentPlayer && session.roundKey !== 'report' && (
           <div className="context-balance">
             <span>Saját vagyon</span>
             <strong>{formatCredits(currentPlayer.currentBalance)}</strong>
           </div>
         )}
-      </div>
+      </header>
 
+      <ParticipantClockSlot.Provider value={clockSlot}>
       <section className="task-card participant-task-card">
         {currentPlayer?.poolExcludedFromRound!==undefined && session.roundKey==='4' && session.publicGoodsRoundNumber>=currentPlayer.poolExcludedFromRound ? (<section className="panel"><h2>A további kasszakörökben már nem veszel részt.</h2><p>Az eddigi döntéseid, eredményeid és a kreditnaplód megmaradnak.</p></section>) : currentPlayer?.botControlled && session.status === 'active' ? (
           <div className="participant-waiting-hero bot-controlled-participant">
@@ -5787,10 +5645,10 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           <>
         {session.roundKey === 'lobby' && (
           <div className="participant-waiting-hero">
-            <div className="waiting-pulse" />
+            <div className="waiting-pulse" aria-hidden="true" />
             <p className="eyebrow">Sikeresen csatlakoztál</p>
             <h1>Várd meg a többieket.</h1>
-            <p>Maradj ezen a képernyőn. Amikor mindenki belépett, a tréner elindítja a játékot, és itt automatikusan megjelenik az első feladat.</p>
+            <p>Az első feladat megjelenik, amint a tréner elindítja a játékot.</p>
           </div>
         )}
 
@@ -5816,26 +5674,29 @@ function ParticipantClient({ code: initial }: { code?: string }) {
 
           return (
             <div className="game-finish">
-              <div className="final-summary reflection-final-summary">
-                <div><span>Az első három játék után</span><strong>{formatCredits(firstStage)}</strong></div>
-                <div>
-                  <span>{continuation ? 'Első Közös kassza eredménye' : 'Közös kassza eredménye'}</span>
-                  <strong className={firstPoolResult >= 0 ? 'good' : 'bad'}>{firstPoolResult >= 0 ? '+' : ''}{formatCredits(firstPoolResult)}</strong>
-                </div>
-                {continuation && firstPoolFinal !== undefined && (
-                  <div><span>Első lezárás végső vagyona</span><strong>{formatCredits(firstPoolFinal)}</strong></div>
-                )}
-                {continuation && learningStart !== undefined && (
-                  <div><span>Tanulókör induló vagyona</span><strong>{formatCredits(learningStart)}</strong></div>
-                )}
-                {continuation && learningResult !== undefined && (
+              <section className="kredit-final-result" aria-label="A játék eredménye">
+                <header className="kredit-result-hero">
                   <div>
-                    <span>Tanulókör eredménye</span>
-                    <strong className={learningResult >= 0 ? 'good' : 'bad'}>{learningResult >= 0 ? '+' : ''}{formatCredits(learningResult)}</strong>
+                    <p>{continuation ? 'Új végső vagyon' : 'Végső vagyon'}</p>
+                    <strong>{formatCredits(currentPlayer.currentBalance)}</strong>
                   </div>
-                )}
-                <div className="final-total"><span>{continuation ? 'Új végső vagyon' : 'Végső vagyon'}</span><strong>{formatCredits(currentPlayer.currentBalance)}</strong></div>
-              </div>
+                </header>
+                <dl className="kredit-result-breakdown">
+                  <div><dt>Az első három játék után</dt><dd>{formatCredits(firstStage)}</dd></div>
+                  <div><dt>{continuation ? 'Első Közös kassza' : 'Közös kassza eredménye'}</dt>
+                    <dd className={firstPoolResult < 0 ? 'bad' : 'good'}>{signedCredits(firstPoolResult)}</dd></div>
+                  {continuation && firstPoolFinal !== undefined && (
+                    <div><dt>Első lezárás végső vagyona</dt><dd>{formatCredits(firstPoolFinal)}</dd></div>
+                  )}
+                  {learningStart !== undefined && (
+                    <div><dt>Tanulókör induló vagyona</dt><dd>{formatCredits(learningStart)}</dd></div>
+                  )}
+                  {learningResult !== undefined && (
+                    <div><dt>Tanulókör eredménye</dt>
+                      <dd className={learningResult < 0 ? 'bad' : 'good'}>{signedCredits(learningResult)}</dd></div>
+                  )}
+                </dl>
+              </section>
               <ParticipantReflectionPanel session={session} playerId={playerId} />
             </div>
           );
@@ -5843,6 +5704,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
           </>
         )}
       </section>
+      </ParticipantClockSlot.Provider>
 
       {currentPlayer && <ParticipantLedger session={session} playerId={playerId} />}
     </main>

@@ -13,24 +13,32 @@ const joinPlayer = async (page: Page, code: string, name: string) => {
 
 const identifyRoles = async (a: Page, b: Page) => {
   await expect.poll(async () => {
-    const aProposer = await a.getByText('Mennyit ajánlasz fel a másik játékosnak?').count();
-    const bProposer = await b.getByText('Mennyit ajánlasz fel a másik játékosnak?').count();
+    const aProposer = await a.getByText('Mennyit ajánlasz fel?').count();
+    const bProposer = await b.getByText('Mennyit ajánlasz fel?').count();
     return aProposer + bProposer;
   }, { timeout: 25_000 }).toBe(1);
 
-  const aIsProposer = await a.getByText('Mennyit ajánlasz fel a másik játékosnak?').count() > 0;
+  const aIsProposer = await a.getByText('Mennyit ajánlasz fel?').count() > 0;
   return aIsProposer
     ? { proposer: a, receiver: b }
     : { proposer: b, receiver: a };
 };
 
+const revealExactAmount = async (page: Page) => {
+  const details = page.locator('.credit-exact');
+  if (!await details.getAttribute('open').then(value => value !== null)) {
+    await details.locator('summary').tap();
+  }
+};
+
 const sendOffer = async (proposer: Page, amount: string) => {
   proposer.once('dialog', dialog => dialog.accept());
-  const input = proposer.getByLabel('A másik játékosnak felajánlott kredit');
+  await revealExactAmount(proposer);
+  const input = proposer.locator('.credit-exact input');
   await expect(input).toBeVisible();
   await input.fill(amount);
   await proposer.getByRole('button', { name: 'Ajánlat elküldése' }).tap();
-  await expect(proposer.getByText(/Ajánlat elküldve:/)).toBeVisible({ timeout: 25_000 });
+  await expect(proposer.getByText('Az ajánlatod elküldve.')).toBeVisible({ timeout: 25_000 });
 };
 
 test('A vezérlés és állapotok görgetéskor is látszanak, a kártyákon elérhető a beavatkozás', async ({ browser }) => {
@@ -122,6 +130,11 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
       .not.toBeNull();
     const code = new URL(trainer.url()).searchParams.get('code');
     expect(code).toBeTruthy();
+    await expect(trainer.locator('.lobby-join svg')).toBeVisible();
+    const inviteHref = await trainer.getByRole('link', { name: 'Játékos belépési link' }).getAttribute('href');
+    const invite = new URL(inviteHref!, trainer.url());
+    expect(invite.searchParams.get('code')).toBe(code);
+    expect(invite.searchParams.get('role')).toBe('player');
 
     await Promise.all([
       joinPlayer(iphoneA, code!, 'iPhone A'),
@@ -166,14 +179,16 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
     await close1b.click();
 
     const actorFor = async (label: string) => {
+      const field = (page: Page) => page.locator('.credit-exact .field').filter({hasText:label});
       await expect.poll(async () =>
-        await iphoneA.getByLabel(label, {exact:true}).count() + await iphoneB.getByLabel(label, {exact:true}).count(),
+        await field(iphoneA).count() + await field(iphoneB).count(),
       ).toBe(1);
-      return await iphoneA.getByLabel(label, {exact:true}).count() ? iphoneA : iphoneB;
+      return await field(iphoneA).count() ? iphoneA : iphoneB;
     };
     const amountDecision = async (page: Page, label: string, button: string, amount: string) => {
+      await revealExactAmount(page);
       // The formatted amount preview is also inside the label once a draft exists.
-      const input = page.getByLabel(label, {exact:false});
+      const input = page.locator('.credit-exact .field').filter({hasText:label}).locator('input');
       // Focus first: WebKit must finish switching the formatted saved value to
       // its editable representation before select-all/replacement takes place.
       await input.tap();
@@ -212,8 +227,8 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
     await trainer.getByRole('button',{name:'Tétek lezárása',exact:true}).click();
     await expect(iphoneA.getByText(/Tét lezárva:.*15\s*000/)).toBeVisible();
     await trainer.getByRole('button',{name:'Bank elszámol',exact:true}).click();
-    await expect(iphoneA.getByText(/Visszakaptál:.*35\s*000/)).toBeVisible();
-    await expect(iphoneB.getByText(/Visszakaptál:.*35\s*000/)).toBeVisible();
+    await expect(iphoneA.locator('.kredit-personal-settlement dd').filter({hasText:/35\s*000/})).toBeVisible();
+    await expect(iphoneB.locator('.kredit-personal-settlement dd').filter({hasText:/35\s*000/})).toBeVisible();
 
     console.log('IPHONE SAFARI SIX ROUNDS + POOL EDIT + RELOAD + EXACT PAYOUT OK · game=' + code);
   } finally {

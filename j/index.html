@@ -2,5 +2,12 @@
 <html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kreditjáték – belépés</title></head><body>
 <p>Átirányítás a Kreditjáték belépési oldalára…</p>
 <p><a href="../dashboard/?role=player">Tovább a belépéshez</a></p>
-<script>location.replace('../dashboard/?role=player');</script>
+<script>
+const entry = new URL('../dashboard/', location.href);
+const code = new URLSearchParams(location.search).get('code');
+entry.searchParams.set('role','player');
+if (code) entry.searchParams.set('code',code);
+document.querySelector('a').href = entry.href;
+location.replace(entry.href);
+</script>
 </body></html>

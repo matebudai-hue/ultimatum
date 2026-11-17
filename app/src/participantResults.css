@@ -1,0 +1,215 @@
+.kredit-settlement, .kredit-final-result {
+  --receipt-paper: #eee5d3;
+  --receipt-ink: #20201e;
+  --receipt-red: #a42a1c;
+  border: 1px solid #afa18c;
+  background: var(--receipt-paper);
+  box-shadow: 3px 3px #d5c8af;
+}
+.kredit-final-result { margin-bottom: 28px; }
+.kredit-result-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 14px 15px;
+  color: #fff5e1;
+  background: var(--receipt-ink);
+  border-bottom: 4px solid var(--receipt-red);
+}
+.kredit-result-hero p {
+  margin: 0 0 5px;
+  color: #e4d7c2;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.kredit-result-hero strong {
+  display: block;
+  font-size: clamp(28px, 9vw, 49px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.05em;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+.kredit-result-hero > span {
+  padding: 4px 7px;
+  border: 1px solid #e4d7c2;
+  font-size: 12px;
+  font-weight: 750;
+}
+.kredit-result-hero[data-tone="gain"] strong { color: #ffd79e; }
+.kredit-result-hero[data-tone="loss"] strong { color: #ffad9c; }
+.kredit-settlement .credit-board { margin: 12px 12px 0; }
+.kredit-settlement .credit-vault-meter { margin: 12px; }
+.kredit-result-breakdown { margin: 0; padding: 5px 14px; }
+.kredit-result-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 10px 0;
+}
+.kredit-result-breakdown > div + div { border-top: 1px solid #c2b59f; }
+.kredit-result-breakdown dt { font-size: 14px; }
+.kredit-result-breakdown dd { margin: 0; font-weight: 850; font-variant-numeric: tabular-nums; }
+.kredit-result-wait { border-top: 1px solid #bcae98; margin: 0; padding: 10px 14px; font-size: 13px; color: #48423a; }
+.kredit-reflection-heading h1 {
+  margin: 0 0 9px;
+  font-size: clamp(24px, 6.9vw, 35px);
+  letter-spacing: -.045em;
+  line-height: 1.04;
+}
+.kredit-reflection-heading p { margin: 0 0 13px; font-size: 14px; line-height: 1.45; color: #514c42; }
+.participant-v2 .reflection-selection-status {
+  flex-direction: row;
+  align-items: center;
+  background: #eee5d3;
+  border: 1px solid #b8aa95;
+  border-radius: 0;
+}
+.participant-v2 .reflection-selection-status strong { font-size: 13px; }
+.kredit-selection-marks { display: flex; gap: 5px; flex: none; }
+.kredit-selection-marks i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid #ae574b; }
+.kredit-selection-marks i[data-selected="true"] { background: #a42a1c; }
+.participant-v2 .participant-reflection-grid {
+  position: relative;
+  gap: 0;
+  border-left: 2px solid #a42a1c;
+  background: #fffaf0;
+}
+.participant-v2 .participant-reflection-card {
+  border: 0;
+  border-bottom: 1px solid #d6c9b5;
+  border-radius: 0;
+  background: transparent;
+}
+.participant-v2 .participant-reflection-card.selected { background: #f3dfd5; box-shadow: none; }
+.participant-v2 .participant-reflection-card.disabled:not(.selected) { opacity: .72; }
+.participant-v2 .participant-reflection-select {
+  grid-template-columns: minmax(0, 1fr) 27px;
+  align-items: center;
+  min-height: 54px;
+  padding: 10px 8px 10px 11px;
+}
+.participant-v2 .reflection-check {
+  order: 1;
+  width: 24px;
+  height: 24px;
+  color: #8e271c;
+  background: transparent;
+  border-color: #b46a60;
+  border-radius: 50%;
+  font-size: 15px;
+}
+.participant-v2 .participant-reflection-card.selected .reflection-check { color: #fff; background: #a42a1c; border-color: #a42a1c; }
+.participant-v2 .participant-reflection-select .self-report-mini-card > span { color: #8e271c; font-size: 11px; letter-spacing: .04em; }
+.participant-v2 .participant-reflection-select .self-report-mini-card > strong { font-size: 15px; color: #23211f; }
+.participant-v2 .participant-reflection-select .self-report-mini-card > small { font-size: 13px; color: #514c42; }
+.participant-v2 .participant-reflection-comment { padding: 0 11px 11px; }
+.participant-v2 .participant-reflection-comment > span { font-size: 13px; color: #68271e; }
+.participant-v2 .participant-reflection-comment textarea { border-color: #bb8f80; border-radius: 3px; font-size: 16px; }
+.participant-v2 .participant-reflection-comment small { font-size: 11px; }
+.participant-v2 .takeaway-field, .participant-v2 .personal-report-delivery {
+  padding: 13px;
+  border-color: #c1b39e;
+  border-radius: 0;
+  background: #f4ecdb;
+}
+
+.participant-v2 .participant-own-report > h1 {
+  font-size: clamp(24px, 6.9vw, 35px);
+  letter-spacing: -.045em;
+  margin: 0 0 12px;
+}
+.participant-v2 .participant-own-report-grid {
+  gap: 0;
+  border-left: 2px solid #a42a1c;
+}
+.participant-v2 .participant-own-report-item {
+  padding: 4px 5px;
+  background: #fffaf0;
+  border: 0;
+  border-bottom: 1px solid #d6c9b5;
+  border-radius: 0;
+}
+.participant-v2 .participant-own-report-item.highlighted { background: #f3dfd5; }
+.participant-v2 .participant-own-report-item .self-report-mini-card > span { font-size: 11px; color: #8e271c; }
+.participant-v2 .participant-own-report-item .self-report-mini-card > strong { font-size: 15px; color: #23211f; }
+.participant-v2 .participant-own-report-item .self-report-mini-card > small { font-size: 13px; color: #514c42; }
+.participant-v2 .own-reflection-text { border-color: #c5a291; }
+.participant-v2 .own-reflection-text strong { font-size: 11px; }
+.participant-v2 .own-reflection-text span { font-size: 14px; overflow-wrap: anywhere; }
+.participant-v2 .takeaway-saved {
+  background: #f4ecdb;
+  border-left: 3px solid #a42a1c;
+  padding: 10px 13px;
+}
+.participant-v2 :is(.takeaway-field, .personal-report-delivery, .takeaway-saved) h2 { font-size: 19px; }
+.participant-v2 :is(.takeaway-field, .personal-report-delivery) :is(input, textarea) {
+  width: 100%;
+  border-color: #bcaa91;
+  border-radius: 2px;
+  font-size: 16px;
+}
+.participant-v2 .self-report-export-actions button { min-height: 44px; }
+
+.kredit-personal-settlement {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid #bcae98;
+}
+.kredit-personal-settlement > div { padding: 11px 12px; text-align: right; }
+.kredit-personal-settlement > div + div { border-left: 1px solid #bcae98; }
+.kredit-personal-settlement dt { font-size: 13px; }
+.kredit-personal-settlement dd {
+  margin: 4px 0 0;
+  font-size: clamp(17px, 4.7vw, 25px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  line-height: 1.1;
+}
+.kredit-settlement .credit-vault-meter {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid #bcae98;
+  padding: 9px 0;
+}
+.credit-vault-numbers { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 13px; }
+.credit-vault-numbers strong { display: block; font-variant-numeric: tabular-nums; }
+.credit-vault-track { position: relative; margin: 9px 2px 4px; height: 5px; background: #cdbfa9; }
+.credit-vault-track span { display: block; height: 100%; background: #a42a1c; }
+.credit-vault-track i { position: absolute; top: -3px; width: 2px; height: 11px; transform: translateX(-50%); background: #252320; }
+.credit-vault-reveal {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background: #302a24;
+  animation: kredit-reveal 450ms ease-out both;
+}
+@keyframes kredit-reveal { to { transform: translateX(100%); visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .credit-vault-reveal { display: none; } }
+
+.participant-v2 .participant-reflection-select .self-report-mini-card,
+.participant-v2 .participant-own-report-item .self-report-mini-card {
+  display: grid;
+  grid-template-columns: minmax(62px, 23%) minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 8px;
+}
+.participant-v2 :is(.participant-reflection-select, .participant-own-report-item) .self-report-mini-card > span {
+  grid-row: 1 / span 3;
+  line-height: 1.25;
+}
+.participant-v2 :is(.participant-reflection-select, .participant-own-report-item) .self-report-mini-card > :is(strong, small, em) {
+  grid-column: 2;
+  overflow-wrap: anywhere;
+}
+.participant-v2 .participant-reflection-card.selected .reflection-check {
+  box-shadow: inset 0 0 0 2px #e48472;
+}
