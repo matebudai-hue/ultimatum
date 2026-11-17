@@ -3625,6 +3625,7 @@ function PublicGoodsPatterns({
     return <div className="pattern-empty">Még nincs lezárt Közös kassza kör.</div>;
   }
 
+  const showAllGroups = selectedGroupId === ALL_POOL_GROUPS;
   const group = groupsWithRounds.find((item) => item.id === selectedGroupId) ?? groupsWithRounds[0];
   const chartMemberIds = [...new Set(settled.filter(r=>r.groupId===group.id).flatMap(r=>r.memberIds))];
   const displayPlayer = (playerId: string) => showNames ? playerName(session, playerId) : `${chartMemberIds.indexOf(playerId) + 1}. résztvevő`;
@@ -3639,21 +3640,26 @@ function PublicGoodsPatterns({
 
   return (
     <div className="pool-pattern-groups">
-      {groupsWithRounds.length > 1 && (
-        <div className="pool-pattern-group-tabs">
+      <div className="pool-pattern-group-tabs">
+          <button type="button" className={showAllGroups ? 'active' : ''} aria-pressed={showAllGroups} onClick={() => onSelectGroup(ALL_POOL_GROUPS)}>
+            Összes csoport
+          </button>
           {groupsWithRounds.map((item) => (
             <button
               type="button"
               key={item.id}
-              className={item.id === group.id ? 'active' : ''}
+              className={!showAllGroups && item.id === group.id ? 'active' : ''}
+              aria-pressed={!showAllGroups && item.id === group.id}
               onClick={() => onSelectGroup(item.id)}
             >
               {item.name}
             </button>
           ))}
-        </div>
-      )}
+      </div>
 
+      {showAllGroups ? (
+        <PoolGroupsOverview groups={groupsWithRounds} rounds={settled} learningStart={session.publicGoodsContinuation?.firstContinuationRoundNumber} />
+      ) : (
       <div className="pattern-with-notes"><section className="pool-pattern-group">
         <header>
           <div>
@@ -3792,6 +3798,77 @@ function PublicGoodsPatterns({
           </div>
         </div>
       </section><PoolNotes session={session} rounds={rounds} showNames={showNames} /></div>
+      )}
+    </div>
+  );
+}
+
+const ALL_POOL_GROUPS = ':all:';
+
+function PoolGroupsOverview({
+  groups,
+  rounds,
+  learningStart,
+}: {
+  groups: GameSession['groups'];
+  rounds: GameSession['publicGoodsRounds'];
+  learningStart: number | undefined;
+}) {
+  const roundNumbers = [...new Set(rounds.map((round) => round.roundNumber))].sort((a, b) => a - b);
+  const percent = (amount: number, wealth: number) => amount / Math.max(1, wealth) * 100;
+  const scale = Math.ceil(Math.max(100, ...rounds.map((round) =>
+    percent(Math.max(round.totalContribution, round.minimumAmount ?? 0), round.startingGroupWealth)
+  )) / 10) * 10;
+  const columns = groups.length <= 2 ? groups.length : Math.ceil(Math.sqrt(groups.length * 1.5));
+
+  return (
+    <div className="pool-overview">
+      <div className="pool-overview-caption">
+        <strong>Összes csoport · {groups.length} kiscsoport</strong>
+        <span>A csoport kör eleji vagyonának %-a <i aria-hidden="true" /> Szaggatott vonal: minimum</span>
+      </div>
+      <div className="pool-overview-grid" style={{ '--pool-columns': columns } as React.CSSProperties}>
+        {groups.map((group) => {
+          const groupRounds = rounds.filter((round) => round.groupId === group.id);
+          const roundsByNumber = new Map(groupRounds.map((round) => [round.roundNumber, round]));
+          const members = [...new Set(groupRounds.flatMap((round) => round.memberIds))];
+          return (
+            <section className="pool-overview-group" key={group.id}>
+              <h4>{group.name}</h4>
+              <div className="pool-overview-chart">
+                <div className="pool-overview-axis" aria-hidden="true"><span>{scale}%</span><span>{scale / 2}%</span><span>0%</span></div>
+                <div className="pool-overview-rounds" style={{ gridTemplateColumns: 'repeat(' + roundNumbers.length + ', minmax(0, 1fr))' }}>
+                  {roundNumbers.map((number) => {
+                    const round = roundsByNumber.get(number);
+                    const label = learningStart !== undefined && number >= learningStart
+                      ? 'T' + (number - learningStart + 1) : String(number);
+                    const roundLabel = label.startsWith('T') ? 'Tanuló ' + label.slice(1) + '. kör' : label + '. kör';
+                    const total = round ? Math.round(percent(round.totalContribution, round.startingGroupWealth) * 10) / 10 : null;
+                    const minimum = round?.minimumAmount === undefined ? null : percent(round.minimumAmount, round.startingGroupWealth);
+                    return (
+                      <div className="pool-overview-round" key={number} role="img"
+                        aria-label={roundLabel + (total === null ? ': nincs lezárt eredmény' : ': ' + total + '%') + (minimum === null ? '' : ', minimum ' + (Math.round(minimum * 10) / 10) + '%')}>
+                        <div className="pool-overview-value">{total === null ? '–' : total + '%'}</div>
+                        <div className="pool-overview-track" aria-hidden="true">
+                          {round && (
+                            <div className="pool-overview-stack" style={{ height: percent(round.totalContribution, round.startingGroupWealth) / scale * 100 + '%' }}>
+                              {round.totalContribution > 0 && round.memberIds.map((id) => (
+                                <div key={id} style={{ height: (round.contributions[id] ?? 0) / round.totalContribution * 100 + '%', background: poolPlayerColor(members.indexOf(id)) }} />
+                              ))}
+                            </div>
+                          )}
+                          {minimum !== null && <div className="pool-overview-minimum" style={{ bottom: minimum / scale * 100 + '%' }} />}
+                        </div>
+                        <span title={roundLabel}>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -3833,6 +3910,13 @@ function renderPatternProjectionFromElement(game: PatternGame) {
     '.pattern-question{font-size:clamp(20px,2vw,30px)!important}',
     '.patterns-stage .pattern-toolbar{display:none!important}',
     '.pool-pattern-group-tabs{display:none!important}',
+    'body:has(.pool-overview){padding:14px 20px}',
+    '.patterns-stage:has(.pool-overview) .pattern-card{display:flex;flex-direction:column;height:100%}',
+    '.patterns-stage:has(.pool-overview) .pattern-card-head,.patterns-stage:has(.pool-overview) .pattern-question{display:none!important}',
+    '.patterns-stage:has(.pool-overview) .pattern-chart-area{padding:12px;overflow:hidden}',
+    '.patterns-stage:has(.pool-overview) .pool-pattern-groups,.pool-overview{height:100%;min-height:0}',
+    '.pool-overview-grid{grid-template-columns:repeat(var(--pool-columns),minmax(0,1fr))!important;grid-auto-rows:minmax(0,1fr)}',
+    '.pool-overview-group{min-height:0!important}',
     '.pool-pattern-groups{max-height:none!important;overflow:hidden!important}',
     '.trust-flow-pager button{display:none!important}',
     '.trust-simple-rounds{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}',
@@ -3873,7 +3957,7 @@ function DebriefPatternsView({ session }: { session: GameSession }) {
 
   useEffect(() => {
     if (settledPoolGroups.length === 0) return;
-    if (!settledPoolGroups.some((group) => group.id === selectedPoolGroupId)) {
+    if (selectedPoolGroupId !== ALL_POOL_GROUPS && !settledPoolGroups.some((group) => group.id === selectedPoolGroupId)) {
       setSelectedPoolGroupId(settledPoolGroups[0].id);
     }
   }, [selectedPoolGroupId, settledPoolGroups.map((group) => group.id).join('|')]);
