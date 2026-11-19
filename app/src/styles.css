@@ -2600,18 +2600,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 .pair-inline-trigger:focus-visible{outline:2px solid currentColor;outline-offset:1px}
 .pair-inline-editor{
-  position:absolute;inset:0;z-index:3;overflow:auto;overscroll-behavior:contain;
+  position:absolute;inset:0;z-index:3;overflow:hidden;overscroll-behavior:contain;
   display:flex;flex-direction:column;gap:4px;margin:0;padding:7px 9px;
   border-radius:inherit;background:#fff9ef;color:#17243b;font-size:10px
 }
-.pair-inline-editor>strong{font-size:11px;line-height:1.2}
+.pair-inline-editor>strong{font-size:11px;line-height:1.2;flex-shrink:0}
+.pair-inline-fields{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:grid;align-content:start;gap:4px}
 .pair-inline-editor label{display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:4px;font-size:9px;margin:0}
 .pair-inline-editor input,.pair-inline-editor select{
   width:100%;min-width:0;min-height:23px;box-sizing:border-box;margin:0;padding:2px 4px;font-size:11px;border-radius:3px
 }
 .pair-inline-editor small{font-size:9px;line-height:1.2}
 .pair-inline-editor [role="alert"]{color:#a52323;font-weight:750}
-.pair-inline-editor>div{display:flex;gap:5px}
+.pair-inline-footer{display:flex;gap:5px;flex-shrink:0}
 .pair-inline-editor button{min-height:24px;margin:0;padding:2px 7px;font-size:10px}
 .pair-actions{margin-top:8px;border-top:1px solid #eadbb5;padding-top:6px}
 .pair-actions>summary{color:#71420c;font-size:12px;font-weight:750;cursor:pointer}

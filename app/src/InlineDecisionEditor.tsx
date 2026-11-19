@@ -30,6 +30,7 @@ export function InlineDecisionEditor({session, pairing, playerId, onClose}: {
     onKeyDown={event => {if (event.key === 'Escape') {event.stopPropagation(); onClose();}}}>
     <strong>{name} · Kézi rögzítés</strong>
     {target ? <>
+      <div className="pair-inline-fields">
       <label>{response ? 'Válasz' : target.type === 'trust_return' ? 'Visszaadás' : 'Küldött összeg'}
         {response
           ? <select autoFocus required value={answer} onChange={event => setAnswer(event.target.value)}>
@@ -41,7 +42,8 @@ export function InlineDecisionEditor({session, pairing, playerId, onClose}: {
       <label>Indok<input required value={note} onChange={event => setNote(event.target.value)}/></label>
       {target.reopensPartner && <small>A partner megkapja az új összeget, és újra dönthet.</small>}
       {error && <small role="alert">{error}</small>}
-      <div><button type="submit">Rögzítés</button><button type="button" onClick={onClose}>Mégse</button></div>
+      </div>
+      <div className="pair-inline-footer"><button type="submit">Rögzítés</button><button type="button" onClick={onClose}>Mégse</button></div>
     </> : <><small role="alert">A döntés közben megváltozott.</small><button type="button" onClick={onClose}>Bezárás</button></>}
   </form>;
 }
