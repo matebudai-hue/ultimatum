@@ -857,6 +857,13 @@ export const firebaseSessionStore = {
     return trainerMutation(code, () => session, [playerId]);
   },
 
+  saveInlineStrategicDecision(code: string, pairingId: string, playerId: string, value: number | boolean, note: string, snapshot: string) {
+    const before = localSessionStore.get(code);
+    const affected = before ? affectedPairPlayers(before, playerId) : [playerId];
+    const session = localSessionStore.saveInlineStrategicDecision(code, pairingId, playerId, value, note, snapshot);
+    return trainerMutation(code, () => session, affected);
+  },
+
   trainerSubmitStrategicDecision(code: string, playerId: string, value: number | boolean) {
     const before = localSessionStore.get(code);
     const affected = before ? affectedPairPlayers(before, playerId) : [playerId];

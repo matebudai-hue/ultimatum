@@ -1,4 +1,6 @@
 import { CreditTable, CreditOffer, CreditOutcome, CreditEncounter, VaultOutcome } from './CreditTable';
+import { InlineDecisionEditor } from './InlineDecisionEditor';
+import { inlineStrategicTarget } from './inlineStrategic';
 import { connectionDeadline } from './browserCompat';
 import { PlayerAccessPanel } from './PlayerAccessPanel';
 import {ReflectionsView, StandingsView, renderReflectionProjection, type ReflectionEntry} from './DebriefExtras';
@@ -734,6 +736,7 @@ function TrainerIntervention({ session, playerId, pairing }: { session: GameSess
 }
 
 function CurrentPairsBoard({ session }: { session: GameSession }) {
+  const [editing, setEditing] = useState<{pairingId: string; playerId: string} | null>(null);
   if (!STRATEGIC_ROUNDS.includes(session.roundKey as StrategicRound)) return null;
   const pairings = session.pairings.filter((pairing) => pairing.roundKey === session.roundKey);
 
@@ -802,11 +805,28 @@ function CurrentPairsBoard({ session }: { session: GameSession }) {
                 </span>
               </div>
               <div className="pair-names">
-                <strong>{playerName(session, pairing.playerA)}</strong>
+                <strong>{inlineStrategicTarget(session, pairing.id, pairing.playerA)
+                  ? <button type="button" className="pair-inline-trigger" id={'inline-' + pairing.id + '-' + pairing.playerA}
+                    aria-label={'Kézi rögzítés – ' + playerName(session, pairing.playerA)}
+                    title="Kézi rögzítés" onClick={() => setEditing({pairingId: pairing.id, playerId: pairing.playerA})}>
+                    {playerName(session, pairing.playerA)} ✎</button>
+                  : playerName(session, pairing.playerA)}</strong>
                 <span>→</span>
-                <strong>{playerName(session, pairing.playerB)}</strong>
+                <strong>{inlineStrategicTarget(session, pairing.id, pairing.playerB)
+                  ? <button type="button" className="pair-inline-trigger" id={'inline-' + pairing.id + '-' + pairing.playerB}
+                    aria-label={'Kézi rögzítés – ' + playerName(session, pairing.playerB)}
+                    title="Kézi rögzítés" onClick={() => setEditing({pairingId: pairing.id, playerId: pairing.playerB})}>
+                    {playerName(session, pairing.playerB)} ✎</button>
+                  : playerName(session, pairing.playerB)}</strong>
               </div>
               <p>{detail}</p>
+              {editing?.pairingId === pairing.id && <InlineDecisionEditor
+                key={pairing.id + '-' + editing.playerId} session={session} pairing={pairing} playerId={editing.playerId}
+                onClose={() => {
+                  const trigger = document.getElementById('inline-' + pairing.id + '-' + editing.playerId);
+                  setEditing(null);
+                  trigger?.focus({preventScroll: true});
+                }}/>}
               {(state === 'waiting' || state === 'technical') && !session.closedRounds.includes(session.roundKey as StrategicRound) && (
                 state === 'technical'
                   ? <div className="pair-actions-visible">{[pairing.playerA, pairing.playerB].filter((id) => id !== 'BOT').map((id) => <TrainerIntervention key={id} session={session} playerId={id} pairing={pairing} />)}</div>

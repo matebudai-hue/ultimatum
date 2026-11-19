@@ -1,4 +1,5 @@
 import { makeUuid, readStorage, writeStorage } from './browserCompat';
+import { inlineStrategicTarget } from './inlineStrategic';
 import {
   Decision,
   GameSession,
@@ -854,6 +855,62 @@ export const localSessionStore = {
     const key = strategicWindowKey(pairingId, playerId);
     delete session.strategicSubmitIntentAt[key];
     delete session.strategicTaskSeenAt[key];
+    write(session);
+    return session;
+  },
+
+  saveInlineStrategicDecision(
+    code: string, pairingId: string, playerId: string, value: number | boolean, note: string, snapshot: string,
+  ): GameSession {
+    const session = read(code);
+    if (!session) throw new Error('A játék nem található.');
+    const target = inlineStrategicTarget(session, pairingId, playerId);
+    if (!target || target.snapshot !== snapshot) throw new Error('A pár állapota közben megváltozott. Nyisd meg újra a rögzítést.');
+    const cleanNote = requireCorrectionNote(note);
+    if (target.type === 'ultimatum_response' ? typeof value !== 'boolean'
+      : typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > target.max) {
+      throw new Error(target.type === 'ultimatum_response' ? 'Válassz elfogadást vagy elutasítást.' : `0 és ${target.max} közötti egész összeget adj meg.`);
+    }
+    const pair = session.pairings.find(p => p.id === pairingId)!;
+    const now = new Date().toISOString();
+    const replaced = session.decisions.filter(d => d.pairingId === pairingId &&
+      (d.playerId === playerId || (target.reopensPartner && d.playerId === pair.playerB)));
+    for (const decision of replaced) {
+      session.sessionEvents ??= [];
+      session.sessionEvents.push({
+        id: makeUuid(), at: now, event: 'strategic_decision_replaced', playerId: decision.playerId,
+        roundKey: pair.roundKey, detail: JSON.stringify({decision, note: cleanNote}),
+      });
+      if (decision.playerId === playerId) continue;
+      session.manualCorrections.push({
+        id: makeUuid(), kind: 'strategic_decision', playerId: decision.playerId, roundKey: pair.roundKey,
+        pairingId, field: decision.type, beforeValue: decision.accepted ?? decision.amount ?? null,
+        afterValue: null, note: cleanNote + ' · A partner döntése az új összeg miatt újranyitva.', createdAt: now,
+      });
+    }
+    session.decisions = session.decisions.filter(d => !replaced.includes(d));
+    const affected = target.reopensPartner ? [playerId, pair.playerB] : [playerId];
+    for (const id of affected) {
+      const key = strategicWindowKey(pairingId, id);
+      delete session.strategicTaskSeenAt[key];
+      delete session.strategicSubmitIntentAt[key];
+    }
+    for (const issue of session.strategicTechnicalIssues) {
+      if (issue.pairingId === pairingId && affected.includes(issue.playerId) && !issue.resolvedAt) {
+        issue.resolvedAt = now;
+        issue.resolution = issue.playerId === playerId ? 'decision_received' : 'reopened';
+      }
+    }
+    addDecision(session, {
+      pairingId, playerId, roundKey: pair.roundKey, type: target.type,
+      ...(typeof value === 'boolean' ? {accepted: value} : {amount: value}),
+      submissionSource: 'manual_correction', isBotDecision: false,
+    });
+    session.manualCorrections.push({
+      id: makeUuid(), kind: 'strategic_decision', playerId, roundKey: pair.roundKey, pairingId,
+      field: target.type, beforeValue: target.before, afterValue: value, note: cleanNote, createdAt: now,
+    });
+    autoBotDecisions(session, pairingId);
     write(session);
     return session;
   },
