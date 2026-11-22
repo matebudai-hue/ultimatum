@@ -41,9 +41,24 @@ jobs:
         working-directory: app
         run: npx playwright install --with-deps webkit
 
-      - name: iPhone Safari Ultimatum E2E
+      - name: Set up Java for isolated Firebase tests
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: iPhone Safari sandbox E2E
         working-directory: app
-        run: npm run test:iphone
+        env:
+          KREDIT_SCREENSHOTS: screenshots
+        run: npx --yes firebase-tools@15.37.0 emulators:exec --config firebase.sandbox.json --project demo-kreditjatek-sandbox "npm run test:iphone"
+
+      - name: Upload mobile scenes
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: kreditjatek-mobile-scenes
+          path: app/screenshots/
 
       - name: Upload failure artifacts
         if: failure()

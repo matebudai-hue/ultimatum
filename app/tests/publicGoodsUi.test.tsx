@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { PUBLIC_GOODS_SECONDS } from '../src/gameTypes';
 import { transformSync } from 'esbuild';
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' });
@@ -18,11 +19,11 @@ let failSubmit = false;
 const sent: number[] = [];
 const CreditTable = ({value,onChange,max,disabled}: Parameters<typeof AmountInput>[0]) =>
   <AmountInput value={value} onChange={onChange} max={max} disabled={disabled} required={false} />;
-const Task = new Function('React','useState','useEffect','useAmountDraft','CreditTable','CreditEncounter','confirmAmount','gameStore','formatCredits','DeadlineTimer','Check','publicGoodsPlayerPayout',
+const Task = new Function('React','useState','useEffect','useAmountDraft','CreditTable','CreditEncounter','confirmAmount','gameStore','formatCredits','DeadlineTimer','Check','publicGoodsPlayerPayout','PUBLIC_GOODS_SECONDS',
   js + '; return PublicGoodsParticipantTask;')(
   React, useState, useEffect, useAmountDraft, CreditTable, () => null, () => confirmed,
   { submitPublicGoods: (_c: string, _p: string, amount: number) => { if (failSubmit) throw new Error('Lejárt a döntési idő.'); sent.push(amount); } },
-  (value: number) => value.toLocaleString('hu-HU') + ' kr', () => null, () => null, publicGoodsPlayerPayout);
+  (value: number) => value.toLocaleString('hu-HU') + ' kr', () => null, () => null, publicGoodsPlayerPayout, PUBLIC_GOODS_SECONDS);
 let session: any = { code:'TEST', players:[{id:'p',currentBalance:12000000}],groups:[{id:'g',name:'Teszt',memberIds:['p']}],
   publicGoodsRoundNumber:8, publicGoodsPhase:'open', publicGoodsDeadlineAt:new Date(Date.now()+90000).toISOString(),
   publicGoodsRounds:[{id:'r8',roundNumber:8,memberIds:['p'],contributions:{},minimumMode:'none'}], decisions:[] };
