@@ -9,7 +9,7 @@ import {TakeawayField} from './TakeawayField';
 import {ParticipantJourneyPanel, renderJourneyProjection} from './ParticipantJourney';
 import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
 import { useAmountDraft, confirmAmount } from './AmountInput';
-import { publicGoodsPlayerPayout } from './gameEngine';
+import { publicGoodsPlayerPayout, TRUST_MULTIPLIER } from './gameEngine';
 import React, { createContext, FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
@@ -29,6 +29,7 @@ import {
 import './styles.css';
 import './participant.css';
 import './participantResults.css';
+import './mobileEdition.css';
 import {
   Decision,
   GameSession,
@@ -1228,8 +1229,8 @@ function renderQrProjectionWindow(session: GameSession, joinUrl: string) {
   }
   status.append(statusValue, statusLabel);
   const address = doc.createElement('p');
-  const entry = new URL('../j/', joinUrl);
-  address.textContent = 'QR nélkül: ' + entry.host + entry.pathname + ' · Játékkód: ' + session.code;
+  const entry = new URL('?role=player', joinUrl);
+  address.textContent = 'QR nélkül: ' + entry.host + entry.pathname + entry.search + ' · Játékkód: ' + session.code;
   address.className = 'lead';
   copy.append(eyebrow, title, lead, code, address, status);
 
@@ -4534,7 +4535,7 @@ function TrainerDashboard({ code, testMode = false }: { code: string; testMode?:
       <TrainerCockpit session={session} joinUrl={joinUrl} onOpenDebrief={openDebrief} debriefOpen={debriefOpen} />
       {testMode && <TestHarness session={session} />}
 
-      {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p><a href={joinUrl} target="_blank" rel="noopener noreferrer">Játékos belépési link</a></p><p>QR nélkül: <strong>{new URL('../j/', window.location.href).host}{new URL('../j/', window.location.href).pathname}</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
+      {session.roundKey === 'lobby' && <section className="panel lobby-join"><div><p className="eyebrow">Résztvevők belépése</p><h2>{session.players.length} fő csatlakozott</h2><p>Játékkód: <strong>{session.code}</strong></p><p><a href={joinUrl} target="_blank" rel="noopener noreferrer">Játékos belépési link</a></p><p>QR nélkül: <strong>{location.host}{location.pathname}?role=player</strong></p><p>Induló kredit: {formatCredits(session.startingCredit)}</p><p>{session.players.map(p => p.name).join(' · ') || 'A belépőkre várunk.'}</p></div><QRCodeSVG value={joinUrl} size={180} level="M" includeMargin /></section>}
       <PlayerAccessPanel session={session} />
       <TrainerInterventionCenter session={session} />
       <CurrentPairsBoard session={session} />
@@ -4568,9 +4569,10 @@ function Timer({ startedAt }: { startedAt?: string }) {
 
 const ParticipantClockSlot = createContext<HTMLDivElement | null>(null);
 
-function DeadlineTimer({ deadlineAt, inHeader = false }: {
+function DeadlineTimer({ deadlineAt, inHeader = false, duration = STRATEGIC_DECISION_SECONDS }: {
   deadlineAt?: string;
   inHeader?: boolean;
+  duration?: number;
 }) {
   const slot = useContext(ParticipantClockSlot);
   const [now, setNow] = useState(Date.now);
@@ -4581,7 +4583,7 @@ function DeadlineTimer({ deadlineAt, inHeader = false }: {
   const deadline = deadlineAt ? Date.parse(deadlineAt) : undefined;
   if (deadline === undefined) return null;
   const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
-  const clock = <div className={'timer ' + (remaining === 0 ? 'expired' : remaining <= 10 ? 'urgent' : '')}>
+  const clock = <div style={{ '--time-left': Math.min(100, remaining / duration * 100) + '%' } as React.CSSProperties} className={'timer ' + (remaining === 0 ? 'expired' : remaining <= 10 ? 'urgent' : '')}>
     {remaining > 0 ? remaining + ' mp' : 'Idő lejárt'}
   </div>;
   return inHeader && slot ? createPortal(clock, slot) : clock;
@@ -4614,7 +4616,7 @@ function AmountDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label={label} destination={giveLabel} source={keepLabel} mechanism={giveLabel === 'Ajánlatod az asztalon' ? 'bridge' : 'chute'} />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={max} disabled={submitting} label={label} destination={giveLabel} source={keepLabel} mechanism={giveLabel === 'Ajánlatod az asztalon' ? 'bridge' : 'chute'} />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : button}
       </button>
@@ -4641,7 +4643,7 @@ function TrustSendDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label="Mennyit küldesz a másik játékosnak?" destination="Te küldesz" multiplier={3} mechanism="tripler" />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={max} disabled={submitting} label="Mennyit küldesz a másik játékosnak?" destination="Te küldesz" multiplier={TRUST_MULTIPLIER} mechanism="tripler" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : 'Küldés'}
       </button>
@@ -4668,7 +4670,7 @@ function TrustReturnDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > available) return;
       if (!submitting && confirmAmount(numericAmount, available)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={available} disabled={submitting} label="Mennyit adsz vissza?" destination="Visszaadsz" mechanism="return" />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={available} disabled={submitting} label="Mennyit adsz vissza?" destination="Visszaadsz" mechanism="return" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > available}>
         {submitting ? 'Küldés…' : 'Visszaadás elküldése'}
       </button>
@@ -4944,7 +4946,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     }
 
     const sent = sentDecision.amount ?? 0;
-    const tripled = sent * 3;
+    const tripled = sent * TRUST_MULTIPLIER;
 
     if (!returnedDecision) {
       return (
@@ -4991,7 +4993,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   }
 
   const sent = sentDecision.amount ?? 0;
-  const tripled = sent * 3;
+  const tripled = sent * TRUST_MULTIPLIER;
 
   if (!returnedDecision) {
     return (
@@ -5060,9 +5062,16 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   useEffect(() => { setSaving(false); setPendingAmount(null); setEditingRound(null); }, [session.publicGoodsRoundNumber]);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 300);
-    return () => window.clearInterval(id);
-  }, []);
+    const deadline = Date.parse(session.publicGoodsDeadlineAt ?? '');
+    const refresh = () => setNow(Date.now());
+    refresh();
+    const timer = Number.isFinite(deadline) ? window.setTimeout(refresh, Math.max(0, deadline - Date.now()) + 1) : undefined;
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [session.publicGoodsDeadlineAt]);
 
   if (!player) return null;
 
@@ -5078,17 +5087,6 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
               <small>{currentGroup.memberIds.length} fős csoport</small>
             </div>
           )}
-          <div className="game-rules-card">
-            <p>
-              <strong>{session.publicGoodsContinuation ? 'A tanulókör következik.' : 'Az első három játék véget ért.'}</strong> Jelenlegi vagyonod: {formatCredits(player.currentBalance)}.
-            </p>
-            <p>
-              Mostantól ebben a csoportban játszol. A saját vagyonodból döntheted el, mennyit teszel a közös kasszába.
-            </p>
-            <p>
-              A csoport által befizetett teljes összeget a <strong>bank megduplázza</strong>, majd egyenlő részben osztja vissza a csoport tagjai között. Nem számít, ki mennyit fizetett be: mindenki ugyanakkora összeget kap vissza.
-            </p>
-          </div>
           <div className="waiting-box">Ha megtaláltátok egymást, várjatok a tréner következő körére.</div>
         </>
       );
@@ -5148,7 +5146,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   }
 
   const minimumKey = currentRound.id + ':' + currentRound.minimumMode + ':' + currentRound.minimumAmount;
-  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)}</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
+  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)}</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer duration={PUBLIC_GOODS_SECONDS} deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
 
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
   const canEdit = session.publicGoodsPhase === 'open' && now < deadline;
@@ -5160,7 +5158,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           <h2>Mennyit teszel a közös kasszába?</h2>
           <p>A határidőig módosíthatod. Az utolsó mentett tét számít.</p>
         </div>
-        <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} inHeader />
+        <DeadlineTimer duration={PUBLIC_GOODS_SECONDS} deadlineAt={session.publicGoodsDeadlineAt} inHeader />
       </div>
       {minimumVisible && <div className="minimum-warning" role="status"><strong>Minimum · {formatCredits(currentRound.minimumAmount ?? 0)}</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
 
@@ -5187,7 +5185,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           }
         }
       }}>
-        <CreditTable value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} label="Befizetés" destination="Saját téted" mechanism="vault" />
+        <CreditTable key={currentRound.id} value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} label="Befizetés" destination="Saját téted" mechanism="vault" />
         {amount !== '' && amount > player.currentBalance && (
           <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
         )}
@@ -5721,6 +5719,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
   return (
     <main className="shell participant-shell participant-v2" data-stage={stageIndex}>
       <FirebaseSyncBanner />
+      <div className="edition-brand"><b>Kreditjáték</b><span>{currentPlayer?.name}</span></div>
       <ParticipantStageRail stageIndex={stageIndex} />
       <header className="participant-head participant-masthead">
         <div className="participant-round-mark">

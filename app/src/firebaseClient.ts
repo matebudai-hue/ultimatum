@@ -1,24 +1,26 @@
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, User } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { connectAuthEmulator, getAuth, signInAnonymously, User } from 'firebase/auth';
 import { initializeFirestore } from 'firebase/firestore';
 import {firestoreTransport} from './firestoreTransport';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyAh623-RLDVDkBWFQp6X-F1xBeNi8tLu2Y',
-  authDomain: 'kreditjatek-a644e.firebaseapp.com',
-  projectId: 'kreditjatek-a644e',
-  storageBucket: 'kreditjatek-a644e.firebasestorage.app',
-  messagingSenderId: '136070394488',
-  appId: '1:136070394488:web:1d3f2187ac3acd0efab38d',
-};
+// This development branch uses a fictitious project and loopback-only emulators.
+const app = initializeApp({
+  projectId: 'demo-kreditjatek-sandbox',
+  apiKey: 'demo-kreditjatek',
+  appId: 'demo-kreditjatek-web',
+}, 'kreditjatek-sandbox');
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const sandboxOrigin = typeof location === 'undefined' ? new URL('http://127.0.0.1:4173') : location;
 
 export const firebaseAuth = getAuth(app);
 export const firestore = initializeFirestore(app, {
+  host: sandboxOrigin.host,
+  ssl: sandboxOrigin.protocol === 'https:',
   ignoreUndefinedProperties: true,
   ...firestoreTransport(typeof navigator==='undefined'?'':navigator.userAgent),
 });
+
+connectAuthEmulator(firebaseAuth, sandboxOrigin.origin, { disableWarnings: true });
 
 let readyPromise: Promise<User> | null = null;
 

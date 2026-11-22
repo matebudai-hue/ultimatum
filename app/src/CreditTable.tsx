@@ -33,7 +33,7 @@ function Board({ own, other, ownLabel, otherLabel, state, dropReady, renderChip,
   dropReady?: BoardSide;
   renderChip?: (side: BoardSide, value: number, content: ReactNode) => ReactNode;
 }) {
-  return <div className="credit-board" data-state={state} data-drop-ready={dropReady} data-mechanism={mechanism} aria-label="Kreditek elosztása">
+  return <div className="credit-board" data-state={state} data-focus={center} data-drop-ready={dropReady} data-mechanism={mechanism} aria-label="Kreditek elosztása">
     <div className="credit-seat">
       <div className="credit-seat-figures" aria-hidden="true">
         {mechanism === 'vault' && <div className="credit-seat-shadow credit-seat-shadow-left" />}
@@ -41,8 +41,13 @@ function Board({ own, other, ownLabel, otherLabel, state, dropReady, renderChip,
         <div className="credit-seat-shadow" />
       </div>
       <span>{partner ?? (mechanism === 'vault' ? 'A csoport' : 'A másik játékos')}</span>
+      {renderChip && <div className="transfer-sign" aria-hidden="true" data-flow={mechanism}>
+        <i /><b /><i />
+      </div>}
     </div>
-    <div className="credit-board-seam" aria-hidden="true" />
+    <div className="division-strip" aria-hidden="true">
+      <i style={{ width: (state === 'rejected' || own + other === 0 ? 0 : 100 * other / (own + other)) + '%' }} />
+    </div>
     {([['other', other, otherLabel], ['own', own, ownLabel]] as const).map(([side, credits, label]) => {
       const stacks = splitCredits(credits);
       return <div key={side} className={'credit-half credit-half-' + side} data-center={center === side}>
@@ -58,9 +63,7 @@ function Board({ own, other, ownLabel, otherLabel, state, dropReady, renderChip,
                 : <span className="credit-disc" aria-hidden="true">{content}</span>}
             </div>;
           })}
-          {Array.from({ length: denominations.length - stacks.length }, (_, index) =>
-            <div key={'empty-' + index} className="credit-pile-slot" aria-hidden="true" />)}
-          {mechanism === 'vault' && center === side && <div className="credit-vault-lid" aria-hidden="true"><i /></div>}
+
         </div>
       </div>;
     })}
@@ -153,9 +156,10 @@ export function CreditTable({ value, onChange, max, disabled, label, destination
     setHistory([]);
     onChange(next);
   };
+  const frequent = max >= 10_000 ? [1_000, 5_000, 10_000] : max >= 1000 ? [10, 100, 1000] : [1, 10, 100];
   const transfer = (next: number, credit: number) => {
     if (disabled || next < 0 || next > max) return;
-    setHistory((previous) => [...previous, value]);
+    setHistory((previous) => [...previous.slice(-99), value]);
     animate(next, credit);
     onChange(next);
   };
@@ -258,7 +262,7 @@ export function CreditTable({ value, onChange, max, disabled, label, destination
           partner={mechanism === 'chute' ? 'A másik játékos vár' : undefined}
           dropReady={overTarget} renderChip={(side, credit, content) => chipButton(credit, content, 'credit-disc', side)} />
         {motion && <span key={motion.id} className="credit-disc credit-motion" data-direction={motion.direction}
-          aria-hidden="true">{mechanism === 'tripler' && motion.direction > 0 ? '×3' : motion.value ? short(motion.value) : ''}</span>}
+          aria-hidden="true">{mechanism === 'tripler' && motion.direction > 0 ? '×' + multiplier : motion.value ? short(motion.value) : ''}</span>}
       </div>
       {multiplier && <div className="credit-multiplier">
         A másikhoz kerül <strong>{format(placed * multiplier)} kr</strong> <b>×{multiplier}</b>
@@ -293,16 +297,17 @@ export function CreditTable({ value, onChange, max, disabled, label, destination
       {ghost && <span aria-hidden="true" className="credit-disc credit-ghost"
         style={{ left: ghost.x, top: ghost.y }}>{short(ghost.value)}</span>}
       <div className="credit-denominations" aria-label="Gyakori címletek">
-        {[1_000, 5_000, 10_000].map(credit => chipButton(credit, '+' + format(credit), 'credit-add'))}
+        {frequent.map(credit => chipButton(credit, '+' + format(credit), 'credit-add'))}
       </div>
+      <button className="quick-undo" type="button" onClick={undo} disabled={disabled || !history.length}>↶ Visszavonás</button>
       <details className="credit-exact">
-        <summary>Pontos összeg és további címletek</summary>
+        <summary>Pontos összeg</summary>
         <div className="credit-toolbar">
-          <button type="button" onClick={undo} disabled={disabled || history.length === 0}>Visszavonom</button>
+
           <button type="button" onClick={() => setExact(0)} disabled={disabled || value === 0}>0 kredit</button>
         </div>
         <div className="credit-denominations credit-denominations-extra">
-          {[50_000, 500, 100, 10, 1].map(credit => chipButton(credit, '+' + format(credit), 'credit-add'))}
+          {denominations.filter(credit => !frequent.includes(credit) && credit <= max).map(credit => chipButton(credit, '+' + format(credit), 'credit-add'))}
         </div>
         <label className="field">
           <span>{label}</span>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { formatCreditInput, parseCreditInput, readStorage, writeStorage } from './browserCompat';
 
 export function useAmountDraft(key: string, fallback: number | '' = '') {
@@ -23,7 +24,10 @@ export function AmountInput({ value, onChange, max, disabled = false, required =
     <input type="text" inputMode="numeric" autoComplete="off" required={required}
       disabled={disabled} value={focused ? value : formatCreditInput(value)}
       placeholder="Írd be az összeget"
-      onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+      onFocus={event => {
+        flushSync(() => setFocused(true));
+        event.currentTarget.select();
+      }} onBlur={() => setFocused(false)}
       onChange={event => onChange(parseCreditInput(event.target.value))} />
     {value !== '' && <span className="amount-preview" aria-live="polite">
       <strong>{formatCreditInput(value)} kredit</strong>

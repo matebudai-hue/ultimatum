@@ -1,6 +1,8 @@
 import { makeUuid } from './browserCompat';
 import { Pairing, Player, PublicGoodsRound, RoundKey, Transaction } from './gameTypes';
 
+export const TRUST_MULTIPLIER = 3;
+
 const average = (values: number[]): number =>
   values.length === 0 ? 0 : Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 
@@ -62,7 +64,7 @@ export const settleTrust = (
 ): Transaction[] => {
   const rows = [
     { playerId: pairing.playerA, amount: startingCredit - sentAmount + returnedAmount, reason: 'trust_sender_result' },
-    { playerId: pairing.playerB, amount: sentAmount * 3 - returnedAmount, reason: 'trust_receiver_result' },
+    { playerId: pairing.playerB, amount: sentAmount * TRUST_MULTIPLIER - returnedAmount, reason: 'trust_receiver_result' },
   ];
   return makeTransactions(players, pairing.roundKey, rows);
 };

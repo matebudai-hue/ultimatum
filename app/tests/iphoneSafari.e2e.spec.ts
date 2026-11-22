@@ -1,5 +1,17 @@
 import { test, expect, devices, type Page } from '@playwright/test';
 
+const captureScene = async (page: Page, name: string) => {
+  const dir = process.env.KREDIT_SCREENSHOTS;
+  if (!dir) return;
+  for (const width of [320, 360, 375, 393, 430]) {
+    await page.setViewportSize({ width, height: width === 320 ? 568 : 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+  await page.setViewportSize({ width: 393, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({path: dir + '/' + name + '.png', animations: 'disabled'});
+};
+
 const playerReady = async (page: Page) => {
   await expect(page.getByText('Sikeresen csatlakoztál')).toBeVisible({ timeout: 25_000 });
 };
@@ -36,7 +48,9 @@ const sendOffer = async (proposer: Page, amount: string) => {
   await revealExactAmount(proposer);
   const input = proposer.locator('.credit-exact input');
   await expect(input).toBeVisible();
+  await input.tap();
   await input.fill(amount);
+  await expect(input).toHaveValue(amount);
   await proposer.getByRole('button', { name: 'Ajánlat elküldése' }).tap();
   await expect(proposer.getByText('Az ajánlatod elküldve.')).toBeVisible({ timeout: 25_000 });
 };
@@ -148,11 +162,23 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
 
     // 1a: valódi touch eseménnyel ELFOGADÁS.
     let roles = await identifyRoles(iphoneA, iphoneB);
+    const chip = roles.proposer.locator('.credit-denominations').first().getByRole('button').last();
+    await chip.tap();
+    await roles.proposer.getByRole('button', {name: /Visszavonás/}).tap();
+    await roles.proposer.context().setOffline(true);
+    await chip.tap();
+    await expect(roles.proposer.getByRole('slider')).toHaveValue('10000');
+    await roles.proposer.context().setOffline(false);
+    await roles.proposer.reload();
+    await expect(roles.proposer.getByRole('slider')).toHaveValue('10000');
+    await captureScene(roles.proposer, '01-ultimatum-ajanlat');
     await sendOffer(roles.proposer, '40000');
+    await captureScene(roles.proposer, '07-bekuldve');
 
     const accept = roles.receiver.getByRole('button', { name: 'Elfogadom' });
     await expect(accept).toBeVisible({ timeout: 25_000 });
     await expect(accept).toBeEnabled();
+    await captureScene(roles.receiver, '02-ultimatum-valasz');
     await accept.tap();
     await expect(roles.receiver.getByText('Elfogadtad az ajánlatot.')).toBeVisible({ timeout: 25_000 });
 
@@ -201,11 +227,17 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
       await trainer.getByRole('button',{name:'Következő kör indítása',exact:true}).click();
       if (round<2) {
         const dictator = await actorFor('A másik játékosnak adott kredit');
+        await dictator.locator('.credit-denominations').first().getByRole('button').last().tap();
+        await captureScene(dictator, '03-diktator');
         await amountDecision(dictator,'A másik játékosnak adott kredit','Döntés elküldése','20000');
       } else {
         const sender = await actorFor('Mennyit küldesz a másik játékosnak?');
+        await sender.locator('.credit-denominations').first().getByRole('button').last().tap();
+        await captureScene(sender, '04-bizalom-kuldes');
         await amountDecision(sender,'Mennyit küldesz a másik játékosnak?','Küldés','30000');
         const returner = await actorFor('Mennyit adsz vissza?');
+        await returner.locator('.credit-denominations').first().getByRole('button').last().tap();
+        await captureScene(returner, '05-bizalom-vissza');
         await amountDecision(returner,'Mennyit adsz vissza?','Visszaadás elküldése','45000');
       }
       const close = trainer.getByRole('button',{name:'Kör lezárása és könyvelése',exact:true});
@@ -214,6 +246,9 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
     }
     await trainer.getByRole('button',{name:'Első szakasz lezárása → csapatképzés',exact:true}).click();
     await trainer.getByRole('button',{name:'Első kasszakör indítása',exact:true}).click();
+    await expect(iphoneA.getByText('Mennyit teszel a közös kasszába?')).toBeVisible();
+    await iphoneA.locator('.credit-denominations').first().getByRole('button').last().tap();
+    await captureScene(iphoneA, '06-kassza');
     await amountDecision(iphoneA,'Befizetés','Tét mentése','10000');
     await expect(iphoneA.getByText(/Beérkezett:/)).toBeVisible();
     await iphoneA.reload();
@@ -230,6 +265,7 @@ test('iPhone Safari: hat páros kör és módosított kasszatét átmegy Firebas
     await expect(iphoneA.locator('.kredit-personal-settlement dd').filter({hasText:/35\s*000/})).toBeVisible();
     await expect(iphoneB.locator('.kredit-personal-settlement dd').filter({hasText:/35\s*000/})).toBeVisible();
 
+    await captureScene(iphoneA, '08-elszamolas');
     console.log('IPHONE SAFARI SIX ROUNDS + POOL EDIT + RELOAD + EXACT PAYOUT OK · game=' + code);
   } finally {
     await Promise.all([
