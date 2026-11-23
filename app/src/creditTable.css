@@ -80,7 +80,7 @@
   padding: 1px 3px;
   font-size: 9px;
 }
-.credit-pile button:not(:disabled), .credit-denominations button { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.credit-pile button:not(:disabled) { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .credit-pile button:disabled { opacity: 1; }
 .credit-table .credit-ghost, .credit-table .credit-motion {
   pointer-events: none;
@@ -124,18 +124,6 @@
 .credit-slider input::-moz-range-track { height: 7px; border-radius: 8px; background: #d9cdb9; }
 .credit-slider input::-moz-range-progress { height: 7px; border-radius: 8px; background: #a42a1c; }
 .credit-slider input::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #a42a1c; border: 2px solid #fff4df; box-shadow: 0 0 0 1px #842519; }
-.credit-denominations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-.credit-denominations-extra { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.participant-v2 .credit-denominations .credit-add {
-  min-height: 44px;
-  min-width: 0;
-  padding: 4px;
-  background: #f2e9d9;
-  border: 1px solid #a89881;
-  color: #231f1b;
-  border-radius: 4px;
-  font-weight: 850;
-}
 .credit-toolbar { display: flex; gap: 6px; margin: 5px 0; }
 .participant-v2 .credit-toolbar button { min-height: 44px; padding: 4px 8px; background: transparent; border: 0; text-decoration: underline; }
 .credit-exact summary { min-height: 44px; padding: 11px 0; cursor: pointer; font-size: 13px; }
