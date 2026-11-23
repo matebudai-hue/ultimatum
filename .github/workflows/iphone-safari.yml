@@ -41,9 +41,15 @@ jobs:
         working-directory: app
         run: npx playwright install --with-deps webkit
 
-      - name: iPhone Safari Ultimatum E2E
+      - name: Set up Java for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: iPhone Safari E2E against isolated Firebase emulators
         working-directory: app
-        run: npm run test:iphone
+        run: npx --yes firebase-tools@15.37.0 emulators:exec --only auth,firestore --project demo-kreditjatek-sandbox "npm run test:iphone"
 
       - name: Upload failure artifacts
         if: failure()

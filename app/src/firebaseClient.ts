@@ -1,6 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, User } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth, signInAnonymously, User } from 'firebase/auth';
+import { connectFirestoreEmulator, initializeFirestore } from 'firebase/firestore';
 import {firestoreTransport} from './firestoreTransport';
 
 const firebaseConfig = {
@@ -12,13 +12,21 @@ const firebaseConfig = {
   appId: '1:136070394488:web:1d3f2187ac3acd0efab38d',
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const useEmulator = import.meta.env?.MODE === 'emulator';
+const app = getApps().length ? getApp() : initializeApp(useEmulator
+  ? { projectId: 'demo-kreditjatek-sandbox', apiKey: 'demo-kreditjatek' }
+  : firebaseConfig);
 
 export const firebaseAuth = getAuth(app);
 export const firestore = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
   ...firestoreTransport(typeof navigator==='undefined'?'':navigator.userAgent),
 });
+
+if (useEmulator) {
+  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
+}
 
 let readyPromise: Promise<User> | null = null;
 

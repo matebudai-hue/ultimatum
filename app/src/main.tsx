@@ -9,7 +9,7 @@ import {TakeawayField} from './TakeawayField';
 import {ParticipantJourneyPanel, renderJourneyProjection} from './ParticipantJourney';
 import { PairComments, PoolNotes, pairComments, poolMarkers, openPatternNote, pairNoteId, poolNoteId } from './patternNotes';
 import { useAmountDraft, confirmAmount } from './AmountInput';
-import { publicGoodsPlayerPayout } from './gameEngine';
+import { publicGoodsPlayerPayout, TRUST_MULTIPLIER } from './gameEngine';
 import React, { createContext, FormEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
@@ -29,6 +29,7 @@ import {
 import './styles.css';
 import './participant.css';
 import './participantResults.css';
+import './mobileEdition.css';
 import {
   Decision,
   GameSession,
@@ -3197,7 +3198,7 @@ function SelfReportMiniCard({
       <span>{timeline && item.game !== 'publicGoods'
         ? ROUND_LABELS[item.roundKey] : item.roundLabel}</span>
       <strong>{main}</strong>
-      <small>{secondary}</small>
+      <small data-verdict={item.game === 'ultimatum' && !item.timedOutRole && typeof item.accepted === 'boolean' ? (item.accepted ? 'accepted' : 'rejected') : undefined}>{secondary}</small>
       {item.isBotDecision && <em className="self-report-bot-note">BOT döntése</em>}
     </div>
   );
@@ -4568,8 +4569,9 @@ function Timer({ startedAt }: { startedAt?: string }) {
 
 const ParticipantClockSlot = createContext<HTMLDivElement | null>(null);
 
-function DeadlineTimer({ deadlineAt, inHeader = false }: {
+function DeadlineTimer({ deadlineAt, durationSeconds, inHeader = false }: {
   deadlineAt?: string;
+  durationSeconds?: number;
   inHeader?: boolean;
 }) {
   const slot = useContext(ParticipantClockSlot);
@@ -4581,8 +4583,9 @@ function DeadlineTimer({ deadlineAt, inHeader = false }: {
   const deadline = deadlineAt ? Date.parse(deadlineAt) : undefined;
   if (deadline === undefined) return null;
   const remaining = Math.max(0, Math.ceil((deadline - now) / 1000));
-  const clock = <div className={'timer ' + (remaining === 0 ? 'expired' : remaining <= 10 ? 'urgent' : '')}>
-    {remaining > 0 ? remaining + ' mp' : 'Idő lejárt'}
+  const clockText = Math.floor(remaining / 60) + ':' + String(remaining % 60).padStart(2, '0');
+  const clock = <div role="timer" aria-label={'Hátralévő idő: ' + remaining + ' másodperc'} style={{ '--time-left': Math.min(100, remaining / (durationSeconds ?? STRATEGIC_DECISION_SECONDS) * 100) + '%' } as React.CSSProperties} className={'timer ' + (remaining === 0 ? 'expired' : remaining <= 10 ? 'urgent' : '')}>
+    <small>{remaining ? 'Hátralévő idő' : 'Idő lejárt'}</small><b>{clockText}</b>
   </div>;
   return inHeader && slot ? createPortal(clock, slot) : clock;
 }
@@ -4614,7 +4617,7 @@ function AmountDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label={label} destination={giveLabel} source={keepLabel} mechanism={giveLabel === 'Ajánlatod az asztalon' ? 'bridge' : 'chute'} />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={max} disabled={submitting} label={label} destination={giveLabel} source={keepLabel} mechanism={giveLabel === 'Ajánlatod az asztalon' ? 'bridge' : 'chute'} />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : button}
       </button>
@@ -4641,7 +4644,7 @@ function TrustSendDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > max) return;
       if (!submitting && confirmAmount(numericAmount, max)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={max} disabled={submitting} label="Mennyit küldesz a másik játékosnak?" destination="Te küldesz" multiplier={3} mechanism="tripler" />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={max} disabled={submitting} label="Mennyit küldesz a másik játékosnak?" destination="Te küldesz" multiplier={TRUST_MULTIPLIER} mechanism="tripler" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > max}>
         {submitting ? 'Küldés…' : 'Küldés'}
       </button>
@@ -4668,7 +4671,7 @@ function TrustReturnDecision({
       if (numericAmount === null || numericAmount < 0 || numericAmount > available) return;
       if (!submitting && confirmAmount(numericAmount, available)) onSubmit(numericAmount);
     }}>
-      <CreditTable value={amount} onChange={setAmount} max={available} disabled={submitting} label="Mennyit adsz vissza?" destination="Visszaadsz" mechanism="return" />
+      <CreditTable key={draftKey} value={amount} onChange={setAmount} max={available} disabled={submitting} label="Mennyit adsz vissza?" destination="Visszaadsz" mechanism="return" />
       <button className="primary big" type="submit" disabled={submitting || numericAmount === null || numericAmount < 0 || numericAmount > available}>
         {submitting ? 'Küldés…' : 'Visszaadás elküldése'}
       </button>
@@ -4741,7 +4744,6 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       const ownTimeout = timeout.playerId === playerId;
       return (
         <>
-
           <div className="submitted timeout-result">
             <strong>{ownTimeout ? 'Lejárt a 60 másodperced.' : 'A másik játékos ideje lejárt.'}</strong>
             <span>Ebből a párosításból egyikőtök sem kap kreditet.</span>
@@ -4750,21 +4752,26 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
       );
     }
 
-    if (closed) {
+    if (responseDecision || closed) {
+      if (!responseDecision) return <div className="submitted" role="status"><strong>A kör lezárult.</strong></div>;
       const offer = offerDecision?.amount ?? 0;
-      const accepted = responseDecision?.accepted === true;
-      const ownCredit = accepted ? (isA ? session.startingCredit - offer : offer) : 0;
+      const accepted = responseDecision.accepted === true;
+      const ownCredit = isA ? session.startingCredit - offer : offer;
       return (
         <>
-          <CreditOutcome mechanism="bridge" left={isA ? session.startingCredit - offer : offer}
-            right={isA ? offer : session.startingCredit - offer} rejected={!accepted} />
-
-          <div className={'submitted ' + (accepted ? '' : 'timeout-result')}>
-            <strong>{isA
-              ? (accepted ? 'Elfogadták az ajánlatod.' : 'Elutasították az ajánlatod.')
-              : (accepted ? 'Elfogadtad az ajánlatot.' : 'Elutasítottad az ajánlatot.')}</strong>
-
+          <div className="offer-verdict" data-accepted={accepted} role="status">
+            <b aria-hidden="true">{accepted ? '✓' : '×'}</b>
+            <div>
+              <strong>{isA
+                ? (accepted ? 'Elfogadták az ajánlatodat.' : 'Elutasították az ajánlatodat.')
+                : (accepted ? 'Elfogadtad az ajánlatot.' : 'Elutasítottad az ajánlatot.')}</strong>
+              <span>{accepted
+                ? (closed ? `A körből kapott kredited: ${formatCredits(ownCredit)}.` : 'Jóváírás a kör lezárásakor.')
+                : 'Ebben a körben mindketten 0 kreditet kaptok.'}</span>
+            </div>
           </div>
+          <CreditOutcome mechanism="bridge" left={ownCredit}
+            right={isA ? offer : session.startingCredit - offer} rejected={!accepted} />
         </>
       );
     }
@@ -4779,7 +4786,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
                 <h2>Mennyit ajánlasz fel?</h2>
                 <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
               </div>
-              <DeadlineTimer deadlineAt={proposerDeadline} inHeader />
+              <DeadlineTimer deadlineAt={proposerDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
             </div>
             <AmountDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4791,7 +4798,6 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               onSubmit={(amount) => submit({ type: 'ultimatum_offer', amount })}
               submitting={submitting}
             />
-
           </>
         );
       }
@@ -4806,7 +4812,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
                 ? 'A másik játékos döntése technikai ellenőrzés alatt van. A tréner látja.'
                 : 'Az ajánlatod elküldve.'}
             </span>
-            {receiverDeadline && <DeadlineTimer deadlineAt={receiverDeadline} />}
+            {receiverDeadline && <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} />}
           </div>
         </>
       );
@@ -4815,14 +4821,12 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     if (!offerDecision) {
       return (
         <>
-
           <CreditEncounter mechanism="bridge" own={0} other={session.startingCredit}
             ownLabel="Ajánlatra vársz" otherLabel="Ő osztja el" partner="A másik játékos készül az ajánlattal" />
         </>
       );
     }
 
-    if (!responseDecision) {
       const receiverDeadline = gameStore.ultimatumDeadlineAt(session, pairing.id, playerId);
       return (
         <>
@@ -4831,7 +4835,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               <h2>Elfogadod az ajánlatot?</h2>
               <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
             </div>
-            <DeadlineTimer deadlineAt={receiverDeadline} inHeader />
+            <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
           </div>
           <CreditOffer own={offerDecision.amount ?? 0} other={session.startingCredit - (offerDecision.amount ?? 0)} receiving />
           <div className="decision-buttons">
@@ -4842,22 +4846,9 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               {submitting ? 'Küldés…' : 'Elutasítom'}
             </button>
           </div>
-
         </>
       );
-    }
 
-    return (
-      <>
-        <CreditOutcome mechanism="bridge" left={offerDecision.amount ?? 0}
-          right={session.startingCredit - (offerDecision.amount ?? 0)} rejected={!responseDecision.accepted} />
-        <div className="submitted">
-          <Check size={28} />
-          <strong>{responseDecision.accepted ? 'Elfogadtad az ajánlatot.' : 'Elutasítottad az ajánlatot.'}</strong>
-          <span>Jóváírás a kör lezárásakor.</span>
-        </div>
-      </>
-    );
   }
 
   if (pairing.gameId === 'dictator') {
@@ -4889,9 +4880,8 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
           <div className="participant-pool-heading">
             <div>
               <h2>Mennyit adsz a másik játékosnak?</h2>
-
             </div>
-            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
+            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
           </div>
           <AmountDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4931,7 +4921,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               <h2>Mennyit küldesz a másik játékosnak?</h2>
               <p>A bank megháromszorozza, amit elküldesz.</p>
             </div>
-            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
+            <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
           </div>
           <TrustSendDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4944,7 +4934,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
     }
 
     const sent = sentDecision.amount ?? 0;
-    const tripled = sent * 3;
+    const tripled = sent * TRUST_MULTIPLIER;
 
     if (!returnedDecision) {
       return (
@@ -4991,7 +4981,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
   }
 
   const sent = sentDecision.amount ?? 0;
-  const tripled = sent * 3;
+  const tripled = sent * TRUST_MULTIPLIER;
 
   if (!returnedDecision) {
     return (
@@ -5001,7 +4991,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
             <h2>Mennyit adsz vissza?</h2>
             <p>A beérkezett kreditből adsz vissza.</p>
           </div>
-          <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} inHeader />
+          <DeadlineTimer deadlineAt={gameStore.strategicDeadlineAt(session, pairing.id, playerId)} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
         </div>
         <TrustReturnDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -5148,7 +5138,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
   }
 
   const minimumKey = currentRound.id + ':' + currentRound.minimumMode + ':' + currentRound.minimumAmount;
-  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)}</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
+  if (minimumVisible && acknowledgedMinimum !== minimumKey) return <div className="minimum-warning" role="alert"><h1>A csoport minimuma: {formatCredits(currentRound.minimumAmount ?? 0)}</h1><p>A csoportnak összesen legalább ennyit kell betennie. Ha ez nem teljesül, a bank ebben a körben nem fizet vissza.</p><DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} durationSeconds={PUBLIC_GOODS_SECONDS} /><button type="button" className="primary big" onClick={() => setAcknowledgedMinimum(minimumKey)}>Megértettem, tovább a döntéshez</button></div>;
 
   const deadline = session.publicGoodsDeadlineAt ? new Date(session.publicGoodsDeadlineAt).getTime() : 0;
   const canEdit = session.publicGoodsPhase === 'open' && now < deadline;
@@ -5160,7 +5150,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           <h2>Mennyit teszel a közös kasszába?</h2>
           <p>A határidőig módosíthatod. Az utolsó mentett tét számít.</p>
         </div>
-        <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} inHeader />
+        <DeadlineTimer deadlineAt={session.publicGoodsDeadlineAt} durationSeconds={PUBLIC_GOODS_SECONDS} inHeader />
       </div>
       {minimumVisible && <div className="minimum-warning" role="status"><strong>Minimum · {formatCredits(currentRound.minimumAmount ?? 0)}</strong><p>Ha a csoport nem éri el, a bank nem fizet vissza.</p></div>}
 
@@ -5187,7 +5177,7 @@ function PublicGoodsParticipantTask({ session, playerId }: { session: GameSessio
           }
         }
       }}>
-        <CreditTable value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} label="Befizetés" destination="Saját téted" mechanism="vault" />
+        <CreditTable key={currentRound.id} value={amount} onChange={setAmount} max={player.currentBalance} disabled={!canEdit || saving} label="Befizetés" destination="Saját téted" mechanism="vault" />
         {amount !== '' && amount > player.currentBalance && (
           <div className="error mobile-input-error">Legfeljebb {formatCredits(player.currentBalance)} kreditet adhatsz meg.</div>
         )}
@@ -5721,6 +5711,7 @@ function ParticipantClient({ code: initial }: { code?: string }) {
   return (
     <main className="shell participant-shell participant-v2" data-stage={stageIndex}>
       <FirebaseSyncBanner />
+      <div className="edition-brand"><b>Kreditjáték</b><span>{currentPlayer?.name}</span></div>
       <ParticipantStageRail stageIndex={stageIndex} />
       <header className="participant-head participant-masthead">
         <div className="participant-round-mark">
