@@ -274,6 +274,18 @@ export function CreditTable({ value, onChange, max, disabled, label, destination
 
   return (
     <div className="credit-table" data-mechanism={mechanism}>
+      <button className="quick-undo" type="button" onClick={undo} disabled={disabled || !history.length}>↶ Visszavonás</button>
+      <details className="credit-exact">
+        <summary>Pontos összeg</summary>
+        <label className="field">
+          <span>{label}</span>
+          <AmountInput value={value} onChange={setExact} max={max} disabled={disabled} required={false} />
+        </label>
+        <div className="credit-toolbar">
+          <button type="button" onClick={() => setExact(0)} disabled={disabled || value === 0}>0 kredit</button>
+        </div>
+        {amount > max && <p className="error">Legfeljebb {format(max)} kreditet adhatsz meg.</p>}
+      </details>
       <div ref={board} className="credit-board-wrap">
         <Board mechanism={mechanism} multiplier={multiplier} own={max - placed} other={placed} ownLabel={source} otherLabel={destination}
           center={mechanism === 'bridge' || mechanism === 'vault' ? 'other' : undefined}
@@ -311,19 +323,6 @@ export function CreditTable({ value, onChange, max, disabled, label, destination
       </div>
       {ghost && <span aria-hidden="true" className="credit-disc credit-ghost"
         style={{ left: ghost.x, top: ghost.y }}>{short(ghost.value)}</span>}
-      <button className="quick-undo" type="button" onClick={undo} disabled={disabled || !history.length}>↶ Visszavonás</button>
-      <details className="credit-exact">
-        <summary>Pontos összeg</summary>
-        <label className="field">
-          <span>{label}</span>
-          <AmountInput value={value} onChange={setExact} max={max} disabled={disabled} required={false} />
-        </label>
-        <div className="credit-toolbar">
-
-          <button type="button" onClick={() => setExact(0)} disabled={disabled || value === 0}>0 kredit</button>
-        </div>
-        {amount > max && <p className="error">Legfeljebb {format(max)} kreditet adhatsz meg.</p>}
-      </details>
     </div>
   );
 }
