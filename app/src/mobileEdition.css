@@ -314,13 +314,13 @@ html:has(.participant-v2 .participant-turn-clock > .timer) {
   .participant-v2 .participant-stage span { position: absolute; clip-path: inset(50%); }
   .participant-v2 .participant-masthead { padding-block: 3px; margin-block: 0; }
   .participant-v2 .participant-pool-heading h2 { font-size: clamp(18px, 5vw, 24px); }
-  .participant-v2 .decision-form:has(.credit-table):not(:has(.credit-exact input:focus)) > .primary,
+  .participant-v2 .decision-form:has(.credit-table):not(:has(.credit-exact[open])) > .primary,
   .participant-v2[data-stage="1"] .decision-buttons {
     position: fixed; z-index: 12; bottom: max(6px, env(safe-area-inset-bottom));
     left: 50%; transform: translateX(-50%); width: min(540px, calc(100% - 28px));
     margin: 0; outline: 4px solid var(--player-paper);
   }
-  .participant-v2 .decision-form:has(.credit-exact input:focus) > .primary { position: static; }
+  .participant-v2 .decision-form:has(.credit-exact[open]) > .primary { position: static; }
   .participant-v2[data-stage="1"] .decision-buttons { grid-template-columns: 1fr 1fr; background: var(--player-paper); }
   body:has(.participant-v2 :is(.decision-form:has(.credit-table), .decision-buttons)) {
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
