@@ -4786,7 +4786,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
                 <h2>Mennyit ajánlasz fel?</h2>
                 <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
               </div>
-              <DeadlineTimer deadlineAt={proposerDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
+              <DeadlineTimer deadlineAt={proposerDeadline} durationSeconds={ULTIMATUM_PROPOSER_SECONDS} inHeader />
             </div>
             <AmountDecision
               draftKey={session.code + ":" + playerId + ":" + pairing.id}
@@ -4812,7 +4812,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
                 ? 'A másik játékos döntése technikai ellenőrzés alatt van. A tréner látja.'
                 : 'Az ajánlatod elküldve.'}
             </span>
-            {receiverDeadline && <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} />}
+            {receiverDeadline && <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={ULTIMATUM_RECEIVER_SECONDS} />}
           </div>
         </>
       );
@@ -4835,7 +4835,7 @@ function StrategicParticipantTask({ session, playerId }: { session: GameSession;
               <h2>Elfogadod az ajánlatot?</h2>
               <p>Elutasításkor mindketten 0 kreditet kaptok.</p>
             </div>
-            <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={STRATEGIC_DECISION_SECONDS} inHeader />
+            <DeadlineTimer deadlineAt={receiverDeadline} durationSeconds={ULTIMATUM_RECEIVER_SECONDS} inHeader />
           </div>
           <CreditOffer own={offerDecision.amount ?? 0} other={session.startingCredit - (offerDecision.amount ?? 0)} receiving />
           <div className="decision-buttons">
