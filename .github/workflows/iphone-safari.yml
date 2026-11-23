@@ -49,7 +49,7 @@ jobs:
 
       - name: iPhone Safari E2E against isolated Firebase emulators
         working-directory: app
-        run: npx --yes firebase-tools@15.37.0 emulators:exec --only auth,firestore --project demo-kreditjatek-sandbox "npm run test:iphone"
+        run: npx --yes firebase-tools@15.37.0 emulators:exec --config firebase.emulator.json --only auth,firestore --project demo-kreditjatek-sandbox "npm run test:iphone"
 
       - name: Upload failure artifacts
         if: failure()
